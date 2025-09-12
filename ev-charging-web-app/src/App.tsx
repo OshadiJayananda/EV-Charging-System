@@ -1,35 +1,39 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Routes, Route, Link } from "react-router-dom";
+import "./App.css";
+import AdminDashboard from "./components/Admin/AdminDashboard";
+import CSOperatorDashboard from "./components/CSOperator/CSOperatorDashboard";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="App">
+      {/* Navbar */}
+      <nav className="bg-green-600 text-white p-4 flex justify-between">
+        <h1 className="font-bold text-xl">EV Charging App</h1>
+        <div className="space-x-4">
+          <Link to="/admin" className="hover:underline">
+            Admin
+          </Link>
+          <Link to="/cs-operator" className="hover:underline">
+            CS Operator
+          </Link>
+        </div>
+      </nav>
+
+      {/* Routes */}
+      <main className="p-4">
+        <Routes>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/cs-operator" element={<CSOperatorDashboard />} />
+          <Route
+            path="*"
+            element={
+              <h2>Welcome to EV Charging App! Select a dashboard above.</h2>
+            }
+          />
+        </Routes>
+      </main>
+    </div>
+  );
 }
 
-export default App
+export default App;
