@@ -9,12 +9,12 @@ import {
 
 import { Zap } from "lucide-react";
 import { Link } from "react-router-dom";
-import { 
-  Button, 
-  Section, 
-  IconCard, 
-  FeatureItem, 
-  Footer 
+import {
+  Button,
+  Section,
+  IconCard,
+  FeatureItem,
+  Footer,
 } from "../components/common";
 
 function Home() {
@@ -31,9 +31,9 @@ function Home() {
             stations, operator activities, and EV owner bookings for a seamless
             charging experience.
           </p>
-          <Button variant="secondary">
-            Get Started
-          </Button>
+          <Link to="/login">
+            <Button variant="secondary">Get Started</Button>
+          </Link>
         </div>
       </Section>
 
@@ -52,7 +52,7 @@ function Home() {
               iconBgColor="bg-green-100"
               iconColor="text-green-600"
             />
-            
+
             <IconCard
               icon={<Zap className="h-8 w-8" />}
               title="Station Operators"
@@ -61,7 +61,7 @@ function Home() {
               iconBgColor="bg-blue-100"
               iconColor="text-blue-600"
             />
-            
+
             <IconCard
               icon={<UsersIcon className="h-8 w-8" />}
               title="EV Owners"
@@ -126,14 +126,10 @@ function Home() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link to="/login">
-              <Button variant="secondary">
-                Sign In
-              </Button>
+              <Button variant="secondary">Sign In</Button>
             </Link>
             <Link to="/contact-sales">
-              <Button variant="outline">
-                Contact Sales
-              </Button>
+              <Button variant="outline">Contact Sales</Button>
             </Link>
           </div>
         </div>
