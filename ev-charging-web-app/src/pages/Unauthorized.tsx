@@ -14,10 +14,10 @@ const Unauthorized = () => {
         You don’t have permission to view this page or perform this action.
       </p>
       <button
-        onClick={() => navigate("/")}
+        onClick={() => navigate("/login")}
         className="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg shadow-lg hover:bg-red-700 transition"
       >
-        Go Back to Dashboard
+        Go Back to Sign In
       </button>
     </div>
   );
