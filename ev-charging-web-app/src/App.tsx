@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import ContactSales from "./pages/ContactSales";
 import { useDocumentTitle } from "./hooks/useDocumentTitle";
+import Contact from "./pages/Contact";
 
 function App() {
   const location = useLocation();
@@ -34,6 +35,7 @@ function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/contact-sales" element={<ContactSales />} />
+      <Route path="/contact" element={<Contact />} />
 
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
