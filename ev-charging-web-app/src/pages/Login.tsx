@@ -7,6 +7,8 @@ import {
 } from "@heroicons/react/24/outline";
 import { Car } from "lucide-react";
 import { Input } from "../components/common";
+import { toast } from "react-hot-toast";
+import { getRequest } from "../components/common/api";
 
 interface LoginData {
   email: string;
@@ -21,6 +23,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Partial<LoginData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  //remove below function after backend is ready
+  const donothing = () => Promise.resolve();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -63,12 +68,27 @@ export default function Login() {
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      console.log("Login data:", formData);
-      alert("Login successful!");
+      await toast.promise(
+        (async () => {
+          if (import.meta.env.VITE_APP_API_READY === "true") {
+            // Use real API when backend is ready
+            const response = await getRequest("/auth/login", formData);
+            console.log("Login response from API:", response);
+            return response;
+          } else {
+            // Simulate login
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            return donothing();
+          }
+        })(),
+        {
+          loading: "Signing in...",
+          success: <b>Login successful!</b>,
+          error: <b>Login failed. Please try again.</b>,
+        }
+      );
     } catch (error) {
       console.error("Login error:", error);
-      alert("Login failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

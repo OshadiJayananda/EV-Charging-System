@@ -10,6 +10,7 @@ import { Car, Send, CheckCircle } from "lucide-react";
 import { Button, Input } from "../components/common";
 import ContactInfo from "../components/Contact/ContactInfo";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 interface FormData {
   name: string;
@@ -71,16 +72,32 @@ export default function ContactSales() {
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      console.log("Contact form data:", formData);
-      setIsSubmitted(true);
-    } catch (error) {
-      console.error("Form submission error:", error);
-      alert("Submission failed. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    await toast
+      .promise(
+        new Promise((resolve, reject) => {
+          setTimeout(() => {
+            // Simulate success/failure
+            const success = true; // change this to false to test error
+            if (success) resolve("Form submitted");
+            else reject("Error submitting form");
+          }, 1500);
+        }),
+        {
+          loading: "Submitting...",
+          success: <b>Form submitted successfully!</b>,
+          error: <b>Submission failed. Please try again.</b>,
+        }
+      )
+      .then(() => {
+        console.log("Contact form data:", formData);
+        setIsSubmitted(true);
+      })
+      .catch((error) => {
+        console.error("Form submission error:", error);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   };
 
   if (isSubmitted) {
