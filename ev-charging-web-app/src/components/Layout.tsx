@@ -13,8 +13,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 bg-green-600 text-white p-4 flex items-center justify-between z-50 shadow-md">
-        <h1 className="font-bold text-xl">EV Charging App</h1>
+      <nav className="fixed top-0 left-0 right-0 bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4 flex items-center justify-between z-50 shadow-md">
+        <Link to="/" className="font-bold text-xl">
+          EV Charging App
+        </Link>
 
         {/* Desktop Links */}
         <div className="hidden md:flex space-x-4">

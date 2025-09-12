@@ -5,6 +5,7 @@ import CSOperatorDashboard from "./components/CSOperator/CSOperatorDashboard";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 import Unauthorized from "./pages/Unauthorized";
+import Home from "./pages/Home";
 
 function App() {
   const location = useLocation();
@@ -25,12 +26,7 @@ function App() {
   return (
     <Layout>
       <Routes>
-        <Route
-          path="/"
-          element={
-            <h2>Welcome to EV Charging App! Select a dashboard above.</h2>
-          }
-        />
+        <Route path="/" element={<Home />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/cs-operator" element={<CSOperatorDashboard />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
