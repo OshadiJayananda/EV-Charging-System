@@ -1,0 +1,32 @@
+-------use case diagram 01------------------------------------
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor Admin
+actor "EV Owner" as EVOwner
+actor "Charging Station Operator" as CSOperator
+
+' Admin / Backoffice Use Cases
+Admin --> (Manage Users)
+Admin --> (Activate/Deactivate EV Owner)
+Admin --> (Manage Charging Stations)
+
+' EV Owner Use Cases
+EVOwner --> (Book Charging Slot)
+EVOwner --> (Update Profile)
+EVOwner --> (Cancel Booking)
+EVOwner --> (View Booking History)
+EVOwner --> (Access QR Code)
+EVOwner --> (Get Nearby Charging Stations on Map)
+EVOwner --> (Account Deactivation)
+EVOwner --> (Request Account Reactivation)
+
+' Charging Station Operator Use Cases
+CSOperator --> (Update Slot Availability)
+CSOperator --> (View Bookings)
+CSOperator --> (Manage Station Info)
+CSOperator --> (Confirm Booking via QR)
+CSOperator --> (Finalize Charging Session)
+@enduml
+------------------------------------------------------------------
