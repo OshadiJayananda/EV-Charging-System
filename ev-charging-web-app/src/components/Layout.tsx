@@ -1,13 +1,8 @@
-import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 
-interface LayoutProps {
-  children: ReactNode;
-}
-
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -37,7 +32,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </nav>
-
       {/* Mobile Dropdown Menu */}
       {isOpen && (
         <div className="fixed top-16 left-0 right-0 bg-green-700 text-white p-4 space-y-2 md:hidden shadow-md z-40">
@@ -57,9 +51,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </Link>
         </div>
       )}
-
       {/* Page Content */}
-      <main className="flex-1 flex flex-col pt-16">{children}</main>
+      <main className="flex-1 flex flex-col pt-16">
+        <Outlet />
+      </main>
     </div>
   );
 };
