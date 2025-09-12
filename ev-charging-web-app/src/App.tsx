@@ -1,38 +1,42 @@
-import { Routes, Route, Link } from "react-router-dom";
-import "./App.css";
+import { Routes, Route, useLocation } from "react-router-dom";
+import Layout from "./components/Layout";
 import AdminDashboard from "./components/Admin/AdminDashboard";
 import CSOperatorDashboard from "./components/CSOperator/CSOperatorDashboard";
+import NotFound from "./pages/NotFound";
+import { useEffect } from "react";
+import Unauthorized from "./pages/Unauthorized";
 
 function App() {
-  return (
-    <div className="App">
-      {/* Navbar */}
-      <nav className="bg-green-600 text-white p-4 flex justify-between">
-        <h1 className="font-bold text-xl">EV Charging App</h1>
-        <div className="space-x-4">
-          <Link to="/admin" className="hover:underline">
-            Admin
-          </Link>
-          <Link to="/cs-operator" className="hover:underline">
-            CS Operator
-          </Link>
-        </div>
-      </nav>
+  const location = useLocation();
 
-      {/* Routes */}
-      <main className="p-4">
-        <Routes>
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/cs-operator" element={<CSOperatorDashboard />} />
-          <Route
-            path="*"
-            element={
-              <h2>Welcome to EV Charging App! Select a dashboard above.</h2>
-            }
-          />
-        </Routes>
-      </main>
-    </div>
+  useEffect(() => {
+    switch (location.pathname) {
+      case "/admin":
+        document.title = "Admin Dashboard | EV Charging App";
+        break;
+      case "/cs-operator":
+        document.title = "CS Operator Dashboard | EV Charging App";
+        break;
+      default:
+        document.title = "EV Charging Management App";
+    }
+  }, [location]);
+
+  return (
+    <Layout>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <h2>Welcome to EV Charging App! Select a dashboard above.</h2>
+          }
+        />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/cs-operator" element={<CSOperatorDashboard />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Layout>
   );
 }
 
