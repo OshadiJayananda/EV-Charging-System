@@ -7,8 +7,9 @@ import {
   BuildingOfficeIcon,
 } from "@heroicons/react/24/outline";
 import { Car, Send, CheckCircle } from "lucide-react";
-import { Input } from "../components/common";
+import { Button, Input } from "../components/common";
 import ContactInfo from "../components/Contact/ContactInfo";
+import { Link } from "react-router-dom";
 
 interface FormData {
   name: string;
@@ -103,12 +104,21 @@ export default function ContactSales() {
               Your message has been received. Our sales team will contact you
               within 24 hours.
             </p>
-            <button
-              onClick={() => setIsSubmitted(false)}
-              className="w-full py-3 px-4 rounded-md text-white bg-green-600 hover:bg-green-700 transition"
-            >
-              Submit Another Inquiry
-            </button>
+            <div className="space-y-3">
+              <Button
+                variant="primary"
+                onClick={() => setIsSubmitted(false)}
+                className="w-full"
+              >
+                Send Another Message
+              </Button>
+
+              <Link to="/">
+                <Button variant="secondary" className="w-full">
+                  Go back
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
