@@ -56,6 +56,12 @@ The system uses a **client-server architecture** with a centralized web service 
 
 ## Database Design
 
+### Database Schema Diagram
+
+**Database Design Tool:** https://dbdiagram.io/d/EV-Charging-Station-Booking-System-68c3a356841b2935a62b7584
+
+![EV Charging Station Booking System Database Schema](EV%20Charging%20Station%20Booking%20System.svg)
+
 ### Users
 
 - Fields: \_id, nic, name, email, password_hash, role, status, created_at, updated_at
