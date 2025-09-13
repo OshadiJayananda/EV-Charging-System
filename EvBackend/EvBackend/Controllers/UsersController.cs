@@ -1,16 +1,14 @@
-﻿using EvBackend.Models.DTOs;
-using EvBackend.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-
-// --------------------------------------------------------------
+﻿// --------------------------------------------------------------
 // File Name: UserController.cs
 // Author: Hasindu Koshitha
 // Description: Handles user-related logic for the system
 // Created On: 13/09/2025
 // --------------------------------------------------------------
 
+using EvBackend.Models.DTOs;
+using EvBackend.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace EvBackend.Controllers
 {
@@ -33,8 +31,8 @@ namespace EvBackend.Controllers
         }
 
         [HttpGet("{userId}")]
-        [Authorize(Roles = "Admin,Backoffice,Operator")]
-        public async Task<IActionResult> GetUserById(Guid userId)
+        [Authorize(Roles = "Admin,Operator")]
+        public async Task<IActionResult> GetUserById(String userId)
         {
             var user = await _userService.GetUserById(userId);
             return Ok(user);
@@ -50,7 +48,7 @@ namespace EvBackend.Controllers
 
         [HttpPut("{userId}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateUser(Guid userId, [FromBody] UserDto dto)
+        public async Task<IActionResult> UpdateUser(String userId, [FromBody] UserDto dto)
         {
             var user = await _userService.UpdateUser(userId, dto);
             return Ok(user);
@@ -58,7 +56,7 @@ namespace EvBackend.Controllers
 
         [HttpPatch("{userId}/deactivate")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DeactivateUser(Guid userId)
+        public async Task<IActionResult> DeactivateUser(String userId)
         {
             await _userService.ChangeUserStatus(userId, false);
             return NoContent();
@@ -66,7 +64,7 @@ namespace EvBackend.Controllers
 
         [HttpPatch("{userId}/activate")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> ActivateUser(Guid userId)
+        public async Task<IActionResult> ActivateUser(String userId)
         {
             await _userService.ChangeUserStatus(userId, true);
             return NoContent();
