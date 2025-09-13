@@ -15,6 +15,7 @@ using MongoDB.Bson;
 using EvBackend.Entities;
 using EvBackend.Models.DTOs;
 using EvBackend.Settings;
+using System.Security.Authentication;
 
 namespace EvBackend.Services
 {
@@ -125,10 +126,10 @@ namespace EvBackend.Services
             var user = await _users.Find(u => u.Email == loginDto.Email).FirstOrDefaultAsync();
 
             if (user == null || !user.IsActive)
-                throw new Exception("Invalid credentials or user inactive");
+                throw new AuthenticationException("Invalid credentials or user inactive");
 
             if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
-                throw new Exception("Invalid credentials");
+                throw new AuthenticationException("Invalid credentials");
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_config["Jwt:Key"]);
