@@ -32,10 +32,6 @@ namespace EvBackend.Controllers
                 var response = await _userService.AuthenticateUser(loginDto);
                 return Ok(new
                 {
-                    id = response.Id,
-                    name = response.Name,
-                    email = response.Email,
-                    role = response.Role,
                     token = response.Token
                 });
             }
