@@ -1,0 +1,6 @@
+@EvBackend_HostAddress = http://localhost:5212
+
+GET {{EvBackend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
