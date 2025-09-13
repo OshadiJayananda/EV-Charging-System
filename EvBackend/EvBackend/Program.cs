@@ -1,10 +1,11 @@
 using EvBackend.Settings;
-using EvBackend.Services; // Assuming UserService and IUserService are here
+using EvBackend.Services;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using EvBackend.Seeders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,13 +78,25 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
+        SeedAdmin.Seed(db);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"MongoDB connection failed: {ex.Message}");
+    }
+}
+
 // Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 app.UseHttpsRedirection();
 
 app.UseCors();

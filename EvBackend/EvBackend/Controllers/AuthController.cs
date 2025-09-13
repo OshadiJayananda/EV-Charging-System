@@ -29,8 +29,15 @@ namespace EvBackend.Controllers
         {
             try
             {
-                var token = await _userService.AuthenticateUser(loginDto);
-                return Ok(token);
+                var response = await _userService.AuthenticateUser(loginDto);
+                return Ok(new
+                {
+                    id = response.Id,
+                    name = response.Name,
+                    email = response.Email,
+                    role = response.Role,
+                    token = response.Token
+                });
             }
             catch (AuthenticationException ex)
             {
@@ -38,8 +45,7 @@ namespace EvBackend.Controllers
             }
             catch (Exception ex)
             {
-                //return StatusCode(500, new { message = "An unexpected error occurred." });
-                return StatusCode(500, new { message = ex.Message });
+                return StatusCode(500, new { message = "An unexpected error occurred." });
             }
         }
     }

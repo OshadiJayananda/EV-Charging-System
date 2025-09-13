@@ -113,15 +113,7 @@ namespace EvBackend.Services
             };
         }
 
-        public async Task ChangeUserStatus(Guid userId, bool isActive)
-        {
-            var update = Builders<User>.Update.Set(u => u.IsActive, isActive);
-            var result = await _users.UpdateOneAsync(u => u.Id == userId.ToString(), update);
-
-            if (result.MatchedCount == 0) throw new Exception("User not found");
-        }
-
-        public async Task<string> AuthenticateUser(LoginDto loginDto)
+        public async Task<LoginResponseDto> AuthenticateUser(LoginDto loginDto)
         {
             var user = await _users.Find(u => u.Email == loginDto.Email).FirstOrDefaultAsync();
 
@@ -139,7 +131,8 @@ namespace EvBackend.Services
                 {
                     new Claim(ClaimTypes.NameIdentifier, user.Id),
                     new Claim(ClaimTypes.Email, user.Email),
-                    new Claim(ClaimTypes.Role, user.Role)
+                    new Claim(ClaimTypes.Role, user.Role),
+                    new Claim("FullName", user.FullName)
                 }),
                 Expires = DateTime.UtcNow.AddHours(2),
                 SigningCredentials = new SigningCredentials(
@@ -147,7 +140,12 @@ namespace EvBackend.Services
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
+            var tokenString = tokenHandler.WriteToken(token);
+
+            return new LoginResponseDto
+            {
+                Token = tokenString
+            };
         }
 
         public async Task<bool> ChangeUserStatus(string userId, bool isActive)

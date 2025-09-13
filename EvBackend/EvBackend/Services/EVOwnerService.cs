@@ -41,7 +41,7 @@ namespace EvBackend.Services
                 NIC = dto.NIC,
                 FullName = dto.FullName,
                 Email = dto.Email,
-                PasswordHash = HashPassword(dto.Password),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 IsActive = true
             };
 
@@ -116,16 +116,6 @@ namespace EvBackend.Services
                 NIC = updatedOwner.NIC
             };
             return Task.FromResult(updatedDto);
-        }
-
-        private static string HashPassword(string password)
-        {
-            using (var sha = System.Security.Cryptography.SHA256.Create())
-            {
-                var bytes = System.Text.Encoding.UTF8.GetBytes(password);
-                var hash = sha.ComputeHash(bytes);
-                return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-            }
         }
     }
 }

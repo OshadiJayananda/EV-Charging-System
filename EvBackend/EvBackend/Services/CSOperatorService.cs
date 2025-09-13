@@ -34,7 +34,7 @@ namespace EvBackend.Services
                 Id = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
                 FullName = dto.FullName,
                 Email = dto.Email,
-                PasswordHash = HashPassword(dto.Password),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Role = "CSOperator",
                 IsActive = dto.IsActive,
                 StationId = dto.StationId,
@@ -126,16 +126,6 @@ namespace EvBackend.Services
             var update = Builders<CSOperator>.Update.Set(o => o.IsActive, isActive);
             var result = await _operators.UpdateOneAsync(o => o.Id == id, update);
             return result.ModifiedCount > 0;
-        }
-
-        private static string HashPassword(string password)
-        {
-            using (var sha = System.Security.Cryptography.SHA256.Create())
-            {
-                var bytes = System.Text.Encoding.UTF8.GetBytes(password);
-                var hash = sha.ComputeHash(bytes);
-                return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-            }
         }
     }
 }

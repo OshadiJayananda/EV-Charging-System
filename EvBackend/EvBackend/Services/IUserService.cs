@@ -16,6 +16,6 @@ namespace EvBackend.Services
         Task<IEnumerable<UserDto>> GetAllUsers(int page, int pageSize);
         Task<UserDto> UpdateUser(String userId, UserDto dto);
         Task<bool> ChangeUserStatus(String userId, bool isActive);
-        Task<string> AuthenticateUser(LoginDto loginDto);
+        Task<LoginResponseDto> AuthenticateUser(LoginDto loginDto);
     }
 }
