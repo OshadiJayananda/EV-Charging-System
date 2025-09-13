@@ -34,7 +34,7 @@ namespace EvBackend.Services
         public async Task<EVOwnerDto> CreateEVOwner(CreateEVOwnerDto dto)
         {
             if (await _owners.Find(u => u.NIC == dto.NIC).AnyAsync())
-                throw new Exception("NIC already in use");
+                throw new InvalidOperationException("NIC already in use");
 
             var owner = new EVOwner
             {
@@ -81,7 +81,7 @@ namespace EvBackend.Services
         public Task<EVOwnerDto> GetEVOwnerByNIC(string nic)
         {
             var owner = _owners.Find(o => o.NIC == nic).FirstOrDefault();
-            if (owner == null) return Task.FromResult<EVOwnerDto>(null);
+            if (owner == null) throw new KeyNotFoundException("EV Owner not found");
             var dto = new EVOwnerDto
             {
                 Id = owner.Id,
@@ -102,9 +102,9 @@ namespace EvBackend.Services
                 .Set(o => o.Email, dto.Email)
                 .Set(o => o.NIC, dto.NIC)
                 .Set(o => o.IsActive, dto.IsActive);
-            _owners.UpdateOne(o => o.NIC == nic, update);
+            var result = _owners.UpdateOne(o => o.NIC == nic, update);
+            if (result.MatchedCount == 0) throw new KeyNotFoundException("EV Owner not found");
             var updatedOwner = _owners.Find(o => o.NIC == dto.NIC).FirstOrDefault();
-            if (updatedOwner == null) return Task.FromResult<EVOwnerDto>(null);
             var updatedDto = new EVOwnerDto
             {
                 Id = updatedOwner.Id,

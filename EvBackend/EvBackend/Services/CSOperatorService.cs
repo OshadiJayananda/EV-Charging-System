@@ -26,6 +26,9 @@ namespace EvBackend.Services
 
         public async Task<CSOperatorDto> CreateOperator(CreateCSOperatorDto dto)
         {
+            if (await _operators.Find(o => o.Email == dto.Email).AnyAsync())
+                throw new InvalidOperationException("Email already in use");
+
             var operatorEntity = new CSOperator
             {
                 Id = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
@@ -56,7 +59,7 @@ namespace EvBackend.Services
         public async Task<CSOperatorDto> GetOperatorById(string id)
         {
             var op = await _operators.Find(o => o.Id == id).FirstOrDefaultAsync();
-            if (op == null) return null;
+            if (op == null) throw new KeyNotFoundException("Operator not found");
             return new CSOperatorDto
             {
                 Id = op.Id,
@@ -101,9 +104,9 @@ namespace EvBackend.Services
                 .Set(o => o.StationId, dto.StationId)
                 .Set(o => o.StationName, dto.StationName)
                 .Set(o => o.StationLocation, dto.StationLocation);
-            await _operators.UpdateOneAsync(o => o.Id == id, update);
+            var result = await _operators.UpdateOneAsync(o => o.Id == id, update);
+            if (result.MatchedCount == 0) throw new KeyNotFoundException("Operator not found");
             var updatedOp = await _operators.Find(o => o.Id == id).FirstOrDefaultAsync();
-            if (updatedOp == null) return null;
             return new CSOperatorDto
             {
                 Id = updatedOp.Id,

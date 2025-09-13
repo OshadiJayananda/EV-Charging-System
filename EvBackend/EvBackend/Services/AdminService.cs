@@ -26,6 +26,9 @@ namespace EvBackend.Services
 
         public async Task<UserDto> CreateAdmin(CreateUserDto dto)
         {
+            if (await _admins.Find(a => a.Email == dto.Email).AnyAsync())
+                throw new InvalidOperationException("Email already in use");
+
             var admin = new Admin
             {
                 Id = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
@@ -35,7 +38,6 @@ namespace EvBackend.Services
                 Role = "Admin",
                 IsActive = dto.IsActive
             };
-
             await _admins.InsertOneAsync(admin);
             return new UserDto
             {
@@ -51,7 +53,7 @@ namespace EvBackend.Services
         public async Task<UserDto> GetAdminById(string id)
         {
             var admin = await _admins.Find(a => a.Id == id).FirstOrDefaultAsync();
-            if (admin == null) return null;
+            if (admin == null) throw new KeyNotFoundException("Admin not found");
             return new UserDto
             {
                 Id = admin.Id,
@@ -87,9 +89,9 @@ namespace EvBackend.Services
                 .Set(a => a.Email, dto.Email)
                 .Set(a => a.Role, dto.Role)
                 .Set(a => a.IsActive, dto.IsActive);
-            await _admins.UpdateOneAsync(a => a.Id == id, update);
+            var result = await _admins.UpdateOneAsync(a => a.Id == id, update);
+            if (result.MatchedCount == 0) throw new KeyNotFoundException("Admin not found");
             var updatedAdmin = await _admins.Find(a => a.Id == id).FirstOrDefaultAsync();
-            if (updatedAdmin == null) return null;
             return new UserDto
             {
                 Id = updatedAdmin.Id,
