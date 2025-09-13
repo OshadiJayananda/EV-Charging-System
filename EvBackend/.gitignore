@@ -52,3 +52,30 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# IIS Express
+.vs/ 
+*.vspscc
+Generated\ Files/
+
+# DotCover
+.idea/.idea.DotSettings
+
+# Visual Studio Code
+.vscode/
+
+# User secrets (for sensitive dev configs)
+secrets.json
+
+# App settings overrides (keep base appsettings.json, ignore env-specific)
+appsettings.Development.json
+appsettings.Local.json
+
+# Publish output
+[Pp]ublish/
+
+# Entity Framework Migrations history
+[Mm]igrations/obj/
+
+# Azure Functions local settings (if you ever add Functions)
+local.settings.json
