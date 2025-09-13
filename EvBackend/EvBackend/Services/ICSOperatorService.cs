@@ -11,10 +11,10 @@ namespace EvBackend.Services
 {
     public interface ICSOperatorService
     {
-        Task<UserDto> CreateOperator(CreateCSOperatorDto dto);
-        Task<UserDto> GetOperatorById(string id);
-        Task<IEnumerable<UserDto>> GetAllOperators(int page, int pageSize);
-        Task<UserDto> UpdateOperator(string id, UserDto dto);
+        Task<CSOperatorDto> CreateOperator(CreateCSOperatorDto dto);
+        Task<CSOperatorDto> GetOperatorById(string id);
+        Task<IEnumerable<CSOperatorDto>> GetAllOperators(int page, int pageSize);
+        Task<CSOperatorDto> UpdateOperator(string id, CSOperatorDto dto);
         Task<bool> ChangeOperatorStatus(string id, bool isActive);
     }
 }

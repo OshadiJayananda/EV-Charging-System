@@ -11,10 +11,10 @@ namespace EvBackend.Services
 {
     public interface IEVOwnerService
     {
-        Task<UserDto> CreateEVOwner(CreateEVOwnerDto dto);
-        Task<UserDto> GetEVOwnerByNIC(string nic);
-        Task<IEnumerable<UserDto>> GetAllEVOwners(int page, int pageSize);
-        Task<UserDto> UpdateEVOwner(string nic, UserDto dto);
+        Task<EVOwnerDto> CreateEVOwner(CreateEVOwnerDto dto);
+        Task<EVOwnerDto> GetEVOwnerByNIC(string nic);
+        Task<IEnumerable<EVOwnerDto>> GetAllEVOwners(int page, int pageSize);
+        Task<EVOwnerDto> UpdateEVOwner(string nic, CreateEVOwnerDto dto);
         Task<bool> ChangeEVOwnerStatus(string nic, bool isActive);
     }
 }
