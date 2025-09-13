@@ -149,14 +149,16 @@ namespace EvBackend.Services
             return tokenHandler.WriteToken(token);
         }
 
-        public async Task ChangeUserStatus(string userId, bool isActive)
+        public async Task<bool> ChangeUserStatus(string userId, bool isActive)
         {
             var update = Builders<User>.Update.Set(u => u.IsActive, isActive);
 
             var result = await _users.UpdateOneAsync(u => u.Id == userId, update);
 
             if (result.MatchedCount == 0)
-                throw new Exception("User not found");
+                return false;
+
+            return true;
         }
     }
 }
