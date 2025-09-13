@@ -35,7 +35,7 @@ namespace EvBackend.Services
             if (await _users.Find(u => u.Email == dto.Email).AnyAsync())
                 throw new Exception("Email already in use");
 
-            var allowedRoles = new[] { "Backoffice", "Operator" };
+            var allowedRoles = new[] { "Admin", "Operator" };
             if (!allowedRoles.Contains(dto.Role))
                 throw new Exception("Invalid role assigned");
 
