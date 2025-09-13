@@ -14,7 +14,7 @@ namespace EvBackend.Entities
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
+        public virtual string Id { get; set; }
 
         [BsonElement("fullName")]
         public string FullName { get; set; }
