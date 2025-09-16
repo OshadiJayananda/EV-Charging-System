@@ -5,6 +5,7 @@ import {
   ClockIcon,
 } from "@heroicons/react/24/outline";
 import { companyInfo } from "../../config/companyInfo";
+import { ArrowLeft } from "lucide-react";
 
 export default function ContactInfo() {
   return (
@@ -54,9 +55,9 @@ export default function ContactInfo() {
 
       <a
         href="/"
-        className="mt-6 block text-green-600 hover:underline font-medium"
+        className="mt-6 w-full flex justify-center items-center py-3 px-4 rounded-md text-white bg-green-600 hover:bg-green-700 transition"
       >
-        ← Go Back
+        <ArrowLeft className="h-4 w-4 mr-2" /> Go Back
       </a>
     </div>
   );
