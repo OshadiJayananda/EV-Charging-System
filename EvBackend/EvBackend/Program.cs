@@ -6,8 +6,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using EvBackend.Seeders;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Env.Load();
+builder.Configuration.AddEnvironmentVariables();
 
 // MongoDB Configuration
 builder.Services.Configure<MongoDbSettings>(
@@ -15,8 +19,8 @@ builder.Services.Configure<MongoDbSettings>(
 
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
-    var settings = sp.GetRequiredService<IOptions<MongoDbSettings>>().Value;
-    return new MongoClient(settings.ConnectionString);
+    var mongoConn = builder.Configuration["MongoDB:ConnectionString"];
+    return new MongoClient(mongoConn);
 });
 
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
@@ -41,9 +45,14 @@ builder.Services.Configure<Microsoft.AspNetCore.Routing.RouteOptions>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+
 // JWT Authentication
-var jwtSettings = builder.Configuration.GetSection("Jwt");
-var secretKey = jwtSettings.GetValue<string>("Key");
+var secretKey = builder.Configuration["Jwt:Key"] ?? builder.Configuration["Jwt__Key"];
+var issuer = builder.Configuration["Jwt:Issuer"] ?? builder.Configuration["Jwt__Issuer"];
+var audience = builder.Configuration["Jwt:Audience"] ?? builder.Configuration["Jwt__Audience"];
+
+if (string.IsNullOrEmpty(secretKey))
+    throw new InvalidOperationException("JWT Key not found in configuration");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -58,8 +67,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings.GetValue<string>("Issuer"),
-        ValidAudience = jwtSettings.GetValue<string>("Audience"),
+        ValidIssuer = issuer,
+        ValidAudience = audience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
     };
 });
