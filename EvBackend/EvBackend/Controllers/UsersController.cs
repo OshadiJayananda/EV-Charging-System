@@ -17,9 +17,12 @@ namespace EvBackend.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
-        public UsersController(IUserService userService)
+        private readonly IEVOwnerService _evOwnerService;
+
+        public UsersController(IUserService userService, IEVOwnerService evOwnerService)
         {
             _userService = userService;
+            _evOwnerService = evOwnerService;
         }
 
         [HttpPost]
@@ -64,12 +67,29 @@ namespace EvBackend.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? role = null)
         {
             try
             {
-                var users = await _userService.GetAllUsers(page, pageSize);
-                return Ok(users);
+                if (role != null && role != "Admin" && role != "Operator" && role != "Owner")
+                    return BadRequest(new { message = "Invalid role filter" });
+
+                if (role != null && role == "Owner")
+                {
+                    var owners = await _evOwnerService.GetAllEVOwners(page, pageSize);
+                    return Ok(owners);
+                }
+                var users = await _userService.GetAllUsers(page, pageSize, role);
+
+                if (role == null)
+                {
+                    var owners = await _evOwnerService.GetAllEVOwners(page, pageSize);
+                    return Ok(new { Users = users, Owners = owners });
+                }
+                else
+                {
+                    return Ok(users);
+                }
             }
             catch
             {

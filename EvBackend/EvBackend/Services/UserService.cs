@@ -70,9 +70,15 @@ namespace EvBackend.Services
             };
         }
 
-        public async Task<IEnumerable<UserDto>> GetAllUsers(int page = 1, int pageSize = 10)
+        public async Task<IEnumerable<UserDto>> GetAllUsers(int page = 1, int pageSize = 10, string? role = null)
         {
-            return await _users.Find(u => true)
+            var filter = Builders<User>.Filter.Empty;
+            if (!string.IsNullOrEmpty(role))
+            {
+                filter = Builders<User>.Filter.Eq(u => u.Role, role);
+            }
+
+            return await _users.Find(filter)
                                .Skip((page - 1) * pageSize)
                                .Limit(pageSize)
                                .Project(u => new UserDto
