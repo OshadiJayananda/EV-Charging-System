@@ -99,7 +99,7 @@ namespace EvBackend.Controllers
 
         [HttpPut("{userId}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateUser(string userId, [FromBody] UserDto dto)
+        public async Task<IActionResult> UpdateUser(string userId, [FromBody] UpdateUserDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(new { message = "Invalid input data" });

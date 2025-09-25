@@ -30,4 +30,16 @@ namespace EvBackend.Models.DTOs
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
     }
+
+    public class UpdateUserDto
+    {
+        [Required]
+        [StringLength(100)]
+        public string FullName { get; set; }
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
 }

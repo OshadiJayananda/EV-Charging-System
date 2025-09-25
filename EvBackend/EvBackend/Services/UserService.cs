@@ -91,11 +91,11 @@ namespace EvBackend.Services
                                }).ToListAsync();
         }
 
-        public async Task<UserDto> UpdateUser(String userId, UserDto dto)
+        public async Task<UserDto> UpdateUser(String userId, UpdateUserDto dto)
         {
             var update = Builders<User>.Update
                 .Set(u => u.FullName, dto.FullName)
-                .Set(u => u.Role, dto.Role);
+                .Set(u => u.Email, dto.Email);
 
             var result = await _users.UpdateOneAsync(u => u.Id == userId.ToString(), update);
 
