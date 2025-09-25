@@ -1,8 +1,8 @@
 ﻿// --------------------------------------------------------------
 // File Name: EVOwnerController.cs
 // Author: Hasindu Koshitha
-// Description: Handles authentication logic for the system
-// Created On: 13/09/2025
+// Description: Handles EV Owner registration logic for the system
+// Created On: 25/09/2025
 // --------------------------------------------------------------
 
 using EvBackend.Models.DTOs;
@@ -26,15 +26,25 @@ namespace EvBackend.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> RegisterOwner([FromBody] CreateEVOwnerDto createEVOwnerDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Invalid owner registration data." });
+            }
             try
             {
                 var response = await _evOwnerService.CreateEVOwner(createEVOwnerDto);
-                return Ok(new
-                {
-                    token = response.Token
-                });
+                // If response contains more info, return it. Otherwise, just token.
+                return Ok(response); // Return the EVOwnerDto directly
             }
-            catch (Exception ex)
+            catch (AuthenticationException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception)
             {
                 return StatusCode(500, new { message = "An unexpected error occurred." });
             }
