@@ -53,6 +53,9 @@ namespace EvBackend.Controllers
         {
             try
             {
+                if (!MongoDB.Bson.ObjectId.TryParse(userId, out var objectId))
+                    return BadRequest(new { message = "Invalid user ID" });
+
                 var user = await _userService.GetUserById(userId);
                 if (user == null)
                     return NotFound(new { message = "User not found" });
@@ -100,6 +103,9 @@ namespace EvBackend.Controllers
         [Authorize(Roles = "Operator")]
         public async Task<IActionResult> UpdateUser(string userId, [FromBody] UpdateUserDto dto)
         {
+            if (!MongoDB.Bson.ObjectId.TryParse(userId, out var objectId))
+                return BadRequest(new { message = "Invalid user ID" });
+
             if (!ModelState.IsValid)
                 return BadRequest(new { message = "Invalid input data" });
 
@@ -133,6 +139,9 @@ namespace EvBackend.Controllers
         {
             try
             {
+                if (!MongoDB.Bson.ObjectId.TryParse(userId, out var objectId))
+                    return BadRequest(new { message = "Invalid user ID" });
+
                 var userEmail = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
 
                 var user = await _userService.GetUserById(userId);
@@ -148,7 +157,11 @@ namespace EvBackend.Controllers
 
                 return NoContent();
             }
-            catch
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception)
             {
                 return StatusCode(500, new { message = "Unexpected error occurred" });
             }
@@ -160,6 +173,9 @@ namespace EvBackend.Controllers
         {
             try
             {
+                if (!MongoDB.Bson.ObjectId.TryParse(userId, out var objectId))
+                    return BadRequest(new { message = "Invalid user ID" });
+
                 var user = await _userService.GetUserById(userId);
                 if (user == null)
                     return NotFound(new { message = "User not found" });
@@ -169,6 +185,10 @@ namespace EvBackend.Controllers
 
                 await _userService.ChangeUserStatus(userId, true);
                 return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
             }
             catch
             {

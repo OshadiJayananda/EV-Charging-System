@@ -58,7 +58,7 @@ namespace EvBackend.Services
         public async Task<UserDto> GetUserById(String userId)
         {
             var user = await _users.Find(u => u.Id == userId.ToString()).FirstOrDefaultAsync();
-            if (user == null) throw new Exception("User not found");
+            if (user == null) throw new KeyNotFoundException("User not found");
 
             return new UserDto
             {
