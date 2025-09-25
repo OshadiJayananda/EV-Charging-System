@@ -17,12 +17,10 @@ namespace EvBackend.Services
     public class EVOwnerService : IEVOwnerService
     {
         private readonly IMongoCollection<EVOwner> _owners;
-        private readonly IConfiguration _config;
 
-        public EVOwnerService(IMongoDatabase database, IConfiguration config, IOptions<MongoDbSettings> settings)
+        public EVOwnerService(IMongoDatabase database, IOptions<MongoDbSettings> settings)
         {
             _owners = database.GetCollection<EVOwner>(settings.Value.EVOwnersCollectionName);
-            _config = config;
         }
 
         public Task<bool> ChangeEVOwnerStatus(string nic, bool isActive)
@@ -35,7 +33,7 @@ namespace EvBackend.Services
         public async Task<EVOwnerDto> CreateEVOwner(CreateEVOwnerDto dto)
         {
             if (await _owners.Find(u => u.NIC == dto.NIC).AnyAsync())
-                throw new InvalidOperationException("NIC already in use");
+                throw new ArgumentException("NIC already in use");
 
             var owner = new EVOwner
             {
@@ -43,17 +41,16 @@ namespace EvBackend.Services
                 FullName = dto.FullName,
                 Email = dto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                IsActive = true
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
             };
 
             await _owners.InsertOneAsync(owner);
 
             return new EVOwnerDto
             {
-                Id = owner.Id,
                 FullName = owner.FullName,
                 Email = owner.Email,
-                Role = "EVOwner",
                 IsActive = owner.IsActive,
                 CreatedAt = owner.CreatedAt,
                 NIC = owner.NIC
@@ -68,10 +65,8 @@ namespace EvBackend.Services
                 .ToList();
             var dtos = owners.Select(owner => new EVOwnerDto
             {
-                Id = owner.Id,
                 FullName = owner.FullName,
                 Email = owner.Email,
-                Role = "EVOwner",
                 IsActive = owner.IsActive,
                 CreatedAt = owner.CreatedAt,
                 NIC = owner.NIC
@@ -85,10 +80,8 @@ namespace EvBackend.Services
             if (owner == null) throw new KeyNotFoundException("EV Owner not found");
             var dto = new EVOwnerDto
             {
-                Id = owner.Id,
                 FullName = owner.FullName,
                 Email = owner.Email,
-                Role = "EVOwner",
                 IsActive = owner.IsActive,
                 CreatedAt = owner.CreatedAt,
                 NIC = owner.NIC
@@ -108,12 +101,9 @@ namespace EvBackend.Services
             var updatedOwner = _owners.Find(o => o.NIC == dto.NIC).FirstOrDefault();
             var updatedDto = new EVOwnerDto
             {
-                Id = updatedOwner.Id,
                 FullName = updatedOwner.FullName,
                 Email = updatedOwner.Email,
-                Role = "EVOwner",
                 IsActive = updatedOwner.IsActive,
-                CreatedAt = updatedOwner.CreatedAt,
                 NIC = updatedOwner.NIC
             };
             return Task.FromResult(updatedDto);

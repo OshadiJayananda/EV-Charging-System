@@ -33,8 +33,7 @@ namespace EvBackend.Controllers
             try
             {
                 var response = await _evOwnerService.CreateEVOwner(createEVOwnerDto);
-                // If response contains more info, return it. Otherwise, just token.
-                return Ok(response); // Return the EVOwnerDto directly
+                return Ok(response);
             }
             catch (AuthenticationException ex)
             {
