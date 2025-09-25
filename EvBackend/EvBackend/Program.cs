@@ -33,6 +33,7 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 
 // Register UserService
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IStationService, StationService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ICSOperatorService, CSOperatorService>();
