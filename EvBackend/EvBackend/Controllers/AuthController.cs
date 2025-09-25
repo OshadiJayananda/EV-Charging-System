@@ -6,9 +6,7 @@
 // --------------------------------------------------------------
 
 using EvBackend.Models.DTOs;
-using EvBackend.Services;
 using EvBackend.Services.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Authentication;
 
@@ -18,11 +16,11 @@ namespace EvBackend.Controllers
     [Route("api/auth")]
     public class AuthController : ControllerBase
     {
-        private readonly IUserService _userService;
+        private readonly IAuthService _authService;
 
-        public AuthController(IUserService userService)
+        public AuthController(IAuthService authService)
         {
-            _userService = userService;
+            _authService = authService;
         }
 
         [HttpPost("login")]
@@ -30,7 +28,7 @@ namespace EvBackend.Controllers
         {
             try
             {
-                var response = await _userService.AuthenticateUser(loginDto);
+                var response = await _authService.AuthenticateUser(loginDto);
                 return Ok(new
                 {
                     token = response.Token
