@@ -21,7 +21,7 @@ namespace EvBackend.Services
 
         public EVOwnerService(IMongoDatabase database, IConfiguration config, IOptions<MongoDbSettings> settings)
         {
-            _owners = database.GetCollection<EVOwner>(settings.Value.UsersCollectionName);
+            _owners = database.GetCollection<EVOwner>(settings.Value.EVOwnersCollectionName);
             _config = config;
         }
 
