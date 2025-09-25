@@ -40,6 +40,7 @@ namespace EvBackend.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 return StatusCode(500, new { message = "An unexpected error occurred." });
             }
         }
