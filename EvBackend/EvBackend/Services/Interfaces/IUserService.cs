@@ -13,8 +13,8 @@ namespace EvBackend.Services.Interfaces
     {
         Task<UserDto> CreateUser(CreateUserDto dto);
         Task<UserDto> GetUserById(String userId);
-        Task<IEnumerable<UserDto>> GetAllUsers(int page, int pageSize);
-        Task<UserDto> UpdateUser(String userId, UserDto dto);
+        Task<IEnumerable<UserDto>> GetAllUsers(int page, int pageSize, string? role = null);
+        Task<UserDto> UpdateUser(String userId, UpdateUserDto dto);
         Task<bool> ChangeUserStatus(String userId, bool isActive);
     }
 }

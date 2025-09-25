@@ -7,6 +7,7 @@
 
 using EvBackend.Models.DTOs;
 using EvBackend.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Authentication;
 
@@ -40,8 +41,31 @@ namespace EvBackend.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 return StatusCode(500, new { message = "An unexpected error occurred." });
             }
+        }
+
+        //introduce a me endpoint to verify token validity
+        [HttpGet("me")]
+        [Authorize]
+        public IActionResult Me()
+        {
+            var userId = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var email = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
+            var role = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+            var fullName = User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value;
+            var userType = User.Claims.FirstOrDefault(c => c.Type == "UserType")?.Value;
+            if (userId == null)
+                return Unauthorized(new { message = "Invalid token" });
+            return Ok(new
+            {
+                userId,
+                email,
+                role,
+                fullName,
+                userType
+            });
         }
     }
 }

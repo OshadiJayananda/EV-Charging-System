@@ -27,11 +27,11 @@ namespace EvBackend.Services
         public async Task<UserDto> CreateUser(CreateUserDto dto)
         {
             if (await _users.Find(u => u.Email == dto.Email).AnyAsync())
-                throw new Exception("Email already in use");
+                throw new ArgumentException("Email already in use");
 
             var allowedRoles = new[] { "Admin", "Operator" };
             if (!allowedRoles.Contains(dto.Role))
-                throw new Exception("Invalid role assigned");
+                throw new ArgumentException("Invalid role assigned");
 
             var user = new User
             {
@@ -58,7 +58,7 @@ namespace EvBackend.Services
         public async Task<UserDto> GetUserById(String userId)
         {
             var user = await _users.Find(u => u.Id == userId.ToString()).FirstOrDefaultAsync();
-            if (user == null) throw new Exception("User not found");
+            if (user == null) throw new KeyNotFoundException("User not found");
 
             return new UserDto
             {
@@ -70,9 +70,15 @@ namespace EvBackend.Services
             };
         }
 
-        public async Task<IEnumerable<UserDto>> GetAllUsers(int page = 1, int pageSize = 10)
+        public async Task<IEnumerable<UserDto>> GetAllUsers(int page = 1, int pageSize = 10, string? role = null)
         {
-            return await _users.Find(u => true)
+            var filter = Builders<User>.Filter.Empty;
+            if (!string.IsNullOrEmpty(role))
+            {
+                filter = Builders<User>.Filter.Eq(u => u.Role, role);
+            }
+
+            return await _users.Find(filter)
                                .Skip((page - 1) * pageSize)
                                .Limit(pageSize)
                                .Project(u => new UserDto
@@ -85,11 +91,11 @@ namespace EvBackend.Services
                                }).ToListAsync();
         }
 
-        public async Task<UserDto> UpdateUser(String userId, UserDto dto)
+        public async Task<UserDto> UpdateUser(String userId, UpdateUserDto dto)
         {
             var update = Builders<User>.Update
                 .Set(u => u.FullName, dto.FullName)
-                .Set(u => u.Role, dto.Role);
+                .Set(u => u.Email, dto.Email);
 
             var result = await _users.UpdateOneAsync(u => u.Id == userId.ToString(), update);
 
@@ -109,12 +115,15 @@ namespace EvBackend.Services
 
         public async Task<bool> ChangeUserStatus(string userId, bool isActive)
         {
-            var update = Builders<User>.Update.Set(u => u.IsActive, isActive);
-
-            var result = await _users.UpdateOneAsync(u => u.Id == userId, update);
-
-            if (result.MatchedCount == 0)
+            var user = await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+            if (user == null)
                 return false;
+
+            if (user.IsActive == isActive)
+                return true;
+
+            var update = Builders<User>.Update.Set(u => u.IsActive, isActive);
+            await _users.UpdateOneAsync(u => u.Id == userId, update);
 
             return true;
         }
