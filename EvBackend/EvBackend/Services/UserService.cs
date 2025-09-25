@@ -125,7 +125,14 @@ namespace EvBackend.Services
                 throw new AuthenticationException("Invalid credentials");
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_config["Jwt:Key"]);
+            var secretKey = _config["Jwt:Key"] ?? _config["Jwt__Key"];
+            var issuer = _config["Jwt:Issuer"] ?? _config["Jwt__Issuer"];
+            var audience = _config["Jwt:Audience"] ?? _config["Jwt__Audience"];
+            
+            if (string.IsNullOrEmpty(secretKey))
+                throw new InvalidOperationException("JWT Key not found in configuration");
+                
+            var key = Encoding.ASCII.GetBytes(secretKey);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[]
@@ -136,6 +143,8 @@ namespace EvBackend.Services
                     new Claim("FullName", user.FullName)
                 }),
                 Expires = DateTime.UtcNow.AddHours(2),
+                Issuer = issuer,
+                Audience = audience,
                 SigningCredentials = new SigningCredentials(
                     new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
