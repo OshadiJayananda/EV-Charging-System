@@ -34,7 +34,7 @@ namespace EvBackend.Controllers
                 var user = await _userService.CreateUser(dto);
                 return CreatedAtAction(nameof(GetUserById), new { userId = user.Id }, user);
             }
-            catch (ArgumentException ex) // e.g., duplicate email
+            catch (ArgumentException ex)
             {
                 return Conflict(new { message = ex.Message });
             }

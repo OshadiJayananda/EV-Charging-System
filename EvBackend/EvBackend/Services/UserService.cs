@@ -27,11 +27,11 @@ namespace EvBackend.Services
         public async Task<UserDto> CreateUser(CreateUserDto dto)
         {
             if (await _users.Find(u => u.Email == dto.Email).AnyAsync())
-                throw new Exception("Email already in use");
+                throw new ArgumentException("Email already in use");
 
             var allowedRoles = new[] { "Admin", "Operator" };
             if (!allowedRoles.Contains(dto.Role))
-                throw new Exception("Invalid role assigned");
+                throw new ArgumentException("Invalid role assigned");
 
             var user = new User
             {

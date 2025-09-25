@@ -35,13 +35,15 @@ namespace EvBackend.Services
             if (await _owners.Find(u => u.NIC == dto.NIC).AnyAsync())
                 throw new ArgumentException("NIC already in use");
 
+            if (await _owners.Find(u => u.Email == dto.Email).AnyAsync())
+                throw new ArgumentException("Email already in use");
+
             var owner = new EVOwner
             {
                 NIC = dto.NIC,
                 FullName = dto.FullName,
                 Email = dto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -94,8 +96,7 @@ namespace EvBackend.Services
             var update = Builders<EVOwner>.Update
                 .Set(o => o.FullName, dto.FullName)
                 .Set(o => o.Email, dto.Email)
-                .Set(o => o.NIC, dto.NIC)
-                .Set(o => o.IsActive, dto.IsActive);
+                .Set(o => o.NIC, dto.NIC);
             var result = _owners.UpdateOne(o => o.NIC == nic, update);
             if (result.MatchedCount == 0) throw new KeyNotFoundException("EV Owner not found");
             var updatedOwner = _owners.Find(o => o.NIC == dto.NIC).FirstOrDefault();
