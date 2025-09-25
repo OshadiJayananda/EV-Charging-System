@@ -27,7 +27,7 @@ namespace EvBackend.Services
                 IsActive = true
             };
 
-            await _stations.InsertOneAsync(station); // ✅ Save to MongoDB
+            await _stations.InsertOneAsync(station);
             return ToDto(station);
         }
 
