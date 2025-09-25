@@ -10,6 +10,7 @@ using EvBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Authentication;
+using System.Security.Claims;
 
 namespace EvBackend.Controllers
 {
@@ -76,8 +77,8 @@ namespace EvBackend.Controllers
                     return StatusCode(403, new { message = "Owners cannot activate accounts." });
                 }
 
-                var userNic = User.Identity?.Name; // Assuming NIC is stored in Name claim
-                nic = userNic; // Override NIC to ensure owner can only modify their own account
+                var userNic = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                nic = userNic;
 
                 if (string.IsNullOrWhiteSpace(nic))
                 {
