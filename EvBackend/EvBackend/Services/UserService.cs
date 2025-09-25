@@ -115,12 +115,15 @@ namespace EvBackend.Services
 
         public async Task<bool> ChangeUserStatus(string userId, bool isActive)
         {
-            var update = Builders<User>.Update.Set(u => u.IsActive, isActive);
-
-            var result = await _users.UpdateOneAsync(u => u.Id == userId, update);
-
-            if (result.MatchedCount == 0)
+            var user = await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+            if (user == null)
                 return false;
+
+            if (user.IsActive == isActive)
+                return true;
+
+            var update = Builders<User>.Update.Set(u => u.IsActive, isActive);
+            await _users.UpdateOneAsync(u => u.Id == userId, update);
 
             return true;
         }

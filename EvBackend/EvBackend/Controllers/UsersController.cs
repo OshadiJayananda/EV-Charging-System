@@ -66,14 +66,13 @@ namespace EvBackend.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Operator")]
         public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? role = null)
         {
             try
             {
                 if (role != null && role != "Admin" && role != "Operator" && role != "Owner")
                     return BadRequest(new { message = "Invalid role filter" });
-
                 if (role != null && role == "Owner")
                 {
                     var owners = await _evOwnerService.GetAllEVOwners(page, pageSize);
@@ -98,11 +97,21 @@ namespace EvBackend.Controllers
         }
 
         [HttpPut("{userId}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Operator")]
         public async Task<IActionResult> UpdateUser(string userId, [FromBody] UpdateUserDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(new { message = "Invalid input data" });
+
+            //if role is operator, they can only update their own profile
+            var userRole = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+            var userEmail = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
+            if (userRole == "Operator")
+            {
+                var user = await _userService.GetUserById(userId);
+                if (user == null || user.Email != userEmail)
+                    return Forbid();
+            }
 
             try
             {
@@ -119,11 +128,20 @@ namespace EvBackend.Controllers
         }
 
         [HttpPatch("{userId}/deactivate")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Operator")]
         public async Task<IActionResult> DeactivateUser(string userId)
         {
             try
             {
+                var userEmail = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
+
+                var user = await _userService.GetUserById(userId);
+                if (user == null || user.Email != userEmail)
+                    return Forbid();
+
+                if (!user.IsActive)
+                    return BadRequest(new { message = "User is already deactivated" });
+
                 var result = await _userService.ChangeUserStatus(userId, false);
                 if (!result)
                     return NotFound(new { message = "User not found" });
@@ -142,10 +160,14 @@ namespace EvBackend.Controllers
         {
             try
             {
-                var result = await _userService.ChangeUserStatus(userId, true);
-                if (!result)
+                var user = await _userService.GetUserById(userId);
+                if (user == null)
                     return NotFound(new { message = "User not found" });
 
+                if (user.IsActive)
+                    return BadRequest(new { message = "User is already active" });
+
+                await _userService.ChangeUserStatus(userId, true);
                 return NoContent();
             }
             catch
