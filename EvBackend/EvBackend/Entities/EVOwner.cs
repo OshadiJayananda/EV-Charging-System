@@ -26,7 +26,7 @@ namespace EvBackend.Entities
         public string PasswordHash { get; set; }
 
         [BsonElement("isActive")]
-        public bool IsActive { get; set; } = true;
+        public bool IsActive { get; set; } = false;
 
         [BsonElement("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
