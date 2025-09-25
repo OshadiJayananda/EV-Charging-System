@@ -7,6 +7,7 @@
 
 using EvBackend.Models.DTOs;
 using EvBackend.Services;
+using EvBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Authentication;

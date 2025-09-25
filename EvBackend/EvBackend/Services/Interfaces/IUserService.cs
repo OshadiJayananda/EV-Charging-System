@@ -7,7 +7,7 @@
 
 using EvBackend.Models.DTOs;
 
-namespace EvBackend.Services
+namespace EvBackend.Services.Interfaces
 {
     public interface IUserService
     {

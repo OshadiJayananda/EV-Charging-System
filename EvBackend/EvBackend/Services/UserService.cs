@@ -16,6 +16,7 @@ using EvBackend.Entities;
 using EvBackend.Models.DTOs;
 using EvBackend.Settings;
 using System.Security.Authentication;
+using EvBackend.Services.Interfaces;
 
 namespace EvBackend.Services
 {
