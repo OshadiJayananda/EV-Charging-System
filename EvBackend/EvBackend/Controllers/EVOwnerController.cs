@@ -54,12 +54,12 @@ namespace EvBackend.Controllers
 
         [HttpPatch("status/{nic?}")]
         [Authorize(Roles = "Owner,Admin")]
-        public async Task<IActionResult> ChangeEVOwnerStatus(string? nic, [FromQuery] bool isActivating)
+        public async Task<IActionResult> ChangeEVOwnerStatus(string? nic, [FromQuery] bool isActivate)
         {
             // Admins can only activate
             if (User.IsInRole("Admin"))
             {
-                if (!isActivating)
+                if (!isActivate)
                 {
                     return StatusCode(403, new { message = "Admin can only activate accounts." });
                 }
@@ -72,7 +72,7 @@ namespace EvBackend.Controllers
             // Owners can only deactivate their own account
             else if (User.IsInRole("Owner"))
             {
-                if (isActivating)
+                if (isActivate)
                 {
                     return StatusCode(403, new { message = "Owners cannot activate accounts." });
                 }
@@ -92,7 +92,7 @@ namespace EvBackend.Controllers
 
             try
             {
-                var result = await _evOwnerService.ChangeEVOwnerStatus(nic, isActivating);
+                var result = await _evOwnerService.ChangeEVOwnerStatus(nic, isActivate);
 
                 if (result == null)
                 {
@@ -103,7 +103,7 @@ namespace EvBackend.Controllers
                 {
                     return BadRequest(new
                     {
-                        message = isActivating
+                        message = isActivate
                         ? "EV Owner is already activated."
                         : "EV Owner is already deactivated."
                     });
