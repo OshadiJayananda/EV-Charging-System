@@ -7,6 +7,7 @@
 
 using EvBackend.Entities;
 using EvBackend.Models.DTOs;
+using EvBackend.Services.Interfaces;
 using EvBackend.Settings;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;

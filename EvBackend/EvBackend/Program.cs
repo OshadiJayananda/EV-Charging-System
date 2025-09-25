@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using EvBackend.Seeders;
 using DotNetEnv;
+using EvBackend.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,10 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 
 // Register UserService
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IStationService, StationService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<ICSOperatorService, CSOperatorService>();
+builder.Services.AddScoped<IEVOwnerService, EVOwnerService>();
 
 // Controllers
 builder.Services.AddControllers();
@@ -104,8 +109,12 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "EV Backend API V1");
+    });
 }
+
 app.UseHttpsRedirection();
 
 app.UseCors();
