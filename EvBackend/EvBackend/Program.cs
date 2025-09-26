@@ -17,6 +17,9 @@ builder.Configuration.AddEnvironmentVariables();
 // MongoDB Configuration
 builder.Services.Configure<MongoDbSettings>(
     builder.Configuration.GetSection("MongoDB"));
+// Email Configuration
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
 
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
