@@ -9,6 +9,7 @@ using EvBackend.Models.DTOs;
 using EvBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Authentication;
 
 namespace EvBackend.Controllers
@@ -78,16 +79,47 @@ namespace EvBackend.Controllers
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
         {
-            await _authService.ResetPassword(resetPasswordDto);
-            return Ok(new { message = "Password has been reset successfully" });
+            try
+            {
+                await _authService.ResetPassword(resetPasswordDto);
+                return Ok(new { message = "Password has been reset successfully" });
+            }
+            catch (AuthenticationException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return StatusCode(500, new { message = "An unexpected error occurred." });
+            }
         }
 
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto forgotPasswordDto)
         {
-            await _authService.SendPasswordResetEmail(forgotPasswordDto);
-
-            return Ok(new { message = "If an account with that email exists, a password reset link has been sent." });
+            try
+            {
+                await _authService.SendPasswordResetEmail(forgotPasswordDto);
+                return Ok(new { message = "If an account with that email exists, a password reset link has been sent." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return StatusCode(500, new { message = "An unexpected error occurred." });
+            }
         }
     }
 }
