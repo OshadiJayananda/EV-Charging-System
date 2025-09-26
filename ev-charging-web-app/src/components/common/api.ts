@@ -52,10 +52,10 @@ const handleError = (error: unknown, fallbackMessage: string) => {
 export const getRequest = async <T>(
   url: string,
   params?: object
-): Promise<T | null> => {
+): Promise<{ data: T; status: number } | null> => {
   try {
     const response = await api.get<T>(url, { params });
-    return response.data;
+    return { data: response.data, status: response.status };
   } catch (error) {
     return handleError(error, "Error fetching data");
   }
@@ -65,10 +65,10 @@ export const getRequest = async <T>(
 export const postRequest = async <T>(
   url: string,
   data?: object
-): Promise<T | null> => {
+): Promise<{ data: T; status: number } | null> => {
   try {
     const response = await api.post<T>(url, data);
-    return response.data;
+    return { data: response.data, status: response.status };
   } catch (error) {
     return handleError(error, "Error posting data");
   }
@@ -78,20 +78,22 @@ export const postRequest = async <T>(
 export const putRequest = async <T>(
   url: string,
   data?: object
-): Promise<T | null> => {
+): Promise<{ data: T; status: number } | null> => {
   try {
     const response = await api.put<T>(url, data);
-    return response.data;
+    return { data: response.data, status: response.status };
   } catch (error) {
     return handleError(error, "Error updating data");
   }
 };
 
 // DELETE request
-export const deleteRequest = async <T>(url: string): Promise<T | null> => {
+export const deleteRequest = async <T>(
+  url: string
+): Promise<{ data: T; status: number } | null> => {
   try {
     const response = await api.delete<T>(url);
-    return response.data;
+    return { data: response.data, status: response.status };
   } catch (error) {
     return handleError(error, "Error deleting data");
   }

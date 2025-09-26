@@ -78,9 +78,9 @@ export default function Login() {
         formData
       );
 
-      if (response?.token) {
+      if (response?.data.token) {
         toast.success("Login successful!");
-        const token = response.token;
+        const token = response.data.token;
         login(token);
         const role = getUserRoleFromToken(token);
         roleNavigate(role, navigate);
