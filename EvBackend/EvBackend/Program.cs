@@ -8,6 +8,7 @@ using System.Text;
 using EvBackend.Seeders;
 using DotNetEnv;
 using EvBackend.Services.Interfaces;
+using EvBackend.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -95,6 +96,9 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Add SignalR
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -128,5 +132,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Add SignalR NotificationHub endpoint
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();
