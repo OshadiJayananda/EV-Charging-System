@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { postRequest } from "../components/common/api";
+import { Navigate, useNavigate } from "react-router-dom";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const validateEmail = (value: string): boolean => {
     if (!value) {
@@ -67,10 +69,20 @@ export default function ForgotPassword() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-green-600 text-white py-2 rounded font-semibold hover:bg-green-700 transition"
+          className="mt-4 w-full bg-green-600 text-white py-2 rounded font-semibold hover:bg-green-700 transition"
         >
           {isSubmitting ? "Sending..." : "Send Reset Link"}
         </button>
+
+        <div className="mt-2 text-center">
+          <button
+            type="button"
+            onClick={() => navigate("/login")}
+            className="w-full py-2 rounded border text-sm text-green-600 hover:text-green-500"
+          >
+            Back to Login
+          </button>
+        </div>
       </form>
     </div>
   );

@@ -92,10 +92,20 @@ export default function ResetPassword() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-green-600 text-white py-2 rounded font-semibold hover:bg-green-700 transition"
+          className="mt-4 w-full bg-green-600 text-white py-2 rounded font-semibold hover:bg-green-700 transition"
         >
           {isSubmitting ? "Resetting..." : "Reset Password"}
         </button>
+
+        <div className="mt-2 text-center">
+          <button
+            type="button"
+            onClick={() => navigate("/login")}
+            className="w-full py-2 rounded border text-sm text-green-600 hover:text-green-500"
+          >
+            Back to Login
+          </button>
+        </div>
       </form>
     </div>
   );
