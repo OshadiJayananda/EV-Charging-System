@@ -118,3 +118,11 @@ export interface DashboardInfo {
 //   message: string;
 //   data?: T;
 // }
+
+export interface Notification {
+  id: string;
+  userId: string;
+  message: string;
+  createdAt: string;
+  isRead: boolean;
+}
