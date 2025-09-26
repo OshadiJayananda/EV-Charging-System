@@ -74,5 +74,20 @@ namespace EvBackend.Controllers
         {
             return Ok(new { message = "Logged out successfully" });
         }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
+        {
+            await _authService.ResetPassword(resetPasswordDto);
+            return Ok(new { message = "Password has been reset successfully" });
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto forgotPasswordDto)
+        {
+            await _authService.SendPasswordResetEmail(forgotPasswordDto);
+
+            return Ok(new { message = "If an account with that email exists, a password reset link has been sent." });
+        }
     }
 }

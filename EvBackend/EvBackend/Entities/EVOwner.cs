@@ -30,5 +30,11 @@ namespace EvBackend.Entities
 
         [BsonElement("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [BsonElement("passwordResetToken")]
+        public string PasswordResetToken { get; set; }
+
+        [BsonElement("passwordResetTokenExpiration")]
+        public DateTime? PasswordResetTokenExpiration { get; set; }
     }
 }
