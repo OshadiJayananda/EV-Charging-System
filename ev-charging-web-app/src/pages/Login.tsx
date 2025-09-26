@@ -8,7 +8,9 @@ import {
 import { Car } from "lucide-react";
 import { Input } from "../components/common";
 import { toast } from "react-hot-toast";
-import { getRequest } from "../components/common/api";
+import { postRequest } from "../components/common/api";
+import { getUserRoleFromToken } from "../components/common/getUserRoleFromToken";
+import { useNavigate } from "react-router-dom";
 
 interface LoginData {
   email: string;
@@ -23,9 +25,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Partial<LoginData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  //remove below function after backend is ready
-  const donothing = () => Promise.resolve();
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -68,25 +68,24 @@ export default function Login() {
     setIsSubmitting(true);
 
     try {
-      await toast.promise(
-        (async () => {
-          if (import.meta.env.VITE_APP_API_READY === "true") {
-            // Use real API when backend is ready
-            const response = await getRequest("/auth/login", formData);
-            console.log("Login response from API:", response);
-            return response;
-          } else {
-            // Simulate login
-            await new Promise((resolve) => setTimeout(resolve, 1500));
-            return donothing();
-          }
-        })(),
-        {
-          loading: "Signing in...",
-          success: <b>Login successful!</b>,
-          error: <b>Login failed. Please try again.</b>,
-        }
+      const response = await postRequest<{ token: string }>(
+        "/auth/login",
+        formData
       );
+
+      if (response?.token) {
+        toast.success("Login successful!");
+        localStorage.setItem("token", response.token);
+        const token = response.token;
+        const role = getUserRoleFromToken(token);
+        if (role === "admin") {
+          navigate("/admin-dashboard");
+        } else if (role === "operator") {
+          navigate("/operator/dashboard");
+        } else {
+          navigate("/login");
+        }
+      }
     } catch (error) {
       console.error("Login error:", error);
     } finally {
@@ -171,12 +170,15 @@ export default function Login() {
                     Remember me
                   </span>
                 </label>
-                <a
-                  href="#"
-                  className="text-sm font-medium text-green-600 hover:text-green-500"
+                <button
+                  type="button"
+                  className="text-sm font-medium text-green-600 hover:text-green-500 bg-transparent border-none p-0 cursor-pointer"
+                  onClick={() =>
+                    toast("Password reset is not implemented yet.")
+                  }
                 >
                   Forgot your password?
-                </a>
+                </button>
               </div>
 
               {/* Submit */}

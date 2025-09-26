@@ -39,8 +39,8 @@ function App() {
 
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/cs-operator" element={<CSOperatorDashboard />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/operator/dashboard" element={<CSOperatorDashboard />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="*" element={<NotFound />} />
       </Route>
