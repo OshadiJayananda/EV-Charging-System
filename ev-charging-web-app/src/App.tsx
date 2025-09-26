@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 import AdminDashboard from "./components/Admin/AdminDashboard";
 import CSOperatorDashboard from "./components/CSOperator/CSOperatorDashboard";
@@ -9,6 +9,8 @@ import Login from "./pages/Login";
 import ContactSales from "./pages/ContactSales";
 import { useDocumentTitle } from "./hooks/useDocumentTitle";
 import Contact from "./pages/Contact";
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/common/ProtectedRoute";
 
 function App() {
   const location = useLocation();
@@ -16,9 +18,9 @@ function App() {
   // Set document title based on current route
   const getPageTitle = () => {
     switch (location.pathname) {
-      case "/admin":
+      case "/admin/dashboard":
         return "Admin Dashboard | EV Charging App";
-      case "/cs-operator":
+      case "/operator/dashboard":
         return "CS Operator Dashboard | EV Charging App";
       case "/login":
         return "Login | EV Charging App";
@@ -32,19 +34,36 @@ function App() {
   useDocumentTitle(getPageTitle());
 
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/contact-sales" element={<ContactSales />} />
-      <Route path="/contact" element={<Contact />} />
+    <AuthProvider>
+      <Routes>
+        {/* Routes without Layout */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/contact-sales" element={<ContactSales />} />
+        <Route path="/contact" element={<Contact />} />
 
-      <Route element={<Layout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/operator/dashboard" element={<CSOperatorDashboard />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />
-        <Route path="*" element={<NotFound />} />
-      </Route>
-    </Routes>
+        {/* All routes inside Layout */}
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute requiredRole="admin" />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          </Route>
+
+          <Route element={<ProtectedRoute requiredRole="operator" />}>
+            <Route
+              path="/operator/dashboard"
+              element={<CSOperatorDashboard />}
+            />
+          </Route>
+
+          {/* Catch-all */}
+          <Route path="/not-found" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/not-found" replace />} />
+        </Route>
+      </Routes>
+    </AuthProvider>
   );
 }
 

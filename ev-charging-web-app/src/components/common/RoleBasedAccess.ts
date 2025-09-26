@@ -1,3 +1,5 @@
+import type { NavigateFunction } from "react-router-dom";
+
 function getUserRoleFromToken(token: string): string | null {
   try {
     const base64Url = token.split(".")[1];
@@ -26,4 +28,14 @@ function getUserRoleFromToken(token: string): string | null {
   }
 }
 
-export { getUserRoleFromToken };
+function roleNavigate(role: string | null, navigate: NavigateFunction) {
+  if (role === "admin") {
+    navigate("/admin/dashboard");
+  } else if (role === "operator") {
+    navigate("/operator/dashboard");
+  } else {
+    navigate("/login");
+  }
+}
+
+export { getUserRoleFromToken, roleNavigate };

@@ -9,8 +9,12 @@ import { Car } from "lucide-react";
 import { Input } from "../components/common";
 import { toast } from "react-hot-toast";
 import { postRequest } from "../components/common/api";
-import { getUserRoleFromToken } from "../components/common/getUserRoleFromToken";
+import {
+  getUserRoleFromToken,
+  roleNavigate,
+} from "../components/common/RoleBasedAccess";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 interface LoginData {
   email: string;
@@ -26,6 +30,7 @@ export default function Login() {
   const [errors, setErrors] = useState<Partial<LoginData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -73,18 +78,12 @@ export default function Login() {
         formData
       );
 
-      if (response?.token) {
+      if (response?.data.token) {
         toast.success("Login successful!");
-        localStorage.setItem("token", response.token);
-        const token = response.token;
+        const token = response.data.token;
+        login(token);
         const role = getUserRoleFromToken(token);
-        if (role === "admin") {
-          navigate("/admin-dashboard");
-        } else if (role === "operator") {
-          navigate("/operator/dashboard");
-        } else {
-          navigate("/login");
-        }
+        roleNavigate(role, navigate);
       }
     } catch (error) {
       console.error("Login error:", error);

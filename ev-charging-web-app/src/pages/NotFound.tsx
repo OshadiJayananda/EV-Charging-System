@@ -2,9 +2,19 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { BoltIcon } from "@heroicons/react/24/outline";
 import ErrorPage from "../components/common/ErrorPage";
+import { useAuth } from "../context/AuthContext";
+import { roleNavigate } from "../components/common/RoleBasedAccess";
 
 const NotFound: React.FC = () => {
   const navigate = useNavigate();
+  const { userRole } = useAuth();
+
+  let buttonText = "Go Back to Sign In";
+  if (userRole === "admin") {
+    buttonText = "Go to Admin Dashboard";
+  } else if (userRole === "operator") {
+    buttonText = "Go to Operator Dashboard";
+  }
 
   return (
     <ErrorPage
@@ -12,10 +22,10 @@ const NotFound: React.FC = () => {
       title="404"
       subtitle="Oops! Page not found."
       description="Looks like the charging station you’re trying to reach doesn’t exist."
-      buttonText="Go Back to Dashboard"
+      buttonText={buttonText}
       buttonVariant="primary"
       gradient="from-blue-50 to-white"
-      onButtonClick={() => navigate("/")}
+      onButtonClick={() => roleNavigate(userRole, navigate)}
     />
   );
 };
