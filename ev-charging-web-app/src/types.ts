@@ -126,3 +126,16 @@ export interface Notification {
   createdAt: string;
   isRead: boolean;
 }
+
+export interface UserResponse {
+  data?: {
+    id?: string;
+    fullName?: string;
+    email?: string;
+    role?: string;
+    userType?: string;
+    isActive?: boolean;
+    createdAt?: string;
+  };
+  status?: number;
+}
