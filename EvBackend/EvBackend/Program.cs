@@ -41,6 +41,7 @@ builder.Services.AddScoped<IStationService, StationService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ICSOperatorService, CSOperatorService>();
 builder.Services.AddScoped<IEVOwnerService, EVOwnerService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Controllers
 builder.Services.AddControllers();

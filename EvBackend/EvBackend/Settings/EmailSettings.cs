@@ -17,5 +17,6 @@ namespace EvBackend.Settings
         public string? Encryption { get; set; }
         public string? FromAddress { get; set; }
         public string? FromName { get; set; }
+        public string? FrontendUrl { get; set; }
     }
 }
