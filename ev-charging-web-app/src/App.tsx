@@ -11,6 +11,9 @@ import { useDocumentTitle } from "./hooks/useDocumentTitle";
 import Contact from "./pages/Contact";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/common/ProtectedRoute";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import Profile from "./pages/Profile";
 
 function App() {
   const location = useLocation();
@@ -38,6 +41,8 @@ function App() {
       <Routes>
         {/* Routes without Layout */}
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/contact-sales" element={<ContactSales />} />
         <Route path="/contact" element={<Contact />} />
 
@@ -56,6 +61,10 @@ function App() {
               path="/operator/dashboard"
               element={<CSOperatorDashboard />}
             />
+          </Route>
+
+          <Route element={<ProtectedRoute />}>
+            <Route path="/profile" element={<Profile />} />
           </Route>
 
           {/* Catch-all */}

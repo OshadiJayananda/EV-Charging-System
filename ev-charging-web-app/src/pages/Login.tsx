@@ -114,7 +114,7 @@ export default function Login() {
         {/* Card */}
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
           <div className="p-6 sm:p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
               {/* Email */}
               <Input
                 label="Email Address"
@@ -123,7 +123,6 @@ export default function Login() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="you@example.com"
-                required
                 error={errors.email}
                 icon={<EnvelopeIcon className="h-5 w-5" />}
               />
@@ -137,23 +136,25 @@ export default function Login() {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  required
                   error={errors.password}
                   icon={<LockClosedIcon className="h-5 w-5" />}
                 />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center top-[32px]">
-                  <button
-                    type="button"
-                    className="text-gray-400 hover:text-gray-500 focus:outline-none"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeSlashIcon className="h-5 w-5" />
-                    ) : (
-                      <EyeIcon className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  className={
+                    errors.password
+                      ? "absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-500 focus:outline-none"
+                      : "absolute inset-y-0 right-0 pr-3 flex items-center top-[32px] text-gray-400 hover:text-gray-500 focus:outline-none"
+                  }
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeSlashIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
               </div>
 
               {/* Remember me and Forgot password */}
@@ -172,9 +173,7 @@ export default function Login() {
                 <button
                   type="button"
                   className="text-sm font-medium text-green-600 hover:text-green-500 bg-transparent border-none p-0 cursor-pointer"
-                  onClick={() =>
-                    toast("Password reset is not implemented yet.")
-                  }
+                  onClick={() => navigate("/forgot-password")}
                 >
                   Forgot your password?
                 </button>
