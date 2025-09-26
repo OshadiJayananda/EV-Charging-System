@@ -6,10 +6,14 @@
 // --------------------------------------------------------------
 
 
+using System.ComponentModel.DataAnnotations;
+
 namespace EvBackend.Models.DTOs
 {
     public class ForgotPasswordDto
     {
+        [Required]
+        [EmailAddress]
         public string email { get; set; }
     }
 }

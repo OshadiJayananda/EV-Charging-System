@@ -15,6 +15,7 @@ namespace EvBackend.Models.DTOs
         public string resetToken { get; set; }
 
         [Required]
+        [StringLength(100, MinimumLength = 6)]
         public string newPassword { get; set; }
     }
 }
