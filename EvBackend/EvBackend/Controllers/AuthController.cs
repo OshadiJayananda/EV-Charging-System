@@ -67,5 +67,12 @@ namespace EvBackend.Controllers
                 userType
             });
         }
+
+        [HttpPost("logout")]
+        [Authorize]
+        public IActionResult Logout()
+        {
+            return Ok(new { message = "Logged out successfully" });
+        }
     }
 }
