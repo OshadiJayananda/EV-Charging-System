@@ -1,6 +1,6 @@
 import { Link, Outlet } from "react-router-dom";
 import { useState } from "react";
-import { LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, User, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { postRequest } from "./common/api";
 import toast from "react-hot-toast";
@@ -38,6 +38,14 @@ const Layout: React.FC = () => {
 
         {/* Desktop Links */}
         <div className="hidden md:flex space-x-4 items-center">
+          {isAuthenticated && (
+            <Link
+              to="/profile"
+              className="hover:underline flex items-center gap-1"
+            >
+              Profile
+            </Link>
+          )}
           {isAuthenticated && userRole === "admin" && (
             <Link to="/admin/dashboard" className="hover:underline">
               Admin
@@ -75,6 +83,15 @@ const Layout: React.FC = () => {
       {/* Mobile Dropdown Menu */}
       {isOpen && (
         <div className="fixed top-16 left-0 right-0 bg-green-700 text-white p-4 space-y-2 md:hidden shadow-md z-40">
+          {isAuthenticated && (
+            <Link
+              to="/profile"
+              className="block hover:underline flex items-center gap-1"
+              onClick={() => setIsOpen(false)}
+            >
+              Profile
+            </Link>
+          )}
           {isAuthenticated && userRole === "admin" && (
             <Link
               to="/admin/dashboard"

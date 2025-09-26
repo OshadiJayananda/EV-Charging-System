@@ -13,6 +13,7 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Profile from "./pages/Profile";
 
 function App() {
   const location = useLocation();
@@ -60,6 +61,10 @@ function App() {
               path="/operator/dashboard"
               element={<CSOperatorDashboard />}
             />
+          </Route>
+
+          <Route element={<ProtectedRoute />}>
+            <Route path="/profile" element={<Profile />} />
           </Route>
 
           {/* Catch-all */}
