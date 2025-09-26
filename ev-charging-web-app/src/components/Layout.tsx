@@ -1,4 +1,4 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { LogOut, Menu, User, X, Bell } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -6,6 +6,7 @@ import { postRequest, getRequest } from "./common/api";
 import toast from "react-hot-toast";
 import { HubConnectionBuilder } from "@microsoft/signalr";
 import type { Notification } from "../types";
+import { roleNavigate } from "./common/RoleBasedAccess";
 
 const Layout: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,6 +14,7 @@ const Layout: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const { isAuthenticated, userRole, logout } = useAuth();
+  const navigate = useNavigate();
 
   // Fetch notifications and setup SignalR
   useEffect(() => {
@@ -62,6 +64,10 @@ const Layout: React.FC = () => {
     logout();
   };
 
+  const handleRoleNavigate = () => {
+    roleNavigate(userRole, navigate);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Navbar */}
@@ -95,15 +101,10 @@ const Layout: React.FC = () => {
               )}
             </button>
           )}
-          {isAuthenticated && userRole === "admin" && (
-            <Link to="/admin/dashboard" className="hover:underline">
-              Admin
-            </Link>
-          )}
-          {isAuthenticated && userRole === "operator" && (
-            <Link to="/operator/dashboard" className="hover:underline">
-              CS Operator
-            </Link>
+          {isAuthenticated && (
+            <button onClick={handleRoleNavigate} className="hover:underline">
+              Dashboard
+            </button>
           )}
           {isAuthenticated && (
             <button
