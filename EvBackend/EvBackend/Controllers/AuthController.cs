@@ -19,10 +19,14 @@ namespace EvBackend.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IUserService _userService;
+        private readonly IEVOwnerService _evOwnerService;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, IUserService userService, IEVOwnerService evOwnerService)
         {
             _authService = authService;
+            _userService = userService;
+            _evOwnerService = evOwnerService;
         }
 
         [HttpPost("login")]
@@ -47,26 +51,49 @@ namespace EvBackend.Controllers
             }
         }
 
-        //introduce a me endpoint to verify token validity
+        // Verifies token validity and returns current user information
         [HttpGet("me")]
         [Authorize]
-        public IActionResult Me()
+        public async Task<IActionResult> Me()
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            var email = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
-            var role = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
-            var fullName = User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value;
-            var userType = User.Claims.FirstOrDefault(c => c.Type == "UserType")?.Value;
-            if (userId == null)
+            var nic = User.Claims.FirstOrDefault(c => c.Type == "NIC")?.Value;
+
+            if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { message = "Invalid token" });
-            return Ok(new
+
+            // Check if EVOwner by NIC
+            if (!string.IsNullOrEmpty(nic))
             {
-                userId,
-                email,
-                role,
-                fullName,
-                userType
-            });
+                var owner = await _evOwnerService.GetEVOwnerByNIC(nic);
+                if (owner != null)
+                {
+                    return Ok(new EVOwnerDto
+                    {
+                        NIC = owner.NIC,
+                        FullName = owner.FullName,
+                        Email = owner.Email,
+                        IsActive = owner.IsActive,
+                        CreatedAt = owner.CreatedAt
+                    });
+                }
+            }
+
+            // Otherwise, fallback to normal User
+            var user = await _userService.GetUserById(userId);
+            if (user != null)
+            {
+                return Ok(new UserDto
+                {
+                    Id = user.Id,
+                    FullName = user.FullName,
+                    Email = user.Email,
+                    Role = user.Role,
+                    IsActive = user.IsActive
+                });
+            }
+
+            return NotFound(new { message = "User not found" });
         }
 
         [HttpPost("logout")]

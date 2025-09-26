@@ -93,8 +93,9 @@ namespace EvBackend.Controllers
                     return Ok(users);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"Unexpected error occurred while fetching users: {ex.Message}");
                 return StatusCode(500, new { message = "Unexpected error occurred" });
             }
         }
