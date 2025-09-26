@@ -23,12 +23,14 @@ namespace EvBackend.Services
         private readonly IMongoCollection<User> _users;
         private readonly IMongoCollection<EVOwner> _evOwners;
         private readonly IConfiguration _config;
+        private readonly IEmailService _emailService;
 
-        public AuthService(IMongoDatabase database, IConfiguration config, IOptions<MongoDbSettings> settings)
+        public AuthService(IMongoDatabase database, IConfiguration config, IOptions<MongoDbSettings> settings, IEmailService emailService)
         {
             _users = database.GetCollection<User>(settings.Value.UsersCollectionName);
             _evOwners = database.GetCollection<EVOwner>(settings.Value.EVOwnersCollectionName);
             _config = config;
+            _emailService = emailService;
         }
 
         public async Task<LoginResponseDto> AuthenticateUser(LoginDto loginDto)
@@ -120,5 +122,72 @@ namespace EvBackend.Services
             throw new AuthenticationException("Invalid credentials or user inactive");
         }
 
+        public async Task SendPasswordResetEmail(ForgotPasswordDto forgotPasswordDto)
+        {
+            // Find user by email in Users collection
+            var user = await _users.Find(u => u.Email == forgotPasswordDto.email).FirstOrDefaultAsync();
+            var owner = await _evOwners.Find(o => o.Email == forgotPasswordDto.email).FirstOrDefaultAsync();
+
+            if (user != null)
+            {
+                // Generate a password reset token
+                var resetToken = Guid.NewGuid().ToString();
+                // Save the reset token to the database
+                user.PasswordResetToken = resetToken;
+                user.PasswordResetTokenExpiration = DateTime.UtcNow.AddHours(1);
+                await _users.ReplaceOneAsync(u => u.Id == user.Id, user);
+
+                // Send the password reset email (you'll need to implement this)
+                await _emailService.SendPasswordResetEmail(user.Email, resetToken);
+            }
+            else if (owner != null)
+            {
+                // Generate a password reset token
+                var resetToken = Guid.NewGuid().ToString();
+                // Save the reset token to the database
+                owner.PasswordResetToken = resetToken;
+                owner.PasswordResetTokenExpiration = DateTime.UtcNow.AddHours(1);
+                await _evOwners.ReplaceOneAsync(o => o.NIC == owner.NIC, owner);
+
+                // Send the password reset email (you'll need to implement this)
+                await _emailService.SendPasswordResetEmail(owner.Email, resetToken);
+            }
+        }
+
+        //reset password method can be added here
+        public async Task ResetPassword(ResetPasswordDto resetPasswordDto)
+        {
+            // Try to find user in Users collection by reset token
+            var user = await _users.Find(u => u.PasswordResetToken == resetPasswordDto.resetToken).FirstOrDefaultAsync();
+            if (user != null)
+            {
+                if (user.PasswordResetTokenExpiration < DateTime.UtcNow)
+                    throw new InvalidOperationException("Reset token has expired");
+
+                // Update the password
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(resetPasswordDto.newPassword);
+                user.PasswordResetToken = null;
+                user.PasswordResetTokenExpiration = null;
+                await _users.ReplaceOneAsync(u => u.Id == user.Id, user);
+                return;
+            }
+
+            // Try to find user in EVOwners collection by reset token
+            var owner = await _evOwners.Find(o => o.PasswordResetToken == resetPasswordDto.resetToken).FirstOrDefaultAsync();
+            if (owner != null)
+            {
+                if (owner.PasswordResetTokenExpiration < DateTime.UtcNow)
+                    throw new InvalidOperationException("Reset token has expired");
+
+                // Update the password
+                owner.PasswordHash = BCrypt.Net.BCrypt.HashPassword(resetPasswordDto.newPassword);
+                owner.PasswordResetToken = null;
+                owner.PasswordResetTokenExpiration = null;
+                await _evOwners.ReplaceOneAsync(o => o.NIC == owner.NIC, owner);
+                return;
+            }
+
+            throw new KeyNotFoundException("Invalid reset token");
+        }
     }
 }

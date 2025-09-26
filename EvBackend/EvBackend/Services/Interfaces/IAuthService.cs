@@ -12,5 +12,7 @@ namespace EvBackend.Services.Interfaces
     public interface IAuthService
     {
         Task<LoginResponseDto> AuthenticateUser(LoginDto loginDto);
+        Task SendPasswordResetEmail(ForgotPasswordDto forgotPasswordDto);
+        Task ResetPassword(ResetPasswordDto resetPasswordDto);
     }
 }

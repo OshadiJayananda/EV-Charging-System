@@ -17,6 +17,9 @@ builder.Configuration.AddEnvironmentVariables();
 // MongoDB Configuration
 builder.Services.Configure<MongoDbSettings>(
     builder.Configuration.GetSection("MongoDB"));
+// Email Configuration
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
 
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
@@ -38,6 +41,7 @@ builder.Services.AddScoped<IStationService, StationService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ICSOperatorService, CSOperatorService>();
 builder.Services.AddScoped<IEVOwnerService, EVOwnerService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Controllers
 builder.Services.AddControllers();
