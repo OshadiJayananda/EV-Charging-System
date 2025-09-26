@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 import AdminDashboard from "./components/Admin/AdminDashboard";
 import CSOperatorDashboard from "./components/CSOperator/CSOperatorDashboard";
@@ -59,7 +59,8 @@ function App() {
           </Route>
 
           {/* Catch-all */}
-          <Route path="*" element={<NotFound />} />
+          <Route path="/not-found" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/not-found" replace />} />
         </Route>
       </Routes>
     </AuthProvider>

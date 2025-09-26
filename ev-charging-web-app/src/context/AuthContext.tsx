@@ -6,7 +6,7 @@ import React, {
   useEffect,
   type ReactNode,
 } from "react";
-import { getUserRoleFromToken } from "../components/common/getUserRoleFromToken";
+import { getUserRoleFromToken } from "../components/common/RoleBasedAccess";
 
 interface AuthContextType {
   token: string | null;

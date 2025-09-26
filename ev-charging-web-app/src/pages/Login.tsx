@@ -9,7 +9,10 @@ import { Car } from "lucide-react";
 import { Input } from "../components/common";
 import { toast } from "react-hot-toast";
 import { postRequest } from "../components/common/api";
-import { getUserRoleFromToken } from "../components/common/getUserRoleFromToken";
+import {
+  getUserRoleFromToken,
+  roleNavigate,
+} from "../components/common/RoleBasedAccess";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -80,14 +83,7 @@ export default function Login() {
         const token = response.token;
         login(token);
         const role = getUserRoleFromToken(token);
-
-        if (role === "admin") {
-          navigate("/admin/dashboard");
-        } else if (role === "operator") {
-          navigate("/operator/dashboard");
-        } else {
-          navigate("/login");
-        }
+        roleNavigate(role, navigate);
       }
     } catch (error) {
       console.error("Login error:", error);
