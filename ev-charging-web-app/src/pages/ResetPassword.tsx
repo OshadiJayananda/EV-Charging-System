@@ -7,12 +7,26 @@ export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const token = searchParams.get("token");
 
+  const validatePassword = (value: string): boolean => {
+    if (!value) {
+      setError("Password is required");
+      return false;
+    } else if (value.length < 6) {
+      setError("Password must be at least 6 characters");
+      return false;
+    }
+    setError(null);
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validatePassword(password)) return;
     setIsSubmitting(true);
     try {
       const response = await postRequest("/auth/reset-password", {
@@ -23,8 +37,6 @@ export default function ResetPassword() {
       if (response?.status === 200) {
         toast.success("Password reset successful!");
         navigate("/login");
-      } else {
-        toast.error("Failed to reset password.");
       }
     } catch {
       toast.error("Error resetting password.");
@@ -41,7 +53,6 @@ export default function ResetPassword() {
           <p className="text-gray-600">
             Password reset link is invalid or expired.
           </p>
-
           <div className="mt-4">
             <button
               onClick={() => navigate("/login")}
@@ -60,18 +71,24 @@ export default function ResetPassword() {
       <form
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md"
+        noValidate
       >
         <h2 className="text-2xl font-bold mb-4 text-green-700">
           Reset Password
         </h2>
         <input
           type="password"
-          className="w-full border rounded px-3 py-2 mb-4"
+          className={`w-full border rounded px-3 py-2 mb-1 ${
+            error ? "border-red-500" : ""
+          }`}
           placeholder="New password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
+          onChange={(e) => {
+            setPassword(e.target.value);
+            if (error) validatePassword(e.target.value);
+          }}
         />
+        {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
         <button
           type="submit"
           disabled={isSubmitting}

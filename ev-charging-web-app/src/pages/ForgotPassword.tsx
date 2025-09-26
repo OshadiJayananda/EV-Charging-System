@@ -5,9 +5,24 @@ import { postRequest } from "../components/common/api";
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const validateEmail = (value: string): boolean => {
+    if (!value) {
+      setError("Email is required");
+      return false;
+    } else if (!/\S+@\S+\.\S+/.test(value)) {
+      setError("Email is invalid");
+      return false;
+    }
+    setError(null);
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateEmail(email)) return;
+
     setIsSubmitting(true);
     try {
       const response = await postRequest("/auth/forgot-password", { email });
@@ -28,6 +43,7 @@ export default function ForgotPassword() {
       <form
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md"
+        noValidate
       >
         <h2 className="text-2xl font-bold mb-4 text-green-700">
           Forgot Password
@@ -37,12 +53,17 @@ export default function ForgotPassword() {
         </p>
         <input
           type="email"
-          className="w-full border rounded px-3 py-2 mb-4"
+          className={`w-full border rounded px-3 py-2 mb-1 ${
+            error ? "border-red-500" : ""
+          }`}
           placeholder="you@example.com"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (error) validateEmail(e.target.value);
+          }}
         />
+        {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
         <button
           type="submit"
           disabled={isSubmitting}
