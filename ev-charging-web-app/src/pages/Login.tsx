@@ -172,9 +172,7 @@ export default function Login() {
                 <button
                   type="button"
                   className="text-sm font-medium text-green-600 hover:text-green-500 bg-transparent border-none p-0 cursor-pointer"
-                  onClick={() =>
-                    toast("Password reset is not implemented yet.")
-                  }
+                  onClick={() => navigate("/forgot-password")}
                 >
                   Forgot your password?
                 </button>
