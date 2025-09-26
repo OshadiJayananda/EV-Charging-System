@@ -1,9 +1,11 @@
 import { Link, Outlet } from "react-router-dom";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 const Layout: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { isAuthenticated, userRole, logout } = useAuth();
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -15,10 +17,10 @@ const Layout: React.FC = () => {
 
         {/* Desktop Links */}
         <div className="hidden md:flex space-x-4">
-          <Link to="/admin" className="hover:underline">
+          <Link to="/admin/dashboard" className="hover:underline">
             Admin
           </Link>
-          <Link to="/cs-operator" className="hover:underline">
+          <Link to="/operator/dashboard" className="hover:underline">
             CS Operator
           </Link>
         </div>
@@ -43,7 +45,7 @@ const Layout: React.FC = () => {
             Admin
           </Link>
           <Link
-            to="/cs-operator"
+            to="/operator/dashboard"
             className="block hover:underline"
             onClick={() => setIsOpen(false)}
           >
