@@ -16,13 +16,30 @@ const Layout: React.FC = () => {
         </Link>
 
         {/* Desktop Links */}
-        <div className="hidden md:flex space-x-4">
-          <Link to="/admin/dashboard" className="hover:underline">
-            Admin
-          </Link>
-          <Link to="/operator/dashboard" className="hover:underline">
-            CS Operator
-          </Link>
+        <div className="hidden md:flex space-x-4 items-center">
+          {isAuthenticated && userRole === "admin" && (
+            <Link to="/admin/dashboard" className="hover:underline">
+              Admin
+            </Link>
+          )}
+          {isAuthenticated && userRole === "operator" && (
+            <Link to="/operator/dashboard" className="hover:underline">
+              CS Operator
+            </Link>
+          )}
+          {isAuthenticated && (
+            <button
+              onClick={logout}
+              className="ml-4 px-3 py-1 rounded bg-white text-green-700 font-semibold hover:bg-green-100 transition-colors"
+            >
+              Logout
+            </button>
+          )}
+          {!isAuthenticated && (
+            <Link to="/login" className="hover:underline">
+              Login
+            </Link>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -37,20 +54,44 @@ const Layout: React.FC = () => {
       {/* Mobile Dropdown Menu */}
       {isOpen && (
         <div className="fixed top-16 left-0 right-0 bg-green-700 text-white p-4 space-y-2 md:hidden shadow-md z-40">
-          <Link
-            to="/admin"
-            className="block hover:underline"
-            onClick={() => setIsOpen(false)}
-          >
-            Admin
-          </Link>
-          <Link
-            to="/operator/dashboard"
-            className="block hover:underline"
-            onClick={() => setIsOpen(false)}
-          >
-            CS Operator
-          </Link>
+          {isAuthenticated && userRole === "admin" && (
+            <Link
+              to="/admin/dashboard"
+              className="block hover:underline"
+              onClick={() => setIsOpen(false)}
+            >
+              Admin
+            </Link>
+          )}
+          {isAuthenticated && userRole === "operator" && (
+            <Link
+              to="/operator/dashboard"
+              className="block hover:underline"
+              onClick={() => setIsOpen(false)}
+            >
+              CS Operator
+            </Link>
+          )}
+          {isAuthenticated && (
+            <button
+              onClick={() => {
+                logout();
+                setIsOpen(false);
+              }}
+              className="block w-full text-left px-3 py-1 rounded bg-white text-green-700 font-semibold hover:bg-green-100 transition-colors mt-2"
+            >
+              Logout
+            </button>
+          )}
+          {!isAuthenticated && (
+            <Link
+              to="/login"
+              className="block hover:underline"
+              onClick={() => setIsOpen(false)}
+            >
+              Login
+            </Link>
+          )}
         </div>
       )}
       {/* Page Content */}

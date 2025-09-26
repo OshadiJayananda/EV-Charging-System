@@ -36,28 +36,29 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
+        {/* Routes without Layout */}
         <Route path="/login" element={<Login />} />
         <Route path="/contact-sales" element={<ContactSales />} />
         <Route path="/contact" element={<Contact />} />
 
-        <Route element={<ProtectedRoute requiredRole="admin" />}>
-          <Route element={<Layout />}>
+        {/* All routes inside Layout */}
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute requiredRole="admin" />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Route>
-        </Route>
 
-        <Route element={<ProtectedRoute requiredRole="operator" />}>
-          <Route element={<Layout />}>
+          <Route element={<ProtectedRoute requiredRole="operator" />}>
             <Route
               path="/operator/dashboard"
               element={<CSOperatorDashboard />}
             />
           </Route>
-        </Route>
 
-        <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/unauthorized" element={<Unauthorized />} />
+          {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

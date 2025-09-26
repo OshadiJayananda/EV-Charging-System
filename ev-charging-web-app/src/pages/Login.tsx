@@ -79,7 +79,7 @@ export default function Login() {
         const token = response.token;
         const role = getUserRoleFromToken(token);
         if (role === "admin") {
-          navigate("/admin-dashboard");
+          navigate("/admin/dashboard");
         } else if (role === "operator") {
           navigate("/operator/dashboard");
         } else {
