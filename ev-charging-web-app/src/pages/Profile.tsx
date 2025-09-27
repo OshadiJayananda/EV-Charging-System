@@ -159,7 +159,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100">
+    <div className="h-full flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
         <h2 className="text-2xl font-bold mb-4 text-green-700">Profile</h2>
         {content}
