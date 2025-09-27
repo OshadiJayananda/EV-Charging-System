@@ -33,14 +33,22 @@ namespace EvBackend.Services
             _emailService = emailService;
         }
 
-        public async Task<LoginResponseDto> AuthenticateUser(LoginDto loginDto)
+        public async Task<LoginResponseDto> AuthenticateUser(LoginDto loginDto, HttpRequest request)
         {
+            var clientType = request.Headers["X-Client-Type"].ToString();
+            bool isWeb = clientType.Equals("Web", StringComparison.OrdinalIgnoreCase);
+            string[] webRoles = new[] { "Admin", "Operator" };
+            string[] mobileRoles = new[] { "Operator", "Owner" };
+
             // Try to find user in Users collection
             var user = await _users.Find(u => u.Email == loginDto.Email).FirstOrDefaultAsync();
             if (user != null && user.IsActive)
             {
                 if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
                     throw new AuthenticationException("Invalid credentials");
+
+                if ((isWeb && !webRoles.Contains(user.Role)) || (!isWeb && !mobileRoles.Contains(user.Role)))
+                    throw new AuthenticationException("Access denied from this platform");
 
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var secretKey = _config["Jwt:Key"] ?? _config["Jwt__Key"];
@@ -83,6 +91,9 @@ namespace EvBackend.Services
             {
                 if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, evOwner.PasswordHash))
                     throw new AuthenticationException("Invalid credentials");
+
+                if ((isWeb && !webRoles.Contains("Owner")) || (!isWeb && !mobileRoles.Contains("Owner")))
+                    throw new AuthenticationException("Access denied from this platform");
 
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var secretKey = _config["Jwt:Key"] ?? _config["Jwt__Key"];
