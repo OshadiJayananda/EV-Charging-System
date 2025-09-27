@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Authentication;
+using System.Security.Claims;
 
 namespace EvBackend.Controllers
 {
@@ -56,14 +57,24 @@ namespace EvBackend.Controllers
         [Authorize]
         public async Task<IActionResult> Me()
         {
+            var role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
             var userId = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            var nic = User.Claims.FirstOrDefault(c => c.Type == "NIC")?.Value;
 
-            if (string.IsNullOrEmpty(userId))
+            var nic = "";
+
+            if (role == "Owner") {
+                nic = userId;
+                userId = "";
+            }
+
+            if(role == null)
+                return Unauthorized(new { message = "Invalid token" });
+
+            if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(nic))
                 return Unauthorized(new { message = "Invalid token" });
 
             // Check if EVOwner by NIC
-            if (!string.IsNullOrEmpty(nic))
+            if (!string.IsNullOrEmpty(nic) && role == "Owner")
             {
                 var owner = await _evOwnerService.GetEVOwnerByNIC(nic);
                 if (owner != null)
