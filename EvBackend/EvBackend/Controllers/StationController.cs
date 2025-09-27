@@ -18,7 +18,7 @@ namespace EvBackend.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateStation([FromBody] CreateStationDto dto)
         {
             //var ownerId = User.Identity?.Name ?? "system"; // Example
@@ -27,7 +27,7 @@ namespace EvBackend.Controllers
         }
 
         [HttpPut("{stationId}")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateStation(string stationId, [FromBody] UpdateStationDto dto)
         {
             var result = await _stationService.UpdateStationAsync(stationId, dto);
@@ -36,7 +36,7 @@ namespace EvBackend.Controllers
         }
 
         [HttpPatch("{stationId}/deactivate")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeactivateStation(string stationId)
         {
             var success = await _stationService.DeactivateStationAsync(stationId);
@@ -45,7 +45,7 @@ namespace EvBackend.Controllers
         }
 
         [HttpGet("{stationId}")]
-        //[Authorize(Roles = "Admin,Operator")]
+        [Authorize(Roles = "Admin,Operator")]
         public async Task<IActionResult> GetStationById(string stationId)
         {
             var result = await _stationService.GetStationByIdAsync(stationId);
@@ -54,7 +54,7 @@ namespace EvBackend.Controllers
         }
 
         [HttpGet]
-        //[Authorize(Roles = "Admin,Operator")]
+        [Authorize(Roles = "Admin,Operator")]
         public async Task<IActionResult> GetAllStations([FromQuery] bool onlyActive = false)
         {
             var result = await _stationService.GetAllStationsAsync(onlyActive);
@@ -62,7 +62,7 @@ namespace EvBackend.Controllers
         }
 
         [HttpGet("search")]
-        //[Authorize(Roles = "Admin,Operator,Owner")]
+        [Authorize(Roles = "Admin,Operator,Owner")]
         public async Task<IActionResult> SearchStations([FromQuery] string type, [FromQuery] string location)
         {
             var result = await _stationService.SearchStationsAsync(type, location);
