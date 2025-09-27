@@ -1,36 +1,69 @@
 
-```markdown
-# 📱 EV Charging System – Mobile App Setup Guide
 
-This guide explains how to set up the environment required to build and run the **Mobile Android App (Java + SQLite)** inside this repository.  
+# 📱 EV-Mobile App (Java + Gradle)
 
-Both the **Web App** and **Mobile App** share the same backend (`EvBackend`), so make sure you have the backend running before testing the mobile app.  
+This is the **Mobile Android app** for the EV-Charging System.
+It is built with **pure Android (Java + Gradle)**, no frameworks, and runs inside the same repo alongside **Web** and **Backend**.
 
 ---
 
-## ⚙️ 1. Install Java JDK 17
+## 🚀 Features
 
-### Windows
-- Download Oracle JDK 17 → [Oracle JDK 17 Downloads](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)  
-- Install into:
-```
+* EV Owner:
 
-C:\Program Files\Java\jdk-17
+  * Create, update, deactivate account
+  * Make and cancel bookings
+  * View history and QR codes
+* Station Operator:
 
-````
+  * Login via mobile
+  * Scan QR codes
+  * Finalize bookings
+* Dashboard with reservations summary
+* Local SQLite DB support (to be added later)
 
-- Add environment variable:
-- `JAVA_HOME = C:\Program Files\Java\jdk-17`
-- Add to **Path**:
+---
+
+## 🛠️ Prerequisites
+
+* **Java 17 (JDK)**
+* **Android SDK Command Line Tools**
+* **Gradle 8.6** (via wrapper)
+* **ADB (Android Debug Bridge)**
+* **VS Code** with recommended extensions:
+
+  * Extension Pack for Java
+  * Gradle for Java
+  * Android XML Tools
+
+---
+
+## 🖥️ Setup Instructions
+
+### 1. Install Java 17
+
+#### Windows
+
+* Install to: `C:\Program Files\Java\jdk-17`
+* Set environment variables:
+
+  ```text
+  JAVA_HOME = C:\Program Files\Java\jdk-17
+  PATH += %JAVA_HOME%\bin
   ```
-  %JAVA_HOME%\bin
+* Verify:
+
+  ```cmd
+  java -version
+  javac -version
   ```
 
-### Linux (Ubuntu/Debian)
+#### Linux / macOS
+
 ```bash
-sudo apt update
-sudo apt install openjdk-17-jdk -y
-````
+sudo apt update && sudo apt install openjdk-17-jdk -y   # Ubuntu/Debian
+brew install openjdk@17                                 # macOS
+```
 
 Add to `~/.bashrc` or `~/.zshrc`:
 
@@ -39,194 +72,267 @@ export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 export PATH=$JAVA_HOME/bin:$PATH
 ```
 
-### macOS (Homebrew)
-
-```bash
-brew install openjdk@17
-```
-
-Add to `~/.zshrc`:
-
-```bash
-export JAVA_HOME=$(/usr/libexec/java_home -v17)
-export PATH=$JAVA_HOME/bin:$PATH
-```
-
-✅ Verify everywhere:
-
-```bash
-java -version
-javac -version
-```
-
 ---
 
-## ⚙️ 2. Install Android SDK Command-line Tools
+### 2. Install Android SDK CLI Tools
 
-* Download → [Android Command-line Tools](https://developer.android.com/studio#command-tools)
-* Choose the **zip** for your OS.
+Download from: [Android Command Line Tools](https://developer.android.com/studio#command-tools)
 
-### Extract into:
+#### Windows
 
-* **Windows**:
+* Extract to:
 
   ```
   C:\Android\cmdline-tools\latest\
   ```
-* **Linux/macOS**:
+* Add environment variables:
+
+  ```text
+  ANDROID_HOME = C:\Android
+  PATH += C:\Android\cmdline-tools\latest\bin
+  PATH += C:\Android\platform-tools
+  ```
+
+#### Linux / macOS
+
+* Extract to:
 
   ```
-  ~/Android/cmdline-tools/latest/
+  $HOME/Android/cmdline-tools/latest/
   ```
+* Add to `~/.bashrc`:
 
-Final structure should include:
-
-```
-cmdline-tools/latest/bin/sdkmanager
-cmdline-tools/latest/lib/...
-```
-
-⚠️ Folder **must** be named `latest`.
+  ```bash
+  export ANDROID_HOME=$HOME/Android
+  export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+  ```
 
 ---
 
-## ⚙️ 3. Set Environment Variables
-
-### Windows
-
-Add system variables:
-
-```
-JAVA_HOME = C:\Program Files\Java\jdk-17
-ANDROID_HOME = C:\Android
-```
-
-Add to Path:
-
-```
-%JAVA_HOME%\bin
-C:\Android\cmdline-tools\latest\bin
-C:\Android\platform-tools
-```
-
-### Linux/macOS
-
-Add to `~/.bashrc` or `~/.zshrc`:
+### 3. Install SDK Packages
 
 ```bash
-export ANDROID_HOME=$HOME/Android
-export PATH=$JAVA_HOME/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
-```
-
-✅ Reload shell:
-
-```bash
-source ~/.bashrc   # or source ~/.zshrc
-```
-
----
-
-## ⚙️ 4. Install SDK Packages
-
-Run:
-
-```bash
-sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 sdkmanager --licenses
-```
-
-On Windows, you can also use a helper batch script `install-android-sdk.bat`:
-
-```bat
-@echo off
-echo Installing Android SDK packages...
-sdkmanager --sdk_root=C:\Android "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-echo Accepting all licenses...
-yes | sdkmanager --licenses
-echo Done! You can now use adb and build Android apps.
-pause
-```
-
-On Linux/macOS you can run:
-
-```bash
-yes | sdkmanager --licenses
+sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 ```
 
 ---
 
-## ⚙️ 5. Verify Installation
+### 4. Initialize Gradle Project
+
+Inside repo root:
 
 ```bash
-adb --version
-sdkmanager --version
+cd EV-CHARGING-SYSTEM
+mkdir Mobile
+cd Mobile
+gradle init
 ```
 
-✅ Expected:
+Select:
 
-* Android Debug Bridge version
-* SDK Manager version
+* Application → Java → Java 17
+* Project name → EvMobile
+* Single project, DSL = Groovy
+* Test framework = JUnit 4
+* New APIs = No
 
 ---
 
-## 📱 6. Connect Android Phone
+### 5. Convert to Android Project
 
-1. Enable **Developer Options → USB Debugging** on your phone.
-2. Connect via USB.
-3. Run:
+Delete:
+
+```
+app/src/main/java/org/example/App.java
+app/src/test/java/org/example/AppTest.java
+```
+
+Create Android files:
+
+```
+app/src/main/java/com/evcharging/mobile/MainActivity.java
+app/src/main/res/layout/activity_main.xml
+app/src/main/AndroidManifest.xml
+```
+
+📌 Add content:
+
+* [MainActivity.java](#mainactivityjava)
+* [activity_main.xml](#activity_mainxml)
+* [AndroidManifest.xml](#androidmanifestxml)
+
+---
+
+### 6. Update Gradle Configs
+
+**settings.gradle**
+
+```gradle
+pluginManagement {
+    repositories { google(); mavenCentral(); gradlePluginPortal() }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories { google(); mavenCentral() }
+}
+rootProject.name = "EvMobile"
+include(":app")
+```
+
+**app/build.gradle**
+
+```gradle
+plugins {
+    id 'com.android.application' version '8.2.2'
+}
+android {
+    namespace "com.evcharging.mobile"
+    compileSdk 34
+    defaultConfig {
+        applicationId "com.evcharging.mobile"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+}
+```
+
+**gradle-wrapper.properties**
+
+```properties
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.6-bin.zip
+```
+
+---
+
+### 7. Build APK
+
+```bash
+cd Mobile
+gradlew clean
+gradlew build
+```
+
+APK output:
+
+```
+Mobile/app/build/outputs/apk/debug/app-debug.apk
+```
+
+---
+
+### 8. Install APK on Phone
+
+1. Enable **Developer Options** → USB Debugging.
+2. Connect phone → verify:
 
    ```bash
    adb devices
    ```
+3. Install:
 
-   You should see your phone listed as `device`.
+   ```bash
+   adb install -r app/build/outputs/apk/debug/app-debug.apk
+   ```
+
+Open app → **Hello EV Mobile World!** 🎉
 
 ---
 
-## ⚙️ 7. Build & Install App
+## 📂 Folder Structure
 
-From the repo root:
-
-```bash
-cd EV-CHARGING-SYSTEM/Mobile
-gradle assembleDebug
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+Mobile/
+ ├── app/
+ │   ├── build.gradle
+ │   ├── src/
+ │   │   └── main/
+ │   │       ├── AndroidManifest.xml
+ │   │       ├── java/com/evcharging/mobile/MainActivity.java
+ │   │       └── res/layout/activity_main.xml
+ ├── build.gradle
+ ├── settings.gradle
+ ├── gradle/wrapper/gradle-wrapper.properties
+ ├── gradlew
+ ├── gradlew.bat
 ```
 
+---
 
-## ⚠️ Common Issues & Fixes
+## 📌 Source Files
 
-* **`sdkmanager not found`**
+### MainActivity.java
 
-  * Check your `PATH` includes:
+```java
+package com.evcharging.mobile;
 
-    ```
-    C:\Android\cmdline-tools\latest\bin
-    ```
+import android.os.Bundle;
+import androidx.appcompat.app.AppCompatActivity;
+import android.widget.TextView;
 
-    or
+public class MainActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-    ```
-    $ANDROID_HOME/cmdline-tools/latest/bin
-    ```
+        TextView tv = new TextView(this);
+        tv.setText("Hello, EV Mobile World!");
+        tv.setTextSize(24);
 
-* **`adb not recognized`**
+        setContentView(tv);
+    }
+}
+```
 
-  * Ensure `platform-tools` is installed and path includes:
+### activity_main.xml
 
-    ```
-    C:\Android\platform-tools
-    ```
+```xml
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical">
 
-* **`findstr not recognized (Windows)`**
+    <TextView
+        android:id="@+id/helloText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello EV Mobile World!"
+        android:textSize="24sp"/>
+</LinearLayout>
+```
 
-  * Add `C:\Windows\System32` to your PATH.
+### AndroidManifest.xml
 
-* **`Java version error`**
+```xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.evcharging.mobile">
 
-  * Must be Java 17. Run:
+    <application
+        android:label="EvMobile"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+```
 
-    ```bash
-    java -version
-    ```
+---
 
