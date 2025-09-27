@@ -50,19 +50,17 @@ namespace EvBackend.Services
             return updatedStation != null ? ToDto(updatedStation) : null;
         }
 
-        public async Task<bool> DeactivateStationAsync(string stationId)
-        {
-            // Business rule: cannot deactivate if active bookings exist
-            if (await HasActiveBookingsAsync(stationId))
-                return false;
+public async Task<bool> DeactivateStationAsync(string stationId)
+{
+    if (await HasActiveBookingsAsync(stationId))
+        throw new InvalidOperationException("Cannot deactivate station with active bookings");
 
-            var filter = Builders<Station>.Filter.Eq(s => s.StationId, stationId);
-            var update = Builders<Station>.Update.Set(s => s.IsActive, false);
+    var filter = Builders<Station>.Filter.Eq(s => s.StationId, stationId);
+    var update = Builders<Station>.Update.Set(s => s.IsActive, false);
 
-            var result = await _stations.UpdateOneAsync(filter, update);
-            return result.ModifiedCount > 0;
-        }
-
+    var result = await _stations.UpdateOneAsync(filter, update);
+    return result.ModifiedCount > 0;
+}
         public async Task<StationDto> GetStationByIdAsync(string stationId)
         {
             var station = await _stations.Find(s => s.StationId == stationId).FirstOrDefaultAsync();
@@ -95,11 +93,16 @@ namespace EvBackend.Services
             return stations.Select(ToDto);
         }
 
-        public async Task<bool> HasActiveBookingsAsync(string stationId)
-        {
-            // TODO: integrate with BookingService
-            return await Task.FromResult(false);
-        }
+public async Task<bool> HasActiveBookingsAsync(string stationId)
+{
+    var bookings = _stations.Database.GetCollection<Booking>("Bookings");
+
+    // Active = Pending or Approved
+    var filter = Builders<Booking>.Filter.Eq(b => b.StationId, stationId) &
+                 Builders<Booking>.Filter.In(b => b.Status, new[] { "Pending", "Approved" });
+
+    return await bookings.Find(filter).AnyAsync();
+}
 
         private static StationDto ToDto(Station station) =>
             new StationDto
