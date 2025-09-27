@@ -15,7 +15,7 @@ using System.Security.Claims;
 namespace EvBackend.Controllers
 {
     [ApiController]
-    [Route("api/owner")]
+    [Route("api/owners")]
     public class EVOwnerController : ControllerBase
     {
         private readonly IEVOwnerService _evOwnerService;
@@ -121,5 +121,72 @@ namespace EvBackend.Controllers
                 return StatusCode(500, new { message = "An unexpected error occurred." });
             }
         }
+
+        [HttpPut("{nic}")]
+        [Authorize(Roles = "Owner")]
+        public async Task<IActionResult> UpdateOwner(string nic, [FromBody] UpdateEVOwnerDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(new { message = "Invalid data." });
+
+            var userNic = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!string.Equals(userNic, nic, StringComparison.OrdinalIgnoreCase))
+                return Forbid();
+
+            try
+            {
+                var updated = await _evOwnerService.UpdateEVOwner(nic, dto);
+                return Ok(updated);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { message = "EV Owner not found." });
+            }
+        }
+
+        [HttpGet("{nic}")]
+        [Authorize(Roles = "Owner,Admin")]
+        public async Task<IActionResult> GetOwner(string nic)
+        {
+            var isOwner = User.IsInRole("OWNER");
+            if (isOwner)
+            {
+                var userNic = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!string.Equals(userNic, nic, StringComparison.OrdinalIgnoreCase))
+                    return Forbid();
+            }
+
+            try
+            {
+                var dto = await _evOwnerService.GetEVOwnerByNIC(nic);
+                return Ok(dto);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { message = "EV Owner not found." });
+            }
+        }
+
+        [HttpPatch("{nic}/deactivate")]
+        [Authorize(Roles = "Owner")]
+        public async Task<IActionResult> DeactivateSelf(string nic)
+        {
+            var userNic = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!string.Equals(userNic, nic, StringComparison.OrdinalIgnoreCase))
+                return Forbid();
+
+            var ok = await _evOwnerService.ChangeEVOwnerStatus(nic, false);
+            if (!ok) return NotFound(new { message = "EV Owner not found." });
+            return Ok(new { message = "Account deactivated." });
+        }
+
+        [HttpPatch("{nic}/activate")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ActivateByBackoffice(string nic)
+        {
+            var ok = await _evOwnerService.ChangeEVOwnerStatus(nic, true);
+            if (!ok) return NotFound(new { message = "EV Owner not found." });
+            return Ok(new { message = "Account activated." });
+        }
+
     }
 }

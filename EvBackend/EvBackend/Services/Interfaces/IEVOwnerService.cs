@@ -14,7 +14,7 @@ namespace EvBackend.Services.Interfaces
         Task<EVOwnerDto> CreateEVOwner(CreateEVOwnerDto dto);
         Task<EVOwnerDto> GetEVOwnerByNIC(string nic);
         Task<IEnumerable<EVOwnerDto>> GetAllEVOwners(int page, int pageSize);
-        Task<EVOwnerDto> UpdateEVOwner(string nic, CreateEVOwnerDto dto);
+        Task<EVOwnerDto> UpdateEVOwner(string nic, UpdateEVOwnerDto dto);
         Task<bool> ChangeEVOwnerStatus(string nic, bool isActive);
     }
 }

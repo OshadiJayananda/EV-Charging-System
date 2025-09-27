@@ -91,23 +91,29 @@ namespace EvBackend.Services
             return Task.FromResult(dto);
         }
 
-        public Task<EVOwnerDto> UpdateEVOwner(string nic, CreateEVOwnerDto dto)
+        public async Task<EVOwnerDto> UpdateEVOwner(string nic, UpdateEVOwnerDto dto)
         {
             var update = Builders<EVOwner>.Update
                 .Set(o => o.FullName, dto.FullName)
-                .Set(o => o.Email, dto.Email)
-                .Set(o => o.NIC, dto.NIC);
-            var result = _owners.UpdateOne(o => o.NIC == nic, update);
-            if (result.MatchedCount == 0) throw new KeyNotFoundException("EV Owner not found");
-            var updatedOwner = _owners.Find(o => o.NIC == dto.NIC).FirstOrDefault();
-            var updatedDto = new EVOwnerDto
+                .Set(o => o.Email, dto.Email);
+
+            var result = await _owners.FindOneAndUpdateAsync(
+                o => o.NIC == nic,
+                update,
+                new FindOneAndUpdateOptions<EVOwner> { ReturnDocument = ReturnDocument.After });
+
+            if (result == null)
+                throw new KeyNotFoundException("EV Owner not found");
+
+            return new EVOwnerDto
             {
-                FullName = updatedOwner.FullName,
-                Email = updatedOwner.Email,
-                IsActive = updatedOwner.IsActive,
-                NIC = updatedOwner.NIC
+                NIC = result.NIC,
+                FullName = result.FullName,
+                Email = result.Email,
+                IsActive = result.IsActive,
+                CreatedAt = result.CreatedAt
             };
-            return Task.FromResult(updatedDto);
         }
+
     }
 }
