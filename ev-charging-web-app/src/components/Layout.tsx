@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { LogOut, Menu, User, X, Bell } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { postRequest, getRequest } from "./common/api";
@@ -15,6 +15,7 @@ const Layout: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const { isAuthenticated, userRole, logout } = useAuth();
   const navigate = useNavigate();
+  const notificationsRef = useRef<HTMLDivElement>(null);
 
   // Fetch notifications and setup SignalR
   useEffect(() => {
@@ -67,6 +68,22 @@ const Layout: React.FC = () => {
   const handleRoleNavigate = () => {
     roleNavigate(userRole, navigate);
   };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target as Node)
+      ) {
+        setShowNotifications(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -179,7 +196,10 @@ const Layout: React.FC = () => {
       {/* Notifications Dropdown (shared for desktop & mobile) */}
       {showNotifications && (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-white shadow-lg rounded-lg w-full max-w-sm mx-4 border">
+          <div
+            ref={notificationsRef}
+            className="bg-white shadow-lg rounded-lg w-full max-w-sm mx-4 border"
+          >
             <div className="p-4 border-b font-bold text-green-700 flex justify-between items-center">
               Notifications
               <button
