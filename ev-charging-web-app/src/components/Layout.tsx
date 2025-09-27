@@ -93,20 +93,6 @@ const Layout: React.FC = () => {
             </button>
           )}
           {isAuthenticated && (
-            <Link
-              to="/profile"
-              className="hover:underline flex items-center gap-1"
-            >
-              <User className="w-5 h-5" />
-              Profile
-            </Link>
-          )}
-          {isAuthenticated && (
-            <button onClick={handleRoleNavigate} className="hover:underline">
-              Dashboard
-            </button>
-          )}
-          {isAuthenticated && (
             <button
               onClick={handleLogout}
               className="ml-4 px-3 py-1 rounded bg-white text-green-700 font-semibold hover:bg-green-100 transition-colors"

@@ -14,6 +14,7 @@ import ProtectedRoute from "./components/common/ProtectedRoute";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
+import ProtectedLayout from "./components/ProtectedLayout";
 
 function App() {
   const location = useLocation();
@@ -53,18 +54,24 @@ function App() {
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute requiredRole="admin" />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route element={<ProtectedLayout />}>
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            </Route>
           </Route>
 
           <Route element={<ProtectedRoute requiredRole="operator" />}>
-            <Route
-              path="/operator/dashboard"
-              element={<CSOperatorDashboard />}
-            />
+            <Route element={<ProtectedLayout />}>
+              <Route
+                path="/operator/dashboard"
+                element={<CSOperatorDashboard />}
+              />
+            </Route>
           </Route>
 
           <Route element={<ProtectedRoute />}>
-            <Route path="/profile" element={<Profile />} />
+            <Route element={<ProtectedLayout />}>
+              <Route path="/profile" element={<Profile />} />
+            </Route>
           </Route>
 
           {/* Catch-all */}
