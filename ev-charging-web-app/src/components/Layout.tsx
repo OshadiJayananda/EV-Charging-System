@@ -79,15 +79,6 @@ const Layout: React.FC = () => {
         {/* Desktop Links */}
         <div className="hidden md:flex space-x-4 items-center">
           {isAuthenticated && (
-            <Link
-              to="/profile"
-              className="hover:underline flex items-center gap-1"
-            >
-              <User className="w-5 h-5" />
-              Profile
-            </Link>
-          )}
-          {isAuthenticated && (
             <button
               onClick={() => setShowNotifications(!showNotifications)}
               className="relative"
@@ -100,6 +91,15 @@ const Layout: React.FC = () => {
                 </span>
               )}
             </button>
+          )}
+          {isAuthenticated && (
+            <Link
+              to="/profile"
+              className="hover:underline flex items-center gap-1"
+            >
+              <User className="w-5 h-5" />
+              Profile
+            </Link>
           )}
           {isAuthenticated && (
             <button onClick={handleRoleNavigate} className="hover:underline">
@@ -132,33 +132,39 @@ const Layout: React.FC = () => {
       </nav>
       {/* Mobile Dropdown Menu */}
       {isOpen && (
-        <div className="fixed top-16 left-0 right-0 bg-green-700 text-white p-4 space-y-2 md:hidden shadow-md z-40">
+        <div className="fixed top-16 left-0 right-0 bg-white text-green-900 p-4 space-y-2 md:hidden shadow-lg z-40 rounded-b-xl border-b border-green-200">
+          {isAuthenticated && (
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
+              aria-label="Show notifications"
+            >
+              <Bell className="w-5 h-5" />
+              <span className="font-semibold">Notifications</span>
+              {notifications.some((n) => !n.isRead) && (
+                <span className="absolute right-6 top-2 bg-red-500 text-white rounded-full text-xs px-2 py-0.5">
+                  {notifications.filter((n) => !n.isRead).length}
+                </span>
+              )}
+            </button>
+          )}
           {isAuthenticated && (
             <Link
               to="/profile"
-              className="block hover:underline flex items-center gap-1"
+              className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
               onClick={() => setIsOpen(false)}
             >
-              Profile
+              <User className="w-5 h-5" />
+              <span className="font-semibold">Profile</span>
             </Link>
           )}
-          {isAuthenticated && userRole === "admin" && (
-            <Link
-              to="/admin/dashboard"
-              className="block hover:underline"
-              onClick={() => setIsOpen(false)}
+          {isAuthenticated && (
+            <button
+              onClick={handleRoleNavigate}
+              className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
             >
-              Admin
-            </Link>
-          )}
-          {isAuthenticated && userRole === "operator" && (
-            <Link
-              to="/operator/dashboard"
-              className="block hover:underline"
-              onClick={() => setIsOpen(false)}
-            >
-              CS Operator
-            </Link>
+              <span className="font-semibold">Dashboard</span>
+            </button>
           )}
           {isAuthenticated && (
             <button
@@ -166,70 +172,73 @@ const Layout: React.FC = () => {
                 handleLogout();
                 setIsOpen(false);
               }}
-              className="block w-full text-left px-3 py-1 rounded bg-green-700 text-white font-semibold hover:bg-green-100 transition-colors mt-2"
+              className="flex items-center gap-2 w-full px-4 py-3 rounded-lg bg-red-50 text-red-700 font-semibold hover:bg-red-100 transition mt-2"
             >
+              <LogOut className="w-5 h-5" />
               Logout
             </button>
           )}
           {!isAuthenticated && (
             <Link
               to="/login"
-              className="block hover:underline"
+              className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
               onClick={() => setIsOpen(false)}
             >
-              Login
+              <span className="font-semibold">Login</span>
             </Link>
           )}
         </div>
       )}
 
-      {/* Notifications Dropdown */}
+      {/* Notifications Dropdown (shared for desktop & mobile) */}
       {showNotifications && (
-        <div className="absolute right-4 top-16 bg-white shadow-lg rounded-lg w-80 z-50 border">
-          <div className="p-4 border-b font-bold text-green-700 flex justify-between items-center">
-            Notifications
-            <button
-              className="text-gray-400 hover:text-gray-600"
-              onClick={() => setShowNotifications(false)}
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="max-h-80 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <div className="p-4 text-gray-500 text-center">
-                No notifications
-              </div>
-            ) : (
-              notifications.map((n) => (
-                <div
-                  key={n.id}
-                  className={`p-4 border-b last:border-b-0 ${
-                    n.isRead ? "bg-gray-50" : "bg-green-50"
-                  }`}
-                >
-                  <div className="font-medium">{n.message}</div>
-                  <div className="text-xs text-gray-400">
-                    {new Date(n.createdAt).toLocaleString()}
-                  </div>
-                  {!n.isRead && (
-                    <button
-                      className="mt-2 text-xs text-green-600 hover:underline"
-                      onClick={async () => {
-                        await postRequest(`/notifications/${n.id}/read`);
-                        setNotifications((prev) =>
-                          prev.map((x) =>
-                            x.id === n.id ? { ...x, isRead: true } : x
-                          )
-                        );
-                      }}
-                    >
-                      Mark as read
-                    </button>
-                  )}
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+          <div className="bg-white shadow-lg rounded-lg w-full max-w-sm mx-4 border">
+            <div className="p-4 border-b font-bold text-green-700 flex justify-between items-center">
+              Notifications
+              <button
+                className="text-gray-400 hover:text-gray-600"
+                onClick={() => setShowNotifications(false)}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="max-h-80 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="p-4 text-gray-500 text-center">
+                  No notifications
                 </div>
-              ))
-            )}
+              ) : (
+                notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    className={`p-4 border-b last:border-b-0 ${
+                      n.isRead ? "bg-gray-50" : "bg-green-50"
+                    }`}
+                  >
+                    <div className="font-medium">{n.message}</div>
+                    <div className="text-xs text-gray-400">
+                      {new Date(n.createdAt).toLocaleString()}
+                    </div>
+                    {!n.isRead && (
+                      <button
+                        className="mt-2 text-xs text-green-600 hover:underline"
+                        onClick={async () => {
+                          await postRequest(`/notifications/${n.id}/read`);
+                          setNotifications((prev) =>
+                            prev.map((x) =>
+                              x.id === n.id ? { ...x, isRead: true } : x
+                            )
+                          );
+                        }}
+                      >
+                        Mark as read
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}
