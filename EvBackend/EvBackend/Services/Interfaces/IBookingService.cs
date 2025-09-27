@@ -1,6 +1,6 @@
 // --------------------------------------------------------------
 // File Name: IBookingService.cs
-// Author: Hewage N M
+// Author: Miyuri Lokuhewage
 // Description: Defines contract for booking management service.
 // Updated to support simplified booking creation: station + connectorType
 // instead of direct slotId, and enforce role-based workflows.

@@ -1,6 +1,6 @@
 // --------------------------------------------------------------
 // File Name: StationController.cs
-// Author: Denuwan Sathsara (merged by Miyuri LOkuhewage)
+// Author: Denuwan Sathsara
 // Description: Unified controller for station and slot management.
 // Includes station CRUD, slot CRUD, and slot availability updates.
 // Created/Updated On: 27/09/2025

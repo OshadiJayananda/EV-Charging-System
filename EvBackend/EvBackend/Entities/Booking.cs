@@ -1,3 +1,12 @@
+// --------------------------------------------------------------
+// File Name: Booking.cs
+// Author: Miyuri Lokuhewage
+// Description: Database entity representing booking details.
+// Created On: 26/09/2025
+// --------------------------------------------------------------
+
+
+
 using System;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;

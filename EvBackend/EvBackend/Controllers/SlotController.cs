@@ -1,6 +1,6 @@
 // --------------------------------------------------------------
 // File Name: SlotController.cs
-// Author: Hewage N M (refined by ChatGPT)
+// Author: Miyuri Lokuhewage
 // Description: Provides endpoints for slot management under stations.
 // Roles: Admin, Backoffice, Operator, Owner (read-only).
 // Includes consistent error handling (400/404/409).

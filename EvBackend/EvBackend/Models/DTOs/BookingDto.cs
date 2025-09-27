@@ -1,6 +1,6 @@
 // --------------------------------------------------------------
 // File Name: BookingDto.cs
-// Author: Hewage N M
+// Author: Miyuri Lokuhewage
 // Description: DTOs for booking management. Simplified so that owners
 // only provide stationId, connectorType, and time range. OwnerId comes
 // from JWT and slot is auto-selected by backend.

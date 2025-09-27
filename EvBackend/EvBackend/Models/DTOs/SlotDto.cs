@@ -1,6 +1,6 @@
 // --------------------------------------------------------------
 // File Name: SlotDto.cs
-// Author: Hewage N M
+// Author: Miyuri Lokuhewage
 // Description: DTOs for slot management. Cleaned to separate creation,
 // updates, and response DTOs.
 // Created/Updated On: 27/09/2025

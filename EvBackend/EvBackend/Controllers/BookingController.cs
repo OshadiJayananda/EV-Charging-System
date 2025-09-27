@@ -1,6 +1,6 @@
 // --------------------------------------------------------------
 // File Name: BookingController.cs
-// Author: Hewage N M (refined by ChatGPT)
+// Author: Miyuri Lokuhewage
 // Description: Booking management endpoints (Owners, Operators, Admins).
 // Owners can create/update/cancel their own bookings,
 // Operators approve/finalize bookings in their station,

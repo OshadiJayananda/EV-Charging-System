@@ -1,6 +1,6 @@
 // --------------------------------------------------------------
 // File Name: BookingService.cs
-// Author: Hewage N M
+// Author: Miyuri Lokuhewage
 // Description: Implements booking management logic.
 // Owners request station + connectorType, service finds free slot,
 // creates booking, and enforces business rules.
