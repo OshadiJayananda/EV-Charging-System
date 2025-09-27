@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository
+      # Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -19,16 +19,16 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x'  # change to your .NET version
+          dotnet-version: '8.0.x'  # or your project version
 
       # Restore dependencies
       - name: Restore dependencies
-        run: cd EvBackend && dotnet restore
+        run: dotnet restore EvBackend.sln
 
-      # Build the project
-      - name: Build
-        run: cd EvBackend && dotnet build --no-restore --configuration Release
+      # Build the solution
+      - name: Build solution
+        run: dotnet build EvBackend.sln --configuration Debug --no-restore
 
       # Run tests
-      - name: Run tests
-        run: cd EvBackend && dotnet test --no-build --verbosity normal
+      - name: Run unit tests
+        run: dotnet test EvBackend.Tests/EvBackend.Tests.csproj --no-build --verbosity normal
