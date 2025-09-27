@@ -79,7 +79,7 @@ namespace EvBackend.Services
 
             // Try to find user in EVOwners collection
             var evOwner = await _evOwners.Find(o => o.Email == loginDto.Email).FirstOrDefaultAsync();
-            if (evOwner != null && evOwner.IsActive)
+            if (evOwner != null)
             {
                 if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, evOwner.PasswordHash))
                     throw new AuthenticationException("Invalid credentials");
