@@ -28,6 +28,7 @@ namespace EvBackend.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> RegisterOwner([FromBody] CreateEVOwnerDto createEVOwnerDto)
         {
+            // Inline: Validates model and delegates to EV Owner service to create owner account.
             if (!ModelState.IsValid)
             {
                 return BadRequest(new { message = "Invalid owner registration data." });
@@ -56,6 +57,7 @@ namespace EvBackend.Controllers
         [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> ChangeEVOwnerStatus(string? nic, [FromQuery] bool isActivate)
         {
+            // Inline: Handles role-based activation/deactivation rules for owners and admins.
             // Admins can only activate
             if (User.IsInRole("Admin"))
             {

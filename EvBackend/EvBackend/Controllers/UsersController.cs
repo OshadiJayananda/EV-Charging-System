@@ -49,6 +49,7 @@ namespace EvBackend.Controllers
 
         [HttpGet("{userId}")]
         [Authorize(Roles = "Admin,Operator")]
+                // --------------------------------------------------------------
         public async Task<IActionResult> GetUserById(string userId)
         {
             try
