@@ -21,6 +21,9 @@ jobs:
         with:
           dotnet-version: '8.0.x'  # or your project version
 
+      - name: Change directory to EvBackend
+        run: cd EvBackend
+
       # Restore dependencies
       - name: Restore dependencies
         run: dotnet restore EvBackend.sln
