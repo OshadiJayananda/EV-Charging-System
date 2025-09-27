@@ -23,7 +23,6 @@ namespace EvBackend.Models.DTOs
         [Required]
         [EmailAddress]
         public string Email { get; set; }
-        public string PasswordHash { get; set; }
         [Required]
         [EnumDataType(typeof(UserRole), ErrorMessage = "Role must be either 'Admin' or 'Operator'.")]
         public string Role { get; set; }
