@@ -23,12 +23,12 @@ jobs:
 
       # Restore dependencies
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore EvBackend.sln
 
       # Build the project
       - name: Build
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build EvBackend.sln --no-restore --configuration Release
 
       # Run tests
       - name: Run tests
-        run: dotnet test --no-build --verbosity normal
+        run: dotnet test EvBackend.sln --no-build --verbosity normal
