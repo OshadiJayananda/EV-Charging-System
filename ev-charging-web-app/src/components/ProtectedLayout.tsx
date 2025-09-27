@@ -13,7 +13,7 @@ export default function ProtectedLayout() {
   return (
     <div className="flex min-h-[calc(100vh-8vh)]">
       {/* Sidebar (only desktop) */}
-      <aside className="hidden md:flex flex-col w-64 bg-gray-100 p-4">
+      <aside className="hidden md:flex flex-col w-64 bg-gray-100 p-4 shadow-lg border-r border-gray-200">
         <nav className="flex flex-col space-y-2">
           <NavLink
             to={roleRoute(userRole)}
