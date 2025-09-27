@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace EvBackend.Tests.Unit
 {
@@ -15,12 +16,16 @@ namespace EvBackend.Tests.Unit
         private Mock<IUserService> mockUserService;
         private Mock<IEVOwnerService> mockEvOwnerService;
         private UsersController controller;
+        private readonly Mock<ILogger<UsersController>> mockLogger;
+
 
         public UsersControllerTests()
         {
             mockUserService = new Mock<IUserService>();
             mockEvOwnerService = new Mock<IEVOwnerService>();
-            controller = new UsersController(mockUserService.Object, mockEvOwnerService.Object);
+            mockLogger = new Mock<ILogger<UsersController>>();
+
+            controller = new UsersController(mockUserService.Object, mockEvOwnerService.Object, mockLogger.Object);
         }
 
         [Fact]
