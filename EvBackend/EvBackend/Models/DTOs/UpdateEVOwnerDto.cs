@@ -13,7 +13,7 @@ namespace EvBackend.Models.DTOs
     {
         [Required] public string FullName { get; set; }
         [Required, EmailAddress] public string Email { get; set; }
-        // No NIC here (cannot change PK)
+        [Required, Phone] public string Phone { get; set; }
     }
 
 }

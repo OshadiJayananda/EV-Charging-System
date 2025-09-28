@@ -21,7 +21,10 @@ namespace EvBackend.Models.DTOs
         [Required]
         [EmailAddress]
         public string Email { get; set; }
+        [Required, Phone]
+        public string Phone { get; set; }
         public bool IsActive { get; set; } = false;
+        public bool ReactivationRequested { get; set; } = false;
         public DateTime CreatedAt { get; set; }
     }
 }

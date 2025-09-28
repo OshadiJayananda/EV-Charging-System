@@ -22,11 +22,17 @@ namespace EvBackend.Entities
         [BsonElement("email")]
         public string Email { get; set; }
 
+        [BsonElement("phone")]
+        public string Phone { get; set; }
+
         [BsonElement("passwordHash")]
         public string PasswordHash { get; set; }
 
         [BsonElement("isActive")]
         public bool IsActive { get; set; } = false;
+
+        [BsonElement("reactivationRequested")]
+        public bool ReactivationRequested { get; set; } = false;
 
         [BsonElement("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

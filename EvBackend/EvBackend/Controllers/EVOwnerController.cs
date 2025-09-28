@@ -188,5 +188,30 @@ namespace EvBackend.Controllers
             return Ok(new { message = "Account activated." });
         }
 
+        [HttpPatch("{nic}/request-reactivation")]
+        [Authorize(Roles = "Owner")]
+        public async Task<IActionResult> RequestReactivation(string nic)
+        {
+            var userNic = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!string.Equals(userNic, nic, StringComparison.OrdinalIgnoreCase))
+                return Forbid();
+
+            try
+            {
+                var ok = await _evOwnerService.RequestReactivation(nic);
+                if (!ok) return BadRequest(new { message = "Could not request reactivation." });
+                return Ok(new { message = "Reactivation request submitted successfully." });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { message = "EV Owner not found." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+
     }
 }
