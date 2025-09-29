@@ -1,5 +1,7 @@
 package com.evcharging.mobile;
 
+import static androidx.core.content.ContextCompat.startActivity;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -40,28 +42,34 @@ public class RegistrationActivity extends AppCompatActivity {
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString();
         String confirmPassword = etConfirmPassword.getText().toString();
-
+        
+        boolean isValid = true;
+        
         if (TextUtils.isEmpty(name)) {
             etName.setError("Name is required");
             etName.requestFocus();
-            return;
+            isValid = false;
         }
 
         if (TextUtils.isEmpty(email)) {
             etEmail.setError("Email is required");
             etEmail.requestFocus();
-            return;
+            isValid = false;
         }
 
         if (TextUtils.isEmpty(password)) {
             etPassword.setError("Password is required");
             etPassword.requestFocus();
-            return;
+            isValid = false;
         }
 
         if (!password.equals(confirmPassword)) {
             etConfirmPassword.setError("Passwords do not match");
             etConfirmPassword.requestFocus();
+            isValid = false;
+        }
+
+        if (!isValid) {
             return;
         }
 
