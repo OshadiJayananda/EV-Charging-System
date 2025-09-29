@@ -68,6 +68,33 @@ public class ApiClient {
         }
     }
 
+    // register
+    public ApiResponse register(String name, String email, String password) {
+        try {
+            JSONObject registerData = new JSONObject();
+            registerData.put("name", name);
+            registerData.put("email", email);
+            registerData.put("password", password);
+            RequestBody body = RequestBody.create(registerData.toString(), JSON);
+            Request request = new Request.Builder()
+                    .url(BASE_URL + "/auth/register")
+                    .post(body)
+                    .build();
+            Response response = client.newCall(request).execute();
+            String responseBody = response.body().string();
+            if (response.isSuccessful()) {
+                return new ApiResponse(true, "Registration successful", null);
+            } else {
+                JSONObject errorResponse = new JSONObject(responseBody);
+                String errorMessage = errorResponse.optString("message", "Registration failed");
+                return new ApiResponse(false, errorMessage, null);
+            }
+        } catch (IOException | JSONException e) {
+            Log.e(TAG, "Error during registration", e);
+            return new ApiResponse(false, "Network or parsing error", null);
+        }
+    }
+
     // GET request
     public ApiResponse get(String endpoint) {
         try {
