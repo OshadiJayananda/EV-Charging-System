@@ -11,7 +11,7 @@ namespace EvBackend.Services.Interfaces
     {
         Task SendNotification(string userId, string message);
         Task<List<Notification>> GetUserNotifications(string userId);
-        // Task<List<Notification>> GetOwnerNotifications(string nic);
+        Task<List<Notification>> GetOwnerNotifications(string nic);
         Task MarkNotificationAsRead(string notificationId);
         Task DeleteNotification(string notificationId);
         Task SendNotificationToAdmins(string message);

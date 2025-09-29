@@ -59,5 +59,12 @@ namespace EvBackend.Services
                 await SendNotification(admin.Id, message);
             }
         }
+
+        public async Task<List<Notification>> GetOwnerNotifications(string nic)
+        {
+            return await _notifications.Find(n => n.UserId == nic)
+                .SortByDescending(n => n.CreatedAt)
+                .ToListAsync();
+        }
     }
 }

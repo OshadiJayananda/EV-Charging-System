@@ -98,8 +98,7 @@ namespace EvBackend.Controllers
             {
                 var result = await _evOwnerService.ChangeEVOwnerStatus(nic, isActivate);
 
-
-                if (result == null)
+                if (!result)
                 {
                     return NotFound(new { message = "EV Owner not found." });
                 }
