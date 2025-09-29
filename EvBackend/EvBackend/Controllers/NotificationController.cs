@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using MongoDB.Driver;
-using EvBackend.Hubs;
+using EvBackend.Services.Interfaces;
+using EvBackend.Entities;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EvBackend.Controllers
 {
@@ -9,53 +9,46 @@ namespace EvBackend.Controllers
     [Route("api/notifications")]
     public class NotificationController : ControllerBase
     {
-        private readonly IMongoCollection<Notification> _notifications;
-        private readonly IHubContext<NotificationHub> _hubContext;
+        private readonly INotificationService _notificationService;
 
-        public NotificationController(IMongoDatabase db, IHubContext<NotificationHub> hubContext)
+        public NotificationController(INotificationService notificationService)
         {
-            _notifications = db.GetCollection<Notification>("Notifications");
-            _hubContext = hubContext;
+            _notificationService = notificationService;
         }
 
         // POST /api/notifications
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> SendNotification([FromBody] Notification notification)
         {
-            notification.CreatedAt = DateTime.UtcNow;
-            notification.IsRead = false;
-            await _notifications.InsertOneAsync(notification);
-
-            // Send to user via SignalR
-            await _hubContext.Clients.User(notification.UserId).SendAsync("ReceiveNotification", notification);
-
+            await _notificationService.SendNotification(notification.UserId, notification.Message);
             return Ok(notification);
         }
 
         // GET /api/notifications/user/{userId}
         [HttpGet("user/{userId}")]
+        [Authorize]
         public async Task<IActionResult> GetUserNotifications(string userId)
         {
-            var notifications = await _notifications.Find(n => n.UserId == userId)
-                .SortByDescending(n => n.CreatedAt)
-                .ToListAsync();
+            var notifications = await _notificationService.GetUserNotifications(userId);
             return Ok(notifications);
         }
 
         // PATCH /api/notifications/{notificationId}/read
         [HttpPatch("{notificationId}/read")]
+        [Authorize]
         public async Task<IActionResult> MarkNotificationAsRead(string notificationId)
         {
-            var update = Builders<Notification>.Update.Set(n => n.IsRead, true);
-            await _notifications.UpdateOneAsync(n => n.Id == notificationId, update);
+            await _notificationService.MarkNotificationAsRead(notificationId);
             return Ok();
         }
 
         // DELETE /api/notifications/{notificationId}
         [HttpDelete("{notificationId}")]
+        [Authorize]
         public async Task<IActionResult> DeleteNotification(string notificationId)
         {
-            await _notifications.DeleteOneAsync(n => n.Id == notificationId);
+            await _notificationService.DeleteNotification(notificationId);
             return Ok();
         }
     }

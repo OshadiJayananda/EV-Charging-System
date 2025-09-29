@@ -44,7 +44,8 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ICSOperatorService, CSOperatorService>();
 builder.Services.AddScoped<IEVOwnerService, EVOwnerService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<EvBackend.Services.Interfaces.IBookingService, EvBackend.Services.BookingService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Controllers
 builder.Services.AddControllers();

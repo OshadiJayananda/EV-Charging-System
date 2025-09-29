@@ -19,10 +19,12 @@ namespace EvBackend.Controllers
     public class EVOwnerController : ControllerBase
     {
         private readonly IEVOwnerService _evOwnerService;
+        private readonly INotificationService _notificationService;
 
-        public EVOwnerController(IEVOwnerService evOwnerService)
+        public EVOwnerController(IEVOwnerService evOwnerService, INotificationService notificationService)
         {
             _evOwnerService = evOwnerService;
+            _notificationService = notificationService;
         }
 
         [HttpPost("register")]
@@ -95,6 +97,7 @@ namespace EvBackend.Controllers
             try
             {
                 var result = await _evOwnerService.ChangeEVOwnerStatus(nic, isActivate);
+
 
                 if (result == null)
                 {

@@ -17,17 +17,32 @@ namespace EvBackend.Services
     public class EVOwnerService : IEVOwnerService
     {
         private readonly IMongoCollection<EVOwner> _owners;
+        private readonly INotificationService _notificationService;
 
-        public EVOwnerService(IMongoDatabase database, IOptions<MongoDbSettings> settings)
+        public EVOwnerService(IMongoDatabase database, IOptions<MongoDbSettings> settings, INotificationService notificationService)
         {
             _owners = database.GetCollection<EVOwner>(settings.Value.EVOwnersCollectionName);
+            _notificationService = notificationService;
         }
 
-        public Task<bool> ChangeEVOwnerStatus(string nic, bool isActive)
+        public async Task<bool> ChangeEVOwnerStatus(string nic, bool isActive)
         {
             var update = Builders<EVOwner>.Update.Set(o => o.IsActive, isActive);
-            var result = _owners.UpdateOne(o => o.NIC == nic, update);
-            return Task.FromResult(result.ModifiedCount > 0);
+            var result = await _owners.UpdateOneAsync(o => o.NIC == nic, update);
+
+            var owner = await _owners.Find(o => o.NIC == nic).FirstOrDefaultAsync();
+            string evOwnerName = owner?.FullName ?? "Unknown";
+
+            if (isActive)
+            {
+                await _notificationService.SendNotification(nic, "Your account has been activated.");
+            }
+            else
+            {
+                await _notificationService.SendNotification(nic, "Your account has been deactivated.");
+                await _notificationService.SendNotificationToAdmins($"EV owner {evOwnerName} account deactivated.");
+            }
+            return result.ModifiedCount > 0;
         }
 
         public async Task<EVOwnerDto> CreateEVOwner(CreateEVOwnerDto dto)
