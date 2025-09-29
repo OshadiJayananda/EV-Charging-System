@@ -34,7 +34,7 @@ namespace EvBackend.Controllers
 
         // Create station - Admin or Backoffice only
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateStation([FromBody] CreateStationDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.Location))
@@ -89,7 +89,7 @@ namespace EvBackend.Controllers
                 Console.WriteLine(ex);
                 return StatusCode(500, new { message = "Unexpected error" });
             }
-}
+        }
 
         // Get station by id
         [HttpGet("{stationId}")]
@@ -130,6 +130,24 @@ namespace EvBackend.Controllers
             }
             catch (Exception ex) { Console.WriteLine(ex); return StatusCode(500, new { message = "Unexpected error" }); }
         }
+
+        [HttpGet("nearby")]
+        [Authorize] // Optional: can restrict to logged-in users
+        public async Task<IActionResult> GetNearbyStations([FromQuery] double latitude, [FromQuery] double longitude, [FromQuery] double radiusKm = 5)
+        {
+            try
+            {
+                var result = await _stationService.GetNearbyStationsAsync(latitude, longitude, radiusKm);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500, new { message = "Unexpected error" });
+            }
+        }
+
+
 
         // ---------------------------
         // 🔌 Slot Endpoints
@@ -194,7 +212,8 @@ namespace EvBackend.Controllers
                 var slot = await slots.Find(s => s.SlotId == slotId && s.StationId == stationId).FirstOrDefaultAsync();
                 if (slot == null) return NotFound(new { message = "Slot not found" });
 
-                return Ok(new SlotDto {
+                return Ok(new SlotDto
+                {
                     SlotId = slot.SlotId,
                     StationId = slot.StationId,
                     ConnectorType = slot.ConnectorType,

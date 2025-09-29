@@ -27,103 +27,103 @@ namespace EvBackend.Services
         // ---------------------------
         // 📌 Create Booking
         // ---------------------------
-public async Task<BookingDto> CreateBookingAsync(CreateBookingDto dto, string ownerId)
-{
-    if (dto.StartTime >= dto.EndTime)
-        throw new ArgumentException("StartTime must be before EndTime");
+        public async Task<BookingDto> CreateBookingAsync(CreateBookingDto dto, string ownerId)
+        {
+            if (dto.StartTime >= dto.EndTime)
+                throw new ArgumentException("StartTime must be before EndTime");
 
-        // ✅ 7-day validation
-    if (dto.StartTime > DateTime.UtcNow.AddDays(7))
-        throw new InvalidOperationException("Bookings can only be made within 7 days from today");
+            // ✅ 7-day validation
+            if (dto.StartTime > DateTime.UtcNow.AddDays(7))
+                throw new InvalidOperationException("Bookings can only be made within 7 days from today");
 
-    if (dto.StartTime < DateTime.UtcNow)
-        throw new InvalidOperationException("Booking start time cannot be in the past");
+            if (dto.StartTime < DateTime.UtcNow)
+                throw new InvalidOperationException("Booking start time cannot be in the past");
 
-    var stations = _db.GetCollection<Station>("Stations");
-    var station = await stations.Find(s => s.StationId == dto.StationId).FirstOrDefaultAsync();
+            var stations = _db.GetCollection<Station>("Stations");
+            var station = await stations.Find(s => s.StationId == dto.StationId).FirstOrDefaultAsync();
 
-    if (station == null) throw new ArgumentException("Station not found");
-    if (!station.IsActive) throw new InvalidOperationException("Station is not active");
+            if (station == null) throw new ArgumentException("Station not found");
+            if (!station.IsActive) throw new InvalidOperationException("Station is not active");
 
-    var slots = _db.GetCollection<Slot>("Slots");
-    
-    // ✅ Capacity vs slot count validation
-    var totalSlots = await slots.CountDocumentsAsync(s => s.StationId == dto.StationId);
-    if (totalSlots < station.Capacity)
-    {
-        throw new InvalidOperationException(
-            $"Station capacity is {station.Capacity}, but only {totalSlots} slots have been created. Please contact operator.");
-    }
+            var slots = _db.GetCollection<Slot>("Slots");
 
-    // 🔎 Find an Available slot of requested type
+            // ✅ Capacity vs slot count validation
+            var totalSlots = await slots.CountDocumentsAsync(s => s.StationId == dto.StationId);
+            if (totalSlots < station.Capacity)
+            {
+                throw new InvalidOperationException(
+                    $"Station capacity is {station.Capacity}, but only {totalSlots} slots have been created. Please contact operator.");
+            }
+
+            // 🔎 Find an Available slot of requested type
             var freeSlot = await slots.Find(s =>
         s.StationId == dto.StationId &&
         s.ConnectorType == dto.ConnectorType &&
         s.Status == "Available").FirstOrDefaultAsync();
 
-    if (freeSlot == null)
-        throw new InvalidOperationException($"No available {dto.ConnectorType} slots in this station. Try another time or slot type.");
+            if (freeSlot == null)
+                throw new InvalidOperationException($"No available {dto.ConnectorType} slots in this station. Try another time or slot type.");
 
-    // TODO: check overlapping bookings for same slot/time
+            // TODO: check overlapping bookings for same slot/time
 
-    var now = DateTime.UtcNow;
-    var bookings = _db.GetCollection<Booking>("Bookings");
+            var now = DateTime.UtcNow;
+            var bookings = _db.GetCollection<Booking>("Bookings");
 
-    var newBooking = new Booking
-    {
-        BookingId = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
-        StationId = dto.StationId,
-        SlotId = freeSlot.SlotId,
-        OwnerId = ownerId,
-        Status = "Pending",
-        StartTime = dto.StartTime,
-        EndTime = dto.EndTime,
-        CreatedAt = now,
-        UpdatedAt = now
-    };
+            var newBooking = new Booking
+            {
+                BookingId = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
+                StationId = dto.StationId,
+                SlotId = freeSlot.SlotId,
+                OwnerId = ownerId,
+                Status = "Pending",
+                StartTime = dto.StartTime,
+                EndTime = dto.EndTime,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
 
-    // ✅ Generate QR Code only if slot found
-    var token = Guid.NewGuid().ToString();
-    var expiresAt = dto.StartTime > DateTime.UtcNow.AddMinutes(15)
-        ? DateTime.UtcNow.AddMinutes(15)
-        : dto.StartTime;
+            // ✅ Generate QR Code only if slot found
+            var token = Guid.NewGuid().ToString();
+            var expiresAt = dto.StartTime > DateTime.UtcNow.AddMinutes(15)
+                ? DateTime.UtcNow.AddMinutes(15)
+                : dto.StartTime;
 
-    using var qrGen = new QRCoder.QRCodeGenerator();
-    var qrData = qrGen.CreateQrCode(token, QRCoder.QRCodeGenerator.ECCLevel.Q);
-    var pngQr = new QRCoder.PngByteQRCode(qrData);
-    var bytes = pngQr.GetGraphic(20);
-    string base64 = Convert.ToBase64String(bytes);
+            using var qrGen = new QRCoder.QRCodeGenerator();
+            var qrData = qrGen.CreateQrCode(token, QRCoder.QRCodeGenerator.ECCLevel.Q);
+            var pngQr = new QRCoder.PngByteQRCode(qrData);
+            var bytes = pngQr.GetGraphic(20);
+            string base64 = Convert.ToBase64String(bytes);
 
-    newBooking.QrCode = token;
-    newBooking.QrExpiresAt = expiresAt;
-    newBooking.QrImageBase64 = base64;
+            newBooking.QrCode = token;
+            newBooking.QrExpiresAt = expiresAt;
+            newBooking.QrImageBase64 = base64;
 
-    await bookings.InsertOneAsync(newBooking);
+            await bookings.InsertOneAsync(newBooking);
 
-    // Mark slot as booked
-    var update = Builders<Slot>.Update
-        .Set(s => s.Status, "Booked")
-        .Set(s => s.StartTime, dto.StartTime)
-        .Set(s => s.EndTime, dto.EndTime);
+            // Mark slot as booked
+            var update = Builders<Slot>.Update
+                .Set(s => s.Status, "Booked")
+                .Set(s => s.StartTime, dto.StartTime)
+                .Set(s => s.EndTime, dto.EndTime);
 
-    await slots.UpdateOneAsync(s => s.SlotId == freeSlot.SlotId, update);
+            await slots.UpdateOneAsync(s => s.SlotId == freeSlot.SlotId, update);
 
-    return new BookingDto
-    {
-        BookingId = newBooking.BookingId,
-        StationId = newBooking.StationId,
-        SlotId = newBooking.SlotId,
-        OwnerId = newBooking.OwnerId,
-        Status = newBooking.Status,
-        StartTime = newBooking.StartTime,
-        EndTime = newBooking.EndTime,
-        CreatedAt = newBooking.CreatedAt,
-        UpdatedAt = newBooking.UpdatedAt,
-        QrCode = newBooking.QrCode,
-        QrExpiresAt = newBooking.QrExpiresAt,
-        QrImageBase64 = newBooking.QrImageBase64
-    };
-}
+            return new BookingDto
+            {
+                BookingId = newBooking.BookingId,
+                StationId = newBooking.StationId,
+                SlotId = newBooking.SlotId,
+                OwnerId = newBooking.OwnerId,
+                Status = newBooking.Status,
+                StartTime = newBooking.StartTime,
+                EndTime = newBooking.EndTime,
+                CreatedAt = newBooking.CreatedAt,
+                UpdatedAt = newBooking.UpdatedAt,
+                QrCode = newBooking.QrCode,
+                QrExpiresAt = newBooking.QrExpiresAt,
+                QrImageBase64 = newBooking.QrImageBase64
+            };
+        }
 
         // ---------------------------
         // 📌 Update Booking
@@ -205,18 +205,18 @@ public async Task<BookingDto> CreateBookingAsync(CreateBookingDto dto, string ow
 
             return new BookingDto
             {
-                    BookingId = b.BookingId,
-                    StationId = b.StationId,
-                    SlotId = b.SlotId,
-                    OwnerId = b.OwnerId,
-                    Status = b.Status,
-                    StartTime = b.StartTime,
-                    EndTime = b.EndTime,
-                    CreatedAt = b.CreatedAt,
-                    UpdatedAt = b.UpdatedAt,
-                    QrCode = b.QrCode,
-                    QrExpiresAt = b.QrExpiresAt,
-                    QrImageBase64 = b.QrImageBase64
+                BookingId = b.BookingId,
+                StationId = b.StationId,
+                SlotId = b.SlotId,
+                OwnerId = b.OwnerId,
+                Status = b.Status,
+                StartTime = b.StartTime,
+                EndTime = b.EndTime,
+                CreatedAt = b.CreatedAt,
+                UpdatedAt = b.UpdatedAt,
+                QrCode = b.QrCode,
+                QrExpiresAt = b.QrExpiresAt,
+                QrImageBase64 = b.QrImageBase64
             };
         }
 
@@ -227,18 +227,19 @@ public async Task<BookingDto> CreateBookingAsync(CreateBookingDto dto, string ow
 
             return list.Select(b => new BookingDto
             {
-                    BookingId = b.BookingId,
-                    StationId = b.StationId,
-                    SlotId = b.SlotId,
-                    OwnerId = b.OwnerId,
-                    Status = b.Status,
-                    StartTime = b.StartTime,
-                    EndTime = b.EndTime,
-                    CreatedAt = b.CreatedAt,
-                    UpdatedAt = b.UpdatedAt,
-                    QrCode = b.QrCode,
-                    QrExpiresAt = b.QrExpiresAt,
-                    QrImageBase64 = b.QrImageBase64            });
+                BookingId = b.BookingId,
+                StationId = b.StationId,
+                SlotId = b.SlotId,
+                OwnerId = b.OwnerId,
+                Status = b.Status,
+                StartTime = b.StartTime,
+                EndTime = b.EndTime,
+                CreatedAt = b.CreatedAt,
+                UpdatedAt = b.UpdatedAt,
+                QrCode = b.QrCode,
+                QrExpiresAt = b.QrExpiresAt,
+                QrImageBase64 = b.QrImageBase64
+            });
         }
 
         public async Task<IEnumerable<BookingDto>> GetBookingsByStationAsync(string stationId)
@@ -248,18 +249,19 @@ public async Task<BookingDto> CreateBookingAsync(CreateBookingDto dto, string ow
 
             return list.Select(b => new BookingDto
             {
-                    BookingId = b.BookingId,
-                    StationId = b.StationId,
-                    SlotId = b.SlotId,
-                    OwnerId = b.OwnerId,
-                    Status = b.Status,
-                    StartTime = b.StartTime,
-                    EndTime = b.EndTime,
-                    CreatedAt = b.CreatedAt,
-                    UpdatedAt = b.UpdatedAt,
-                    QrCode = b.QrCode,
-                    QrExpiresAt = b.QrExpiresAt,
-                    QrImageBase64 = b.QrImageBase64            });
+                BookingId = b.BookingId,
+                StationId = b.StationId,
+                SlotId = b.SlotId,
+                OwnerId = b.OwnerId,
+                Status = b.Status,
+                StartTime = b.StartTime,
+                EndTime = b.EndTime,
+                CreatedAt = b.CreatedAt,
+                UpdatedAt = b.UpdatedAt,
+                QrCode = b.QrCode,
+                QrExpiresAt = b.QrExpiresAt,
+                QrImageBase64 = b.QrImageBase64
+            });
         }
 
         // ---------------------------
@@ -329,5 +331,20 @@ public async Task<BookingDto> CreateBookingAsync(CreateBookingDto dto, string ow
 
             return (base64, expiresAt);
         }
+
+        public async Task<long> CountPendingBookingsAsync()
+        {
+            var bookings = _db.GetCollection<Booking>("Bookings");
+            return await bookings.CountDocumentsAsync(b => b.Status == "Pending");
+        }
+
+        public async Task<long> CountApprovedFutureBookingsAsync()
+        {
+            var bookings = _db.GetCollection<Booking>("Bookings");
+            return await bookings.CountDocumentsAsync(
+                b => b.Status == "Approved" && b.StartTime > DateTime.UtcNow
+            );
+        }
+
     }
 }
