@@ -1,1 +1,7 @@
-<resources></resources>
+<resources>
+    <string name="txtLoginTitle">EV Charging App Login</string>
+    <string name="txtLogin">Login</string>
+    <string name="hntEmail">Email</string>
+    <string name="hntPassword">Password</string>
+    <string name="txtNoAccount">"Don't have an account? Register"</string>
+</resources>
