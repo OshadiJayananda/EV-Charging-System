@@ -21,13 +21,15 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
+        working-directory: ./ev-charging-web-app
         run: npm ci
 
       - name: Build
+        working-directory: ./ev-charging-web-app
         run: npm run build
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+          publish_dir: ./ev-charging-web-app/dist

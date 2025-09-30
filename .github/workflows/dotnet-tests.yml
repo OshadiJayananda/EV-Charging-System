@@ -2,9 +2,9 @@ name: .NET Unit Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build-and-test:
@@ -19,7 +19,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x'  # adjust if needed
+          dotnet-version: "8.0.x"
 
       # Restore dependencies
       - name: Restore dependencies
