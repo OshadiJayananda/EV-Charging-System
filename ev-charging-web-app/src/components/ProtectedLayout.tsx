@@ -34,17 +34,7 @@ export default function ProtectedLayout() {
             <LayoutDashboard className="w-5 h-5" />
             Dashboard
           </NavLink>
-          <NavLink
-            to="/profile"
-            className={({ isActive }) =>
-              `flex items-center gap-2 px-4 py-2 rounded-lg transition ${
-                isActive ? "bg-green-600 text-white" : "hover:bg-green-100"
-              }`
-            }
-          >
-            <User className="w-5 h-5" />
-            Profile
-          </NavLink>
+
           {userRole === "admin" && (
             <NavLink
               to="/admin/users"
@@ -58,7 +48,6 @@ export default function ProtectedLayout() {
               User Management
             </NavLink>
           )}
-          {/* station management also */}
           {userRole === "admin" && (
             <NavLink
               to="/admin/stations"
@@ -73,7 +62,6 @@ export default function ProtectedLayout() {
             </NavLink>
           )}
         </nav>
-        {/* if operator there is Update Slot Availability and View Station Status */}
         {userRole === "operator" && (
           <nav className="flex flex-col space-y-2">
             <NavLink
@@ -100,6 +88,18 @@ export default function ProtectedLayout() {
             </NavLink>
           </nav>
         )}
+
+        <NavLink
+          to="/profile"
+          className={({ isActive }) =>
+            `flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+              isActive ? "bg-green-600 text-white" : "hover:bg-green-100"
+            }`
+          }
+        >
+          <User className="w-5 h-5" />
+          Profile
+        </NavLink>
       </aside>
 
       {/* Page Content */}
