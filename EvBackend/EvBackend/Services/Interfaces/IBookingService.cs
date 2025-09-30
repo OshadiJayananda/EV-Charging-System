@@ -58,5 +58,8 @@ namespace EvBackend.Services.Interfaces
         /// Generate QR code for booking check-in.
         /// </summary>
         Task<(string? base64Image, DateTime? expiresAt)> GenerateQrCodeAsync(string bookingId);
+
+        Task<long> CountPendingBookingsAsync();
+        Task<long> CountApprovedFutureBookingsAsync();
     }
 }

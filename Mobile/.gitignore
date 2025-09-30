@@ -33,3 +33,5 @@ gen/
 # Keystore files (don’t commit your signing keys!)
 *.jks
 *.keystore
+
+app/src/main/res/values/google_maps_api.xml

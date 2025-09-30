@@ -1,3 +1,10 @@
+// --------------------------------------------------------------
+// File Name: StationService.cs
+// Author: Denuwan Sathsara
+// Description: Implements business logic for station management
+// Created On: 13/09/2025
+// --------------------------------------------------------------
+
 using System;
 using EvBackend.Entities;
 using EvBackend.Models.DTOs;
@@ -9,14 +16,19 @@ namespace EvBackend.Services
     public class StationService : IStationService
     {
         private readonly IMongoCollection<Station> _stations;
+        private readonly GeocodingService _geocoding;
 
-        public StationService(IMongoDatabase database)
+
+        public StationService(IMongoDatabase database, GeocodingService geocoding)
         {
             _stations = database.GetCollection<Station>("Stations");
+            _geocoding = geocoding;
         }
 
         public async Task<StationDto> CreateStationAsync(CreateStationDto dto)
         {
+            var coords = await _geocoding.GetCoordinatesAsync(dto.Location);
+
             var station = new Station
             {
                 Name = dto.Name,
@@ -24,10 +36,12 @@ namespace EvBackend.Services
                 Type = dto.Type,
                 Capacity = dto.Capacity,
                 AvailableSlots = dto.Capacity,
-                IsActive = true
+                IsActive = true,
+                Latitude = coords?.lat ?? 0,
+                Longitude = coords?.lng ?? 0
             };
 
-            await _stations.InsertOneAsync(station); // ✅ Save to MongoDB
+            await _stations.InsertOneAsync(station);
             return ToDto(station);
         }
 
@@ -50,17 +64,17 @@ namespace EvBackend.Services
             return updatedStation != null ? ToDto(updatedStation) : null;
         }
 
-public async Task<bool> DeactivateStationAsync(string stationId)
-{
-    if (await HasActiveBookingsAsync(stationId))
-        throw new InvalidOperationException("Cannot deactivate station with active bookings");
+        public async Task<bool> DeactivateStationAsync(string stationId)
+        {
+            if (await HasActiveBookingsAsync(stationId))
+                throw new InvalidOperationException("Cannot deactivate station with active bookings");
 
-    var filter = Builders<Station>.Filter.Eq(s => s.StationId, stationId);
-    var update = Builders<Station>.Update.Set(s => s.IsActive, false);
+            var filter = Builders<Station>.Filter.Eq(s => s.StationId, stationId);
+            var update = Builders<Station>.Update.Set(s => s.IsActive, false);
 
-    var result = await _stations.UpdateOneAsync(filter, update);
-    return result.ModifiedCount > 0;
-}
+            var result = await _stations.UpdateOneAsync(filter, update);
+            return result.ModifiedCount > 0;
+        }
         public async Task<StationDto> GetStationByIdAsync(string stationId)
         {
             var station = await _stations.Find(s => s.StationId == stationId).FirstOrDefaultAsync();
@@ -93,16 +107,39 @@ public async Task<bool> DeactivateStationAsync(string stationId)
             return stations.Select(ToDto);
         }
 
-public async Task<bool> HasActiveBookingsAsync(string stationId)
-{
-    var bookings = _stations.Database.GetCollection<Booking>("Bookings");
+        public async Task<bool> HasActiveBookingsAsync(string stationId)
+        {
+            var bookings = _stations.Database.GetCollection<Booking>("Bookings");
 
-    // Active = Pending or Approved
-    var filter = Builders<Booking>.Filter.Eq(b => b.StationId, stationId) &
-                 Builders<Booking>.Filter.In(b => b.Status, new[] { "Pending", "Approved" });
+            // Active = Pending or Approved
+            var filter = Builders<Booking>.Filter.Eq(b => b.StationId, stationId) &
+                         Builders<Booking>.Filter.In(b => b.Status, new[] { "Pending", "Approved" });
 
-    return await bookings.Find(filter).AnyAsync();
-}
+            return await bookings.Find(filter).AnyAsync();
+        }
+
+        public async Task<IEnumerable<StationDto>> GetNearbyStationsAsync(double latitude, double longitude, double radiusKm)
+        {
+            var list = await _stations.Find(s => s.IsActive).ToListAsync();
+
+            // Simple haversine formula filter
+            return list.Where(s => GetDistanceKm(latitude, longitude, s.Latitude, s.Longitude) <= radiusKm)
+                       .Select(ToDto);
+        }
+
+        private double GetDistanceKm(double lat1, double lon1, double lat2, double lon2)
+        {
+            const double R = 6371; // km
+            var dLat = (lat2 - lat1) * Math.PI / 180.0;
+            var dLon = (lon2 - lon1) * Math.PI / 180.0;
+
+            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                    Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0) *
+                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+
+            return R * 2 * Math.Asin(Math.Sqrt(a));
+        }
+
 
         private static StationDto ToDto(Station station) =>
             new StationDto
@@ -110,6 +147,8 @@ public async Task<bool> HasActiveBookingsAsync(string stationId)
                 StationId = station.StationId,
                 Name = station.Name,
                 Location = station.Location,
+                Latitude = station.Latitude,
+                Longitude = station.Longitude,
                 Type = station.Type,
                 Capacity = station.Capacity,
                 AvailableSlots = station.AvailableSlots,

@@ -1,3 +1,10 @@
+// --------------------------------------------------------------
+// File Name: IStationService.cs
+// Author: Denuwan Sathsara
+// Description: Station management service methods for the system
+// Created On: 13/09/2025
+// --------------------------------------------------------------
+
 using System;
 using EvBackend.Models.DTOs;
 
@@ -11,6 +18,7 @@ public interface IStationService
         Task<StationDto> GetStationByIdAsync(string stationId);
         Task<IEnumerable<StationDto>> GetAllStationsAsync(bool onlyActive = false);
         Task<IEnumerable<StationDto>> SearchStationsAsync(string type, string location);
+        Task<IEnumerable<StationDto>> GetNearbyStationsAsync(double latitude, double longitude, double radiusKm);
         Task<bool> HasActiveBookingsAsync(string stationId); // extra logic
-    
+
 }

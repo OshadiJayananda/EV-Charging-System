@@ -1,15 +1,15 @@
 plugins {
-    id 'com.android.application' version '8.2.2'
+    id 'com.android.application' version '8.6.0'
 }
 
 android {
     namespace "com.evcharging.mobile"
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.evcharging.mobile"
         minSdk 24
-        targetSdk 34
+        targetSdk 36
         versionCode 1
         versionName "1.0"
     }
@@ -26,4 +26,9 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
+    implementation 'com.google.android.gms:play-services-maps:18.1.0'
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    implementation libs.activity
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 }
