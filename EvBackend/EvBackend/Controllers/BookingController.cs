@@ -250,5 +250,38 @@ namespace EvBackend.Controllers
                 return StatusCode(500, new { message = "Unexpected error" });
             }
         }
+
+        [HttpGet("count/pending")]
+        //[Authorize(Roles = "Admin,Backoffice,Operator")]
+        public async Task<IActionResult> CountPendingBookings()
+        {
+            try
+            {
+                var count = await _bookingService.CountPendingBookingsAsync();
+                return Ok(new { pendingCount = count });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500, new { message = "Unexpected error" });
+            }
+        }
+
+        [HttpGet("count/approved")]
+        //[Authorize(Roles = "Admin,Backoffice,Operator")]
+        public async Task<IActionResult> CountApprovedFutureBookings()
+        {
+            try
+            {
+                var count = await _bookingService.CountApprovedFutureBookingsAsync();
+                return Ok(new { approvedCount = count });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500, new { message = "Unexpected error" });
+            }
+        }
+
     }
 }

@@ -35,7 +35,7 @@ namespace EvBackend.Controllers
         {
             try
             {
-                var response = await _authService.AuthenticateUser(loginDto);
+                var response = await _authService.AuthenticateUser(loginDto, HttpContext.Request);
                 return Ok(new
                 {
                     token = response.Token
@@ -62,12 +62,13 @@ namespace EvBackend.Controllers
 
             var nic = "";
 
-            if (role == "Owner") {
+            if (role == "Owner")
+            {
                 nic = userId;
                 userId = "";
             }
 
-            if(role == null)
+            if (role == null)
                 return Unauthorized(new { message = "Invalid token" });
 
             if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(nic))

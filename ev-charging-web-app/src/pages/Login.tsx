@@ -13,7 +13,7 @@ import {
   getUserRoleFromToken,
   roleNavigate,
 } from "../components/common/RoleBasedAccess";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 interface LoginData {
@@ -75,7 +75,12 @@ export default function Login() {
     try {
       const response = await postRequest<{ token: string }>(
         "/auth/login",
-        formData
+        formData,
+        {
+          headers: {
+            "X-Client-Type": "Web",
+          },
+        }
       );
 
       if (response?.data.token) {
@@ -220,12 +225,12 @@ export default function Login() {
           <div className="bg-gray-50 px-6 py-4 text-center">
             <p className="text-sm text-gray-600">
               Don’t have an account?{" "}
-              <a
-                href="/contact-sales"
+              <Link
+                to="/contact-sales"
                 className="font-medium text-green-600 hover:text-green-500 transition-colors duration-200"
               >
                 Contact Sales
-              </a>
+              </Link>
             </p>
           </div>
         </div>

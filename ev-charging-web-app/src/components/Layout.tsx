@@ -1,14 +1,62 @@
-import { Link, Outlet } from "react-router-dom";
-import { useState } from "react";
-import { LogOut, Menu, User, X } from "lucide-react";
+import { Link, Outlet, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import {
+  LogOut,
+  Menu,
+  User,
+  X,
+  Bell,
+  Building,
+  Users,
+  LayoutDashboard,
+  Activity,
+  Wrench,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { postRequest } from "./common/api";
+import { postRequest, getRequest } from "./common/api";
 import toast from "react-hot-toast";
+import { HubConnectionBuilder } from "@microsoft/signalr";
+import type { Notification } from "../types";
+import { roleNavigate } from "./common/RoleBasedAccess";
 
 const Layout: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
   const { isAuthenticated, userRole, logout } = useAuth();
+  const navigate = useNavigate();
+  const notificationsRef = useRef<HTMLDivElement>(null);
+
+  // Fetch notifications and setup SignalR
+  useEffect(() => {
+    let connection: any;
+    const userId = localStorage.getItem("userId");
+    if (isAuthenticated && userId) {
+      getRequest<Notification[]>(`/notifications/user/${userId}`).then(
+        (res) => {
+          setNotifications(res?.data ?? []);
+        }
+      );
+
+      connection = new HubConnectionBuilder()
+        .withUrl("/notificationHub", {
+          accessTokenFactory: () => localStorage.getItem("token") || "",
+        })
+        .withAutomaticReconnect()
+        .build();
+
+      connection.on("ReceiveNotification", (notification: any) => {
+        setNotifications((prev) => [notification, ...prev]);
+        toast.success(notification.message);
+      });
+
+      connection.start().catch(console.error);
+    }
+    return () => {
+      if (connection) connection.stop();
+    };
+  }, [isAuthenticated]);
 
   type LogoutResponse = {
     success?: boolean;
@@ -28,6 +76,26 @@ const Layout: React.FC = () => {
     logout();
   };
 
+  const handleRoleNavigate = () => {
+    roleNavigate(userRole, navigate);
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target as Node)
+      ) {
+        setShowNotifications(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Navbar */}
@@ -39,22 +107,18 @@ const Layout: React.FC = () => {
         {/* Desktop Links */}
         <div className="hidden md:flex space-x-4 items-center">
           {isAuthenticated && (
-            <Link
-              to="/profile"
-              className="hover:underline flex items-center gap-1"
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative"
+              aria-label="Show notifications"
             >
-              Profile
-            </Link>
-          )}
-          {isAuthenticated && userRole === "admin" && (
-            <Link to="/admin/dashboard" className="hover:underline">
-              Admin
-            </Link>
-          )}
-          {isAuthenticated && userRole === "operator" && (
-            <Link to="/operator/dashboard" className="hover:underline">
-              CS Operator
-            </Link>
+              <Bell className="w-5 h-5" />
+              {notifications.some((n) => !n.isRead) && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs px-1">
+                  {notifications.filter((n) => !n.isRead).length}
+                </span>
+              )}
+            </button>
           )}
           {isAuthenticated && (
             <button
@@ -82,54 +146,161 @@ const Layout: React.FC = () => {
       </nav>
       {/* Mobile Dropdown Menu */}
       {isOpen && (
-        <div className="fixed top-16 left-0 right-0 bg-green-700 text-white p-4 space-y-2 md:hidden shadow-md z-40">
+        <div className="fixed top-16 left-0 right-0 bg-white text-green-900 p-4 space-y-2 md:hidden shadow-lg z-40 rounded-b-xl border-b border-green-200">
+          {isAuthenticated && (
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
+              aria-label="Show notifications"
+            >
+              <Bell className="w-5 h-5" />
+              <span className="font-semibold">Notifications</span>
+              {notifications.some((n) => !n.isRead) && (
+                <span className="absolute right-6 top-2 bg-red-500 text-white rounded-full text-xs px-2 py-0.5">
+                  {notifications.filter((n) => !n.isRead).length}
+                </span>
+              )}
+            </button>
+          )}
+          {isAuthenticated && (
+            <button
+              onClick={handleRoleNavigate}
+              className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              <span className="font-semibold">Dashboard</span>
+            </button>
+          )}
           {isAuthenticated && (
             <Link
               to="/profile"
-              className="block hover:underline flex items-center gap-1"
+              className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
               onClick={() => setIsOpen(false)}
             >
-              Profile
+              <User className="w-5 h-5" />
+              <span className="font-semibold">Profile</span>
             </Link>
           )}
-          {isAuthenticated && userRole === "admin" && (
-            <Link
-              to="/admin/dashboard"
-              className="block hover:underline"
-              onClick={() => setIsOpen(false)}
-            >
-              Admin
-            </Link>
+          {/* need to add User Management and Station Management for admin */}
+          {userRole === "admin" && isAuthenticated && (
+            <>
+              <Link
+                to="/admin/users"
+                className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
+                onClick={() => setIsOpen(false)}
+              >
+                <Users className="w-5 h-5" />
+                <span className="font-semibold">User Management</span>
+              </Link>
+              <Link
+                to="/admin/stations"
+                className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
+                onClick={() => setIsOpen(false)}
+              >
+                <Building className="w-5 h-5" />
+                <span className="font-semibold">Station Management</span>
+              </Link>
+            </>
           )}
-          {isAuthenticated && userRole === "operator" && (
-            <Link
-              to="/operator/dashboard"
-              className="block hover:underline"
-              onClick={() => setIsOpen(false)}
-            >
-              CS Operator
-            </Link>
+          {/* need to add Update Slot Availability and View Station Status */}
+          {userRole === "operator" && isAuthenticated && (
+            <>
+              <Link
+                to="/operator/update-slot-availability"
+                className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
+                onClick={() => setIsOpen(false)}
+              >
+                <Wrench className="w-5 h-5" />
+                <span className="font-semibold">Update Slot Availability</span>
+              </Link>
+              <Link
+                to="/operator/view-station-status"
+                className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
+                onClick={() => setIsOpen(false)}
+              >
+                <Activity className="w-5 h-5" />
+                <span className="font-semibold">View Station Status</span>
+              </Link>
+            </>
           )}
+
           {isAuthenticated && (
             <button
               onClick={() => {
                 handleLogout();
                 setIsOpen(false);
               }}
-              className="block w-full text-left px-3 py-1 rounded bg-green-700 text-white font-semibold hover:bg-green-100 transition-colors mt-2"
+              className="flex items-center gap-2 w-full px-4 py-3 rounded-lg bg-red-50 text-red-700 font-semibold hover:bg-red-100 transition mt-2"
             >
+              <LogOut className="w-5 h-5" />
               Logout
             </button>
           )}
           {!isAuthenticated && (
             <Link
               to="/login"
-              className="block hover:underline"
+              className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
               onClick={() => setIsOpen(false)}
             >
-              Login
+              <span className="font-semibold">Login</span>
             </Link>
           )}
+        </div>
+      )}
+
+      {/* Notifications Dropdown (shared for desktop & mobile) */}
+      {showNotifications && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+          <div
+            ref={notificationsRef}
+            className="bg-white shadow-lg rounded-lg w-full max-w-sm mx-4 border"
+          >
+            <div className="p-4 border-b font-bold text-green-700 flex justify-between items-center">
+              Notifications
+              <button
+                className="text-gray-400 hover:text-gray-600"
+                onClick={() => setShowNotifications(false)}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="max-h-80 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="p-4 text-gray-500 text-center">
+                  No notifications
+                </div>
+              ) : (
+                notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    className={`p-4 border-b last:border-b-0 ${
+                      n.isRead ? "bg-gray-50" : "bg-green-50"
+                    }`}
+                  >
+                    <div className="font-medium">{n.message}</div>
+                    <div className="text-xs text-gray-400">
+                      {new Date(n.createdAt).toLocaleString()}
+                    </div>
+                    {!n.isRead && (
+                      <button
+                        className="mt-2 text-xs text-green-600 hover:underline"
+                        onClick={async () => {
+                          await postRequest(`/notifications/${n.id}/read`);
+                          setNotifications((prev) =>
+                            prev.map((x) =>
+                              x.id === n.id ? { ...x, isRead: true } : x
+                            )
+                          );
+                        }}
+                      >
+                        Mark as read
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       )}
 
