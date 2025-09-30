@@ -5,6 +5,8 @@
 // Created On: 28/09/2025
 // --------------------------------------------------------------
 
+using EvBackend.Entities;
+
 namespace EvBackend.Services.Interfaces
 {
     public interface INotificationService
