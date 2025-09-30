@@ -3,6 +3,8 @@ name: Deploy Web App to GitHub Pages
 on:
   push:
     branches: [main]
+    paths:
+      - "ev-charging-web-app/**"
 
 permissions:
   contents: write
@@ -19,6 +21,7 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
+          cache-dependency-path: ev-charging-web-app/package-lock.json
 
       - name: Install dependencies
         working-directory: ./ev-charging-web-app
