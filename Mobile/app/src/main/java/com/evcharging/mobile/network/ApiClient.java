@@ -18,7 +18,7 @@ import okhttp3.Response;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE_URL = "http://10.0.2.2:5000/api";
+    private static final String BASE_URL = "https://ev-charging-backend-dbgvakf8dshwddff.canadacentral-01.azurewebsites.net/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
     private OkHttpClient client;
@@ -36,6 +36,7 @@ public class ApiClient {
     // Login
     public ApiResponse login(String email, String password) {
         try {
+            // Prepare JSON payload
             JSONObject loginData = new JSONObject();
             loginData.put("email", email);
             loginData.put("password", password);
@@ -47,26 +48,61 @@ public class ApiClient {
                     .build();
 
             Response response = client.newCall(request).execute();
-            String responseBody = response.body().string();
+            int statusCode = response.code();
+            String responseBody = response.body() != null ? response.body().string() : "";
 
-            Log.d(TAG, "Login response: " + responseBody);
+            Log.d(TAG, "Login response code: " + statusCode);
+            Log.d(TAG, "Login response body: '" + responseBody + "'");
 
-            if (response.isSuccessful()) {
-                JSONObject jsonResponse = new JSONObject(responseBody);
-                String token = jsonResponse.getString("token");
-                sessionManager.saveToken(token);
-                return new ApiResponse(true, "Login successful", token);
-            } else {
-                JSONObject errorResponse = new JSONObject(responseBody);
-                String errorMessage = errorResponse.optString("message", "Login failed");
-                return new ApiResponse(false, errorMessage, null);
+            // Handle based on status code
+            switch (statusCode) {
+                case 200: // OK
+                    if (!responseBody.isEmpty()) {
+                        JSONObject jsonResponse = new JSONObject(responseBody);
+                        String token = jsonResponse.optString("token", null);
+                        if (token != null) {
+                            sessionManager.saveToken(token);
+                            return new ApiResponse(true, "Login successful", token);
+                        } else {
+                            return new ApiResponse(false, "Login failed: no token received", null);
+                        }
+                    } else {
+                        return new ApiResponse(false, "Login failed: empty response", null);
+                    }
+
+                case 204: // No Content
+                    return new ApiResponse(true, "Login successful (no content returned)", null);
+
+                case 401: // Unauthorized
+                    return new ApiResponse(false, "Unauthorized: Invalid email or password", null);
+
+                case 404: // Not Found
+                    return new ApiResponse(false, "Login endpoint not found", null);
+
+                default: // Other errors
+                    if (!responseBody.isEmpty()) {
+                        try {
+                            JSONObject errorResponse = new JSONObject(responseBody);
+                            String message = errorResponse.optString("message", "Unknown error");
+                            return new ApiResponse(false, message, null);
+                        } catch (JSONException e) {
+                            // Response not JSON
+                            return new ApiResponse(false, "Error: " + responseBody, null);
+                        }
+                    } else {
+                        return new ApiResponse(false, "Unknown error occurred. Status code: " + statusCode, null);
+                    }
             }
 
-        } catch (IOException | JSONException e) {
-            Log.e(TAG, "Error during login", e);
-            return new ApiResponse(false, "Network or parsing error", null);
+        } catch (IOException e) {
+            Log.e(TAG, "Network error during login", e);
+            return new ApiResponse(false, "Network error occurred", null);
+        } catch (JSONException e) {
+            Log.e(TAG, "JSON parsing error during login", e);
+            return new ApiResponse(false, "Response parsing error", null);
         }
     }
+
 
     // register
     public ApiResponse register(String name, String email, String password) {

@@ -1,3 +1,10 @@
+// --------------------------------------------------------------
+// File Name: Station.cs
+// Author: Denuwan Sathsara
+// Description: Database entity representing Station details.
+// Created On: 26/09/2025
+// --------------------------------------------------------------
+
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
