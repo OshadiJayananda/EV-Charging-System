@@ -1,4 +1,4 @@
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, type AxiosRequestConfig } from "axios";
 import toast from "react-hot-toast";
 
 const API_BASE_URL =
@@ -64,10 +64,11 @@ export const getRequest = async <T>(
 // POST request
 export const postRequest = async <T>(
   url: string,
-  data?: object
+  data?: object,
+  options?: AxiosRequestConfig
 ): Promise<{ data: T; status: number } | null> => {
   try {
-    const response = await api.post<T>(url, data);
+    const response = await api.post<T>(url, data, options);
     return { data: response.data, status: response.status };
   } catch (error) {
     return handleError(error, "Error posting data");
