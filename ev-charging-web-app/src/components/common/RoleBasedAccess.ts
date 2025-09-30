@@ -29,13 +29,18 @@ function getUserRoleFromToken(token: string): string | null {
 }
 
 function roleNavigate(role: string | null, navigate: NavigateFunction) {
+  const route = roleRoute(role);
+  navigate(route);
+}
+
+function roleRoute(role: string | null): string {
   if (role === "admin") {
-    navigate("/admin/dashboard");
+    return "/admin/dashboard";
   } else if (role === "operator") {
-    navigate("/operator/dashboard");
+    return "/operator/dashboard";
   } else {
-    navigate("/login");
+    return "/login";
   }
 }
 
-export { getUserRoleFromToken, roleNavigate };
+export { getUserRoleFromToken, roleNavigate, roleRoute };

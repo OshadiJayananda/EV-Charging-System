@@ -9,6 +9,7 @@ using EvBackend.Seeders;
 using DotNetEnv;
 using EvBackend.Services.Interfaces;
 using Microsoft.OpenApi.Models;
+using EvBackend.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,7 +45,8 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ICSOperatorService, CSOperatorService>();
 builder.Services.AddScoped<IEVOwnerService, EVOwnerService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<EvBackend.Services.Interfaces.IBookingService, EvBackend.Services.BookingService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Controllers
 builder.Services.AddControllers();
@@ -134,6 +136,9 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Add SignalR
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -167,5 +172,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Add SignalR NotificationHub endpoint
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();

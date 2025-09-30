@@ -28,6 +28,7 @@ export default function Profile() {
       };
       const typedResponse = response as UserResponse;
       localStorage.setItem("userId", typedResponse?.data?.id || "");
+      setUser(response?.data || null);
       setForm({
         fullName: typedResponse?.data?.fullName || "",
         email: typedResponse?.data?.email || "",
@@ -63,101 +64,105 @@ export default function Profile() {
     setIsSaving(false);
   };
 
+  let content;
+
+  if (loading) {
+    content = <Loading text="Loading profile..." />;
+  } else if (user) {
+    content = (
+      <>
+        <div className="mb-4 flex flex-col items-center">
+          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-2">
+            <span className="text-4xl font-bold text-green-700">
+              {user.fullName ? user.fullName[0] : "?"}
+            </span>
+          </div>
+          {editMode ? (
+            <>
+              <input
+                name="fullName"
+                value={form.fullName}
+                onChange={handleChange}
+                className="text-lg font-semibold text-green-800 mb-2 border rounded px-2 py-1 w-full text-center"
+              />
+              <input
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                className="text-sm text-gray-500 mb-2 border rounded px-2 py-1 w-full text-center"
+              />
+            </>
+          ) : (
+            <>
+              <div className="text-lg font-semibold text-green-800">
+                {user.fullName}
+              </div>
+              <div className="text-sm text-gray-500">{user.email}</div>
+            </>
+          )}
+        </div>
+        <div className="mb-2">
+          <span className="font-semibold">Role:</span>{" "}
+          {user.role || user.userType}
+        </div>
+        <div className="mb-2">
+          <span className="font-semibold">User ID:</span> {user.id}
+        </div>
+        <div className="mb-2">
+          <span className="font-semibold">Active:</span>{" "}
+          {user.isActive ? (
+            <span className="text-green-600 font-bold">Active</span>
+          ) : (
+            <span className="text-red-600 font-bold">Inactive</span>
+          )}
+        </div>
+        <div className="mb-2">
+          <span className="font-semibold">Created At:</span>{" "}
+          {user.createdAt ? new Date(user.createdAt).toLocaleString() : "N/A"}
+        </div>
+        <div className="mt-4 flex gap-2">
+          {editMode ? (
+            <>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="bg-green-600 text-white px-4 py-2 rounded font-semibold hover:bg-green-700 transition"
+              >
+                {isSaving ? "Saving..." : "Save"}
+              </button>
+              <button
+                onClick={() => {
+                  setEditMode(false);
+                  setForm({
+                    fullName: user.fullName,
+                    email: user.email,
+                  });
+                }}
+                className="bg-gray-200 text-gray-700 px-4 py-2 rounded font-semibold hover:bg-gray-300 transition"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setEditMode(true)}
+              className="bg-green-600 text-white px-4 py-2 rounded font-semibold hover:bg-green-700 transition"
+            >
+              Edit Profile
+            </button>
+          )}
+        </div>
+      </>
+    );
+  } else {
+    content = <div className="text-red-500">Failed to load profile.</div>;
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100">
+    <div className="h-full flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
         <h2 className="text-2xl font-bold mb-4 text-green-700">Profile</h2>
-        {loading ? (
-          <Loading text="Loading profile..." />
-        ) : user ? (
-          <>
-            <div className="mb-4 flex flex-col items-center">
-              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-2">
-                <span className="text-4xl font-bold text-green-700">
-                  {user.fullName ? user.fullName[0] : "?"}
-                </span>
-              </div>
-              {editMode ? (
-                <>
-                  <input
-                    name="fullName"
-                    value={form.fullName}
-                    onChange={handleChange}
-                    className="text-lg font-semibold text-green-800 mb-2 border rounded px-2 py-1 w-full text-center"
-                  />
-                  <input
-                    name="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    className="text-sm text-gray-500 mb-2 border rounded px-2 py-1 w-full text-center"
-                  />
-                </>
-              ) : (
-                <>
-                  <div className="text-lg font-semibold text-green-800">
-                    {user.fullName}
-                  </div>
-                  <div className="text-sm text-gray-500">{user.email}</div>
-                </>
-              )}
-            </div>
-            <div className="mb-2">
-              <span className="font-semibold">Role:</span>{" "}
-              {user.role || user.userType}
-            </div>
-            <div className="mb-2">
-              <span className="font-semibold">User ID:</span> {user.userId}
-            </div>
-            <div className="mb-2">
-              <span className="font-semibold">Active:</span>{" "}
-              {user.isActive ? (
-                <span className="text-green-600 font-bold">Active</span>
-              ) : (
-                <span className="text-red-600 font-bold">Inactive</span>
-              )}
-            </div>
-            <div className="mb-2">
-              <span className="font-semibold">Created At:</span>{" "}
-              {user.createdAt
-                ? new Date(user.createdAt).toLocaleString()
-                : "N/A"}
-            </div>
-            <div className="mt-4 flex gap-2">
-              {editMode ? (
-                <>
-                  <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="bg-green-600 text-white px-4 py-2 rounded font-semibold hover:bg-green-700 transition"
-                  >
-                    {isSaving ? "Saving..." : "Save"}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditMode(false);
-                      setForm({
-                        fullName: user.fullName,
-                        email: user.email,
-                      });
-                    }}
-                    className="bg-gray-200 text-gray-700 px-4 py-2 rounded font-semibold hover:bg-gray-300 transition"
-                  >
-                    Cancel
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => setEditMode(true)}
-                  className="bg-green-600 text-white px-4 py-2 rounded font-semibold hover:bg-green-700 transition"
-                >
-                  Edit Profile
-                </button>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="text-red-500">Failed to load profile.</div>
-        )}
+        {content}
       </div>
     </div>
   );
