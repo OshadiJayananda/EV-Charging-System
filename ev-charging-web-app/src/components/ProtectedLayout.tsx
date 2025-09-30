@@ -1,5 +1,12 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { User, LayoutDashboard } from "lucide-react";
+import {
+  User,
+  LayoutDashboard,
+  Users,
+  Building,
+  Wrench,
+  Activity,
+} from "lucide-react";
 import { roleNavigate, roleRoute } from "./common/RoleBasedAccess";
 import { useAuth } from "../context/AuthContext";
 
@@ -38,7 +45,61 @@ export default function ProtectedLayout() {
             <User className="w-5 h-5" />
             Profile
           </NavLink>
+          {userRole === "admin" && (
+            <NavLink
+              to="/admin/users"
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                  isActive ? "bg-green-600 text-white" : "hover:bg-green-100"
+                }`
+              }
+            >
+              <Users className="w-5 h-5" />
+              User Management
+            </NavLink>
+          )}
+          {/* station management also */}
+          {userRole === "admin" && (
+            <NavLink
+              to="/admin/stations"
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                  isActive ? "bg-green-600 text-white" : "hover:bg-green-100"
+                }`
+              }
+            >
+              <Building className="w-5 h-5" />
+              Station Management
+            </NavLink>
+          )}
         </nav>
+        {/* if operator there is Update Slot Availability and View Station Status */}
+        {userRole === "operator" && (
+          <nav className="flex flex-col space-y-2">
+            <NavLink
+              to="/operator/update-slot-availability"
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                  isActive ? "bg-green-600 text-white" : "hover:bg-green-100"
+                }`
+              }
+            >
+              <Wrench className="w-5 h-5" />
+              Update Slot Availability
+            </NavLink>
+            <NavLink
+              to="/operator/view-station-status"
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                  isActive ? "bg-green-600 text-white" : "hover:bg-green-100"
+                }`
+              }
+            >
+              <Activity className="w-5 h-5" />
+              View Station Status
+            </NavLink>
+          </nav>
+        )}
       </aside>
 
       {/* Page Content */}
