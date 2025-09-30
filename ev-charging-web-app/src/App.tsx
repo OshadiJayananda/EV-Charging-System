@@ -15,6 +15,10 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import ProtectedLayout from "./components/ProtectedLayout";
+import StationManage from "./components/Admin/StationsManage";
+import StationList from "./pages/stations/StationList";
+import StationForm from "./pages/stations/StationForm";
+import StationSlots from "./pages/stations/StationSlots";
 
 function App() {
   const location = useLocation();
@@ -56,6 +60,10 @@ function App() {
           <Route element={<ProtectedRoute requiredRole="admin" />}>
             <Route element={<ProtectedLayout />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/stations" element={<StationList />} />
+              <Route path="/admin/stations/new" element={<StationForm />} />
+              <Route path="/admin/stations/edit/:stationId" element={<StationForm isEdit />} />
+              <Route path="/admin/stations/:stationId/slots" element={<StationSlots />} />
             </Route>
           </Route>
 

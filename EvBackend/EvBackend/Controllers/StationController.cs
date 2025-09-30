@@ -34,7 +34,7 @@ namespace EvBackend.Controllers
 
         // Create station - Admin or Backoffice only
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateStation([FromBody] CreateStationDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.Location))
@@ -93,7 +93,7 @@ namespace EvBackend.Controllers
 
         // Get station by id
         [HttpGet("{stationId}")]
-        [Authorize(Roles = "Admin,Operator")]
+        //[Authorize(Roles = "Admin,Operator")]
         public async Task<IActionResult> GetStationById(string stationId)
         {
             try
