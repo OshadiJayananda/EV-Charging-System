@@ -1,6 +1,17 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { LogOut, Menu, User, X, Bell } from "lucide-react";
+import {
+  LogOut,
+  Menu,
+  User,
+  X,
+  Bell,
+  Building,
+  Users,
+  LayoutDashboard,
+  Activity,
+  Wrench,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { postRequest, getRequest } from "./common/api";
 import toast from "react-hot-toast";
@@ -152,6 +163,15 @@ const Layout: React.FC = () => {
             </button>
           )}
           {isAuthenticated && (
+            <button
+              onClick={handleRoleNavigate}
+              className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              <span className="font-semibold">Dashboard</span>
+            </button>
+          )}
+          {isAuthenticated && (
             <Link
               to="/profile"
               className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
@@ -161,14 +181,49 @@ const Layout: React.FC = () => {
               <span className="font-semibold">Profile</span>
             </Link>
           )}
-          {isAuthenticated && (
-            <button
-              onClick={handleRoleNavigate}
-              className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
-            >
-              <span className="font-semibold">Dashboard</span>
-            </button>
+          {/* need to add User Management and Station Management for admin */}
+          {userRole === "admin" && isAuthenticated && (
+            <>
+              <Link
+                to="/admin/users"
+                className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
+                onClick={() => setIsOpen(false)}
+              >
+                <Users className="w-5 h-5" />
+                <span className="font-semibold">User Management</span>
+              </Link>
+              <Link
+                to="/admin/stations"
+                className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
+                onClick={() => setIsOpen(false)}
+              >
+                <Building className="w-5 h-5" />
+                <span className="font-semibold">Station Management</span>
+              </Link>
+            </>
           )}
+          {/* need to add Update Slot Availability and View Station Status */}
+          {userRole === "operator" && isAuthenticated && (
+            <>
+              <Link
+                to="/operator/update-slot-availability"
+                className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
+                onClick={() => setIsOpen(false)}
+              >
+                <Wrench className="w-5 h-5" />
+                <span className="font-semibold">Update Slot Availability</span>
+              </Link>
+              <Link
+                to="/operator/view-station-status"
+                className="flex items-center gap-2 w-full px-4 py-3 rounded-lg hover:bg-green-50 transition"
+                onClick={() => setIsOpen(false)}
+              >
+                <Activity className="w-5 h-5" />
+                <span className="font-semibold">View Station Status</span>
+              </Link>
+            </>
+          )}
+
           {isAuthenticated && (
             <button
               onClick={() => {
