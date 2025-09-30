@@ -6,6 +6,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { companyInfo } from "../../config/companyInfo";
 import { ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function ContactInfo() {
   return (
@@ -53,12 +54,12 @@ export default function ContactInfo() {
         </div>
       </div>
 
-      <a
-        href="/"
+      <Link
+        to="/"
         className="mt-6 w-full flex justify-center items-center py-3 px-4 rounded-md text-white bg-green-600 hover:bg-green-700 transition"
       >
         <ArrowLeft className="h-4 w-4 mr-2" /> Go Back
-      </a>
+      </Link>
     </div>
   );
 }
