@@ -36,18 +36,24 @@ public class LoginActivity extends AppCompatActivity {
                 String email = etEmail.getText().toString().trim();
                 String password = etPassword.getText().toString().trim();
 
+                boolean isValid = true;
+
                 if (TextUtils.isEmpty(email)) {
                     etEmail.setError("Email is required");
-                    return;
+                    isValid = false;
                 }
 
                 if (TextUtils.isEmpty(password)) {
                     etPassword.setError("Password is required");
+                    isValid = false;
+                }
+
+                if (!isValid) {
                     return;
                 }
 
                 // TODO: Call your backend API to authenticate
-                if(email.equals("test@example.com") && password.equals("123456")){
+                if (email.equals("test@example.com") && password.equals("123456")) {
                     Toast.makeText(LoginActivity.this, "Login Successful", Toast.LENGTH_SHORT).show();
                     // Navigate to HomeActivity (map screen)
                     startActivity(new Intent(LoginActivity.this, HomeActivity.class));
