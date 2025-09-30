@@ -75,7 +75,12 @@ export default function Login() {
     try {
       const response = await postRequest<{ token: string }>(
         "/auth/login",
-        formData
+        formData,
+        {
+          headers: {
+            "X-Client-Type": "Web",
+          },
+        }
       );
 
       if (response?.data.token) {
