@@ -3,8 +3,12 @@ name: .NET Unit Tests
 on:
   push:
     branches: [main]
+    paths:
+      - "EvBackend/**"
   pull_request:
     branches: [main]
+    paths:
+      - "EvBackend/**"
 
 jobs:
   build-and-test:
