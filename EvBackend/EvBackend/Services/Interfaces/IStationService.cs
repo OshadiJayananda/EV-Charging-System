@@ -1,3 +1,10 @@
+// --------------------------------------------------------------
+// File Name: IStationService.cs
+// Author: Denuwan Sathsara
+// Description: Station management service methods for the system
+// Created On: 13/09/2025
+// --------------------------------------------------------------
+
 using System;
 using EvBackend.Models.DTOs;
 

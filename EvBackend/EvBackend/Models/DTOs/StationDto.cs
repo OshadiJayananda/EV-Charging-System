@@ -1,3 +1,11 @@
+// --------------------------------------------------------------
+// File Name: StationDto.cs
+// Author: Denuwan Sathsara
+// Description: DTOs for station management. Cleaned to separate creation,
+// updates, and response DTOs.
+// Created/Updated On: 27/09/2025
+// --------------------------------------------------------------
+
 using System;
 
 namespace EvBackend.Models.DTOs;

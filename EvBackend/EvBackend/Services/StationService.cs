@@ -1,3 +1,10 @@
+// --------------------------------------------------------------
+// File Name: StationService.cs
+// Author: Denuwan Sathsara
+// Description: Implements business logic for station management
+// Created On: 13/09/2025
+// --------------------------------------------------------------
+
 using System;
 using EvBackend.Entities;
 using EvBackend.Models.DTOs;
