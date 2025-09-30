@@ -1,3 +1,10 @@
+// --------------------------------------------------------------
+// File Name: GeocodingService.cs
+// Author: Denuwan Sathsara
+// Description: Implements business logic for geocoding services
+// Created On: 13/09/2025
+// --------------------------------------------------------------
+
 using System;
 using System.Text.Json;
 
