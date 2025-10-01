@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getRequest, deleteRequest } from "../../components/common/api";
+import { getRequest, deleteRequest, patchRequest } from "../../components/common/api";
 import type { Station } from "../../types";
 import { useNavigate } from "react-router-dom";
 
@@ -14,7 +14,7 @@ const StationList = () => {
   };
 
   const handleDeactivate = async (id: string) => {
-    await deleteRequest(`/station/${id}/deactivate`);
+    await patchRequest(`/station/${id}/deactivate`);
     fetchStations();
   };
 

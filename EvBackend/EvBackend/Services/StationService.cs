@@ -182,11 +182,15 @@ namespace EvBackend.Services
             var station = await _stations.Find(s => s.StationId == stationId).FirstOrDefaultAsync();
             if (station == null) return null;
 
+            var coords = await _geocoding.GetCoordinatesAsync(dto.Location);
+
             // 1. Update basic station fields (capacity excluded, we’ll recalc later)
             var filter = Builders<Station>.Filter.Eq(s => s.StationId, stationId);
             var update = Builders<Station>.Update
                 .Set(s => s.Name, dto.Name)
                 .Set(s => s.Location, dto.Location)
+                .Set(s => s.Latitude, coords?.lat ?? station.Latitude)
+                .Set(s => s.Longitude, coords?.lng ?? station.Longitude)
                 .Set(s => s.Type, dto.Type)
                 .Set(s => s.AvailableSlots, dto.AvailableSlots);
 
