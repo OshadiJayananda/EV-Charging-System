@@ -93,7 +93,7 @@ namespace EvBackend.Controllers
 
         // Get station by id
         [HttpGet("{stationId}")]
-        //[Authorize(Roles = "Admin,Operator")]
+        [Authorize(Roles = "Admin,Operator")]
         public async Task<IActionResult> GetStationById(string stationId)
         {
             try
@@ -107,7 +107,7 @@ namespace EvBackend.Controllers
 
         // Get all stations
         [HttpGet]
-        [Authorize]
+        //[Authorize]
         public async Task<IActionResult> GetAllStations([FromQuery] bool onlyActive = false)
         {
             try

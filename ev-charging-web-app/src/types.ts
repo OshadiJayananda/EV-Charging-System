@@ -47,6 +47,7 @@ export interface Slot {
   slotId: string;
   stationId: string;
   connectorType: string;
+  number: number;
   status:string
 }
 
