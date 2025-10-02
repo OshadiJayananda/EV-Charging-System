@@ -1,11 +1,20 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="PrimaryButton" parent="Widget.AppCompat.Button">
+    <!-- Application theme -->
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Customize your theme colors -->
+        <item name="colorPrimary">@color/primary_color</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/secondary_color</item>
+        <item name="colorOnSecondary">@color/black</item>
+    </style>
+
+    <!-- Your existing button styles -->
+    <style name="PrimaryButton" parent="Widget.MaterialComponents.Button">
         <item name="android:backgroundTint">@color/primary_color</item>
         <item name="android:textColor">@color/white</item>
     </style>
 
-    <style name="SecondaryButton" parent="Widget.AppCompat.Button">
+    <style name="SecondaryButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
         <item name="android:backgroundTint">@color/secondary_color</item>
         <item name="android:textColor">@color/black</item>
     </style>

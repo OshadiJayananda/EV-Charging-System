@@ -50,32 +50,31 @@ public class OperatorHomeActivity extends AppCompatActivity {
 
                 lvTodayReservations.setAdapter(adapter);
 
-                // Button actions
+                setupClickListeners();
+        }
+
+        private void setupClickListeners() {
+                // Profile Image Click
+                ivProfile.setOnClickListener(v -> navigateToProfile());
+
+                // View Profile Button Click
+                btnViewProfile.setOnClickListener(v -> navigateToProfile());
+
+                // Logout Button
+                btnLogout.setOnClickListener(v -> attemptLogout());
+
+                // Other buttons
                 btnUpdateSlots.setOnClickListener(v -> Toast
-                                .makeText(OperatorHomeActivity.this, "Update Slots Clicked", Toast.LENGTH_SHORT).show()
-                // startActivity(new Intent(OperatorHomeActivity.this,
-                // UpdateSlotActivity.class))
-                );
+                                .makeText(OperatorHomeActivity.this, "Update Slots Clicked", Toast.LENGTH_SHORT)
+                                .show());
 
                 btnViewBookings.setOnClickListener(v -> Toast
-                                .makeText(OperatorHomeActivity.this, "View Bookings Clicked", Toast.LENGTH_SHORT).show()
-                // startActivity(new Intent(OperatorHomeActivity.this, BookingsActivity.class))
-                );
+                                .makeText(OperatorHomeActivity.this, "View Bookings Clicked", Toast.LENGTH_SHORT)
+                                .show());
 
                 btnCancelBookings.setOnClickListener(v -> Toast
                                 .makeText(OperatorHomeActivity.this, "Cancel Bookings Clicked", Toast.LENGTH_SHORT)
-                                .show()
-                // startActivity(new Intent(OperatorHomeActivity.this, BookingsActivity.class))
-                );
-
-                btnLogout.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                                attemptLogout();
-                        }
-                });
-
-
+                                .show());
         }
 
         private void attemptLogout() {
@@ -83,10 +82,9 @@ public class OperatorHomeActivity extends AppCompatActivity {
                 ApiResponse response = apiClient.logout();
 
                 Toast.makeText(
-                        OperatorHomeActivity.this,
-                        response.getMessage(),
-                        Toast.LENGTH_SHORT
-                ).show();
+                                OperatorHomeActivity.this,
+                                response.getMessage(),
+                                Toast.LENGTH_SHORT).show();
 
                 // Redirect to login screen after logout
                 Intent intent = new Intent(OperatorHomeActivity.this, LoginActivity.class);
@@ -107,5 +105,10 @@ public class OperatorHomeActivity extends AppCompatActivity {
                 tvOperatorId = findViewById(R.id.tvOperatorId);
                 btnViewProfile = findViewById(R.id.btnViewProfile);
                 btnLogout = findViewById(R.id.btnLogout);
+        }
+
+        private void navigateToProfile() {
+                Toast.makeText(OperatorHomeActivity.this, "Profile Clicked", Toast.LENGTH_SHORT)
+                        .show();
         }
 }
