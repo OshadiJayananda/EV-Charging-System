@@ -1,7 +1,6 @@
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 
 export function createNotificationConnection(
-  userId: string,
   onReceive: (notification: any) => void
 ) {
   const connection = new HubConnectionBuilder()

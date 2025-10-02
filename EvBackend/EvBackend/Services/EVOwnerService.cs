@@ -58,6 +58,7 @@ namespace EvBackend.Services
                 NIC = dto.NIC,
                 FullName = dto.FullName,
                 Email = dto.Email,
+                Phone = dto.Phone,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 CreatedAt = DateTime.UtcNow
             };
@@ -68,6 +69,7 @@ namespace EvBackend.Services
             {
                 FullName = owner.FullName,
                 Email = owner.Email,
+                Phone = owner.Phone,
                 IsActive = owner.IsActive,
                 CreatedAt = owner.CreatedAt,
                 NIC = owner.NIC
@@ -84,6 +86,7 @@ namespace EvBackend.Services
             {
                 FullName = owner.FullName,
                 Email = owner.Email,
+                Phone = owner.Phone,
                 IsActive = owner.IsActive,
                 CreatedAt = owner.CreatedAt,
                 NIC = owner.NIC
@@ -99,6 +102,7 @@ namespace EvBackend.Services
             {
                 FullName = owner.FullName,
                 Email = owner.Email,
+                Phone = owner.Phone,
                 IsActive = owner.IsActive,
                 CreatedAt = owner.CreatedAt,
                 NIC = owner.NIC
@@ -106,23 +110,47 @@ namespace EvBackend.Services
             return Task.FromResult(dto);
         }
 
-        public Task<EVOwnerDto> UpdateEVOwner(string nic, CreateEVOwnerDto dto)
+        public async Task<EVOwnerDto> UpdateEVOwner(string nic, UpdateEVOwnerDto dto)
         {
             var update = Builders<EVOwner>.Update
                 .Set(o => o.FullName, dto.FullName)
                 .Set(o => o.Email, dto.Email)
-                .Set(o => o.NIC, dto.NIC);
-            var result = _owners.UpdateOne(o => o.NIC == nic, update);
-            if (result.MatchedCount == 0) throw new KeyNotFoundException("EV Owner not found");
-            var updatedOwner = _owners.Find(o => o.NIC == dto.NIC).FirstOrDefault();
-            var updatedDto = new EVOwnerDto
+                .Set(o => o.Phone, dto.Phone);
+            var result = await _owners.FindOneAndUpdateAsync(
+                o => o.NIC == nic,
+                update,
+                new FindOneAndUpdateOptions<EVOwner> { ReturnDocument = ReturnDocument.After });
+
+            if (result == null)
+                throw new KeyNotFoundException("EV Owner not found");
+
+            return new EVOwnerDto
             {
-                FullName = updatedOwner.FullName,
-                Email = updatedOwner.Email,
-                IsActive = updatedOwner.IsActive,
-                NIC = updatedOwner.NIC
+                NIC = result.NIC,
+                FullName = result.FullName,
+                Email = result.Email,
+                Phone = result.Phone,
+                IsActive = result.IsActive,
+                CreatedAt = result.CreatedAt
             };
-            return Task.FromResult(updatedDto);
         }
+
+        public async Task<bool> RequestReactivation(string nic)
+        {
+            var owner = await _owners.Find(o => o.NIC == nic).FirstOrDefaultAsync();
+            if (owner == null) throw new KeyNotFoundException("EV Owner not found");
+
+            if (owner.IsActive)
+                throw new InvalidOperationException("Account is already active.");
+
+            if (owner.ReactivationRequested)
+                throw new InvalidOperationException("Reactivation already requested.");
+
+            var update = Builders<EVOwner>.Update.Set(o => o.ReactivationRequested, true);
+            var result = await _owners.UpdateOneAsync(o => o.NIC == nic, update);
+            return result.ModifiedCount > 0;
+        }
+
+
     }
 }
