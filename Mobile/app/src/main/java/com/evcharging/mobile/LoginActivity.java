@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.evcharging.mobile.network.ApiClient;
 import com.evcharging.mobile.network.ApiResponse;
 import com.evcharging.mobile.session.SessionManager;
+import com.evcharging.mobile.utils.JwtUtils;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -40,7 +41,7 @@ public class LoginActivity extends AppCompatActivity {
         apiClient = new ApiClient(sessionManager);
 
         if (sessionManager.isLoggedIn()) {
-            navigateToHome();
+            redirectToRoleHome(sessionManager.getToken());
             finish();
         }
 
@@ -121,9 +122,10 @@ public class LoginActivity extends AppCompatActivity {
             btnLogin.setEnabled(true);
             progressBar.setVisibility(View.GONE);
 
-            if (response.isSuccess()) {
+            if (response.isSuccess() && response.getToken() != null) {
                 Toast.makeText(LoginActivity.this, response.getMessage(), Toast.LENGTH_SHORT).show();
-                navigateToHome();
+                redirectToRoleHome(response.getToken());
+                finish();
             } else {
                 Toast.makeText(LoginActivity.this, response.getMessage(), Toast.LENGTH_LONG).show();
             }
@@ -133,5 +135,16 @@ public class LoginActivity extends AppCompatActivity {
     private void navigateToHome() {
         startActivity(new Intent(LoginActivity.this, HomeActivity.class));
         finish();
+    }
+
+    private void redirectToRoleHome(String token) {
+        String role = JwtUtils.getRoleFromToken(token);
+        if ("owner".equalsIgnoreCase(role)) {
+            startActivity(new Intent(this, OwnerHomeActivity.class));
+        } else if ("operator".equalsIgnoreCase(role)) {
+            startActivity(new Intent(this, OperatorHomeActivity.class));
+        } else {
+            Toast.makeText(this, "Unknown role!", Toast.LENGTH_SHORT).show();
+        }
     }
 }
