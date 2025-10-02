@@ -6,17 +6,67 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
-    <TextView
-        android:id="@+id/tvWelcomeOperator"
-        android:layout_width="wrap_content"
+    <!-- Profile Header Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Welcome, Station Operator!"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_gravity="center_horizontal"
-        android:paddingBottom="16dp"/>
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="16dp">
 
-    <!-- Today’s Reservations -->
+        <!-- Profile Icon/Image -->
+        <ImageView
+            android:id="@+id/ivProfile"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/ic_profile"
+            android:background="@drawable/circle_background"
+            android:padding="8dp"
+            android:layout_marginEnd="12dp"/>
+
+        <!-- Welcome Text and Station Info -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvWelcomeOperator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Welcome, Station Operator!"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/tvStationInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Station: City Central"
+                android:textSize="14sp"
+                android:textColor="@color/gray"/>
+
+            <TextView
+                android:id="@+id/tvOperatorId"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Operator ID: OP001"
+                android:textSize="12sp"
+                android:textColor="@color/dark_gray"/>
+        </LinearLayout>
+
+        <!-- Logout Button -->
+        <ImageButton
+            android:id="@+id/btnLogout"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_logout"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Logout"/>
+    </LinearLayout>
+
+    <!-- Today's Reservations Section -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -33,6 +83,7 @@
         android:dividerHeight="1dp"
         android:layout_marginBottom="16dp"/>
 
+    <!-- Action Buttons -->
     <Button
         android:id="@+id/btnUpdateSlots"
         android:layout_width="match_parent"
@@ -45,6 +96,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="View All Bookings"
+        android:layout_marginBottom="8dp"/>
+
+    <Button
+        android:id="@+id/btnViewProfile"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="My Profile"
         android:layout_marginBottom="8dp"/>
 
     <Button

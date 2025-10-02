@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -18,6 +19,7 @@ import com.evcharging.mobile.session.SessionManager;
 import com.evcharging.mobile.utils.JwtUtils;
 
 public class LoginActivity extends AppCompatActivity {
+    private static final String TAG = "Login";
 
     private EditText etEmail, etPassword;
     private Button btnLogin;
@@ -122,9 +124,9 @@ public class LoginActivity extends AppCompatActivity {
             btnLogin.setEnabled(true);
             progressBar.setVisibility(View.GONE);
 
-            if (response.isSuccess() && response.getToken() != null) {
+            if (response.isSuccess() && response.getData() != null) {
                 Toast.makeText(LoginActivity.this, response.getMessage(), Toast.LENGTH_SHORT).show();
-                redirectToRoleHome(response.getToken());
+                redirectToRoleHome(response.getData());
                 finish();
             } else {
                 Toast.makeText(LoginActivity.this, response.getMessage(), Toast.LENGTH_LONG).show();

@@ -18,7 +18,7 @@ import okhttp3.Response;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE_URL = "https://7dd95115a569.ngrok-free.app/api";
+    private static final String BASE_URL = "https://a929edef1bf7.ngrok-free.app/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
     private OkHttpClient client;
@@ -102,7 +102,6 @@ public class ApiClient {
             return new ApiResponse(false, "Response parsing error", null);
         }
     }
-
 
     // register
     public ApiResponse register(String name, String email, String password) {
