@@ -19,7 +19,6 @@ import com.evcharging.mobile.session.SessionManager;
 import com.evcharging.mobile.utils.JwtUtils;
 
 public class LoginActivity extends AppCompatActivity {
-    private static final String TAG = "Login";
 
     private EditText etEmail, etPassword;
     private Button btnLogin;
@@ -132,11 +131,6 @@ public class LoginActivity extends AppCompatActivity {
                 Toast.makeText(LoginActivity.this, response.getMessage(), Toast.LENGTH_LONG).show();
             }
         }
-    }
-
-    private void navigateToHome() {
-        startActivity(new Intent(LoginActivity.this, HomeActivity.class));
-        finish();
     }
 
     private void redirectToRoleHome(String token) {

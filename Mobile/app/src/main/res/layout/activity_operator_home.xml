@@ -2,13 +2,14 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
-    android:padding="16dp">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:fitsSystemWindows="true">
 
     <LinearLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:padding="16dp">
 
         <!-- Profile Header Section -->
         <LinearLayout
@@ -40,7 +41,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Welcome, Station Operator!"
-                    android:textSize="20sp"
+                    android:textSize="18sp"
                     android:textStyle="bold"
                     android:paddingBottom="4dp"/>
 
@@ -81,13 +82,20 @@
             android:textStyle="bold"
             android:paddingBottom="12dp"/>
 
-        <ListView
-            android:id="@+id/lvTodayReservations"
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="200dp"
-            android:divider="@android:color/darker_gray"
-            android:dividerHeight="1dp"
-            android:layout_marginBottom="24dp"/>
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="2dp">
+
+            <ListView
+                android:id="@+id/lvTodayReservations"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:divider="@android:color/darker_gray"
+                android:dividerHeight="1dp"/>
+        </androidx.cardview.widget.CardView>
 
         <!-- Action Buttons -->
         <Button
@@ -96,7 +104,7 @@
             android:layout_height="wrap_content"
             android:text="Update Slot Availability"
             android:layout_marginBottom="8dp"
-            style="@style/PrimaryButton"/>
+            style="@style/Widget.AppCompat.Button.Colored"/>
 
         <Button
             android:id="@+id/btnViewBookings"
@@ -104,7 +112,7 @@
             android:layout_height="wrap_content"
             android:text="View All Bookings"
             android:layout_marginBottom="8dp"
-            style="@style/SecondaryButton"/>
+            style="@style/Widget.AppCompat.Button.Borderless"/>
 
         <Button
             android:id="@+id/btnViewProfile"
@@ -112,14 +120,14 @@
             android:layout_height="wrap_content"
             android:text="My Profile"
             android:layout_marginBottom="8dp"
-            style="@style/SecondaryButton"/>
+            style="@style/Widget.AppCompat.Button.Borderless"/>
 
         <Button
             android:id="@+id/btnCancelBookings"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Cancel Bookings on behalf of owner"
-            style="@style/SecondaryButton"/>
+            style="@style/Widget.AppCompat.Button.Borderless"/>
 
     </LinearLayout>
 </ScrollView>

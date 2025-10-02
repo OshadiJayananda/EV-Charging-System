@@ -26,9 +26,6 @@
             android:value="@string/google_maps_key" />
 
         <activity
-            android:name=".HomeActivity"
-            android:exported="false" />
-        <activity
             android:name=".RegistrationActivity"
             android:exported="false" />
         <activity
@@ -40,9 +37,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".MainActivity"
-            android:exported="false" />
     </application>
 
 </manifest>

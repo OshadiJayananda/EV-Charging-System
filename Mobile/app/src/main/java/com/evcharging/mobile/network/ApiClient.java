@@ -18,7 +18,9 @@ import okhttp3.Response;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE_URL = "https://a929edef1bf7.ngrok-free.app/api";
+    private static final String BASE = "https://21779b13e731.ngrok-free.app";
+
+    private static final String BASE_URL = BASE +"/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
     private OkHttpClient client;
@@ -87,7 +89,7 @@ public class ApiClient {
                             return new ApiResponse(false, message, null);
                         } catch (JSONException e) {
                             // Response not JSON
-                            return new ApiResponse(false, "Error: " + responseBody, null);
+                            return new ApiResponse(false, "Unexpected error occurred! Contact Administration", null);
                         }
                     } else {
                         return new ApiResponse(false, "Unknown error occurred. Status code: " + statusCode, null);
