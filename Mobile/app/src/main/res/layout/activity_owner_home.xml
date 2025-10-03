@@ -11,30 +11,74 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <TextView
-            android:id="@+id/tvWelcomeOwner"
-            android:layout_width="wrap_content"
+        <!-- Profile Header Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Welcome, EV Owner!"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_gravity="center_horizontal"
-            android:paddingBottom="16dp"/>
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="24dp">
 
+            <!-- Profile Icon/Image -->
+            <ImageView
+                android:id="@+id/ivProfileOwner"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/ic_profile"
+                android:background="@drawable/circle_background"
+                android:padding="8dp"
+                android:layout_marginEnd="12dp"/>
+
+            <!-- Welcome Text -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvWelcomeOwner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Welcome, EV Owner!"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:paddingBottom="4dp"/>
+
+                <TextView
+                    android:id="@+id/tvOwnerId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Owner ID: OW001"
+                    android:textSize="12sp"
+                    android:textColor="@color/dark_gray"/>
+            </LinearLayout>
+
+            <!-- Logout Button -->
+            <ImageButton
+                android:id="@+id/btnLogoutOwner"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_logout"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Logout"/>
+        </LinearLayout>
+
+        <!-- Map Section -->
         <FrameLayout
             android:id="@+id/mapContainer"
             android:layout_width="match_parent"
             android:layout_height="250dp"
             android:background="#E0E0E0"
             android:layout_marginBottom="16dp">
+
             <com.google.android.gms.maps.MapView
                 android:id="@+id/mapView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
         </FrameLayout>
 
-
-
+        <!-- Action Buttons -->
         <Button
             android:id="@+id/btnReserveSlot"
             android:layout_width="match_parent"
@@ -54,6 +98,5 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Charging History"/>
-
     </LinearLayout>
 </ScrollView>

@@ -1,13 +1,18 @@
 package com.evcharging.mobile;
 
-import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.evcharging.mobile.network.ApiClient;
+import com.evcharging.mobile.network.ApiResponse;
+import com.evcharging.mobile.session.SessionManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -21,16 +26,16 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
         private static final String MAP_VIEW_BUNDLE_KEY = "MapViewBundleKey";
 
         private Button btnReserve, btnBookings, btnHistory;
+        private ImageButton btnLogout;
+        private ImageView ivProfile;
 
         @Override
         protected void onCreate(Bundle savedInstanceState) {
                 super.onCreate(savedInstanceState);
                 setContentView(R.layout.activity_owner_home);
 
-                // Find the MapView by its ID
+                // MapView setup
                 mapView = findViewById(R.id.mapView);
-
-                // Initialize the MapView
                 Bundle mapViewBundle = null;
                 if (savedInstanceState != null) {
                         mapViewBundle = savedInstanceState.getBundle(MAP_VIEW_BUNDLE_KEY);
@@ -43,15 +48,25 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                 btnBookings = findViewById(R.id.btnMyBookings);
                 btnHistory = findViewById(R.id.btnChargingHistory);
 
-                btnReserve.setOnClickListener(v -> Toast
-                                .makeText(OwnerHomeActivity.this, "Reserve Slot Clicked", Toast.LENGTH_SHORT).show());
+                // Profile & Logout
+                ivProfile = findViewById(R.id.ivProfileOwner);
+                btnLogout = findViewById(R.id.btnLogoutOwner);
 
-                btnBookings.setOnClickListener(v -> Toast
-                                .makeText(OwnerHomeActivity.this, "My Bookings Clicked", Toast.LENGTH_SHORT).show());
+                // Button Clicks
+                btnReserve.setOnClickListener(
+                                v -> Toast.makeText(this, "Reserve Slot Clicked", Toast.LENGTH_SHORT).show());
 
-                btnHistory.setOnClickListener(v -> Toast
-                                .makeText(OwnerHomeActivity.this, "Charging History Clicked", Toast.LENGTH_SHORT)
-                                .show());
+                btnBookings.setOnClickListener(
+                                v -> Toast.makeText(this, "My Bookings Clicked", Toast.LENGTH_SHORT).show());
+
+                btnHistory.setOnClickListener(
+                                v -> Toast.makeText(this, "Charging History Clicked", Toast.LENGTH_SHORT).show());
+
+                // Profile Click
+                ivProfile.setOnClickListener(v -> Toast.makeText(this, "Profile Clicked", Toast.LENGTH_SHORT).show());
+
+                // Logout Click
+                btnLogout.setOnClickListener(v -> attemptLogout());
         }
 
         @Override
@@ -62,7 +77,7 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                 googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(colombo, 12));
         }
 
-        // MapView lifecycle
+        // MapView lifecycle methods
         @Override
         protected void onStart() {
                 super.onStart();
@@ -108,5 +123,21 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                         outState.putBundle(MAP_VIEW_BUNDLE_KEY, mapViewBundle);
                 }
                 mapView.onSaveInstanceState(mapViewBundle);
+        }
+
+        private void attemptLogout() {
+                ApiClient apiClient = new ApiClient(new SessionManager(this));
+                ApiResponse response = apiClient.logout();
+
+                Toast.makeText(
+                        this,
+                        response.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+
+                // Redirect to login screen after logout
+                Intent intent = new Intent(this, LoginActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // Clear backstack
+                startActivity(intent);
+                finish();
         }
 }
