@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="gray">#808080</color>
+    <color name="dark_gray">#444444</color>
+    
+    <!-- Primary and Secondary Colors for EV Charging App -->
+    <color name="primary_color">#4CAF50</color>      <!-- Green - represents eco-friendly/electric -->
+    <color name="secondary_color">#FFC107</color>    <!-- Amber/Yellow - represents energy/power -->
+    
+    <!-- Basic Colors -->
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+    
+    <!-- Additional recommended colors for EV charging theme -->
+    <color name="primary_dark">#388E3C</color>       <!-- Darker green for status bar -->
+    <color name="accent_color">#FF5722</color>       <!-- Orange for highlights/warnings -->
+    <color name="light_green">#C8E6C9</color>        <!-- Light green for backgrounds -->
+    <color name="text_primary">#212121</color>       <!-- Dark text -->
+    <color name="text_secondary">#757575</color>     <!-- Secondary text -->
+
+    <color name="logout_card_background">#FFEBEE</color>  <!-- Very light red/pink for logout card -->
+</resources>

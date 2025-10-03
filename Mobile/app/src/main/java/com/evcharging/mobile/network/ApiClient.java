@@ -18,7 +18,9 @@ import okhttp3.Response;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE_URL = "https://ev-charging-backend-dbgvakf8dshwddff.canadacentral-01.azurewebsites.net/api";
+    private static final String BASE = "https://21779b13e731.ngrok-free.app";
+
+    private static final String BASE_URL = BASE + "/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
     private OkHttpClient client;
@@ -87,7 +89,7 @@ public class ApiClient {
                             return new ApiResponse(false, message, null);
                         } catch (JSONException e) {
                             // Response not JSON
-                            return new ApiResponse(false, "Error: " + responseBody, null);
+                            return new ApiResponse(false, "Unexpected error occurred! Contact Administration", null);
                         }
                     } else {
                         return new ApiResponse(false, "Unknown error occurred. Status code: " + statusCode, null);
@@ -102,7 +104,6 @@ public class ApiClient {
             return new ApiResponse(false, "Response parsing error", null);
         }
     }
-
 
     // register
     public ApiResponse register(String name, String email, String password) {
@@ -197,5 +198,16 @@ public class ApiClient {
         }
         sessionManager.clearToken();
         return new ApiResponse(true, "Logged out successfully", null);
+    }
+
+    public ApiResponse logoutAndForget() {
+        try {
+            post("/auth/logout", new JSONObject());
+        } catch (Exception e) {
+            Log.w(TAG, "Logout API failed, clearing all data anyway", e);
+        }
+
+        sessionManager.clearAll();
+        return new ApiResponse(true, "Logged out and credentials cleared", null);
     }
 }

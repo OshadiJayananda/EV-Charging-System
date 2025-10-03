@@ -1,56 +1,133 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:padding="16dp"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:fitsSystemWindows="true">
 
-    <TextView
-        android:id="@+id/tvWelcomeOperator"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Welcome, Station Operator!"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_gravity="center_horizontal"
-        android:paddingBottom="16dp"/>
-
-    <!-- Today’s Reservations -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Today's Reservations"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:paddingBottom="8dp"/>
-
-    <ListView
-        android:id="@+id/lvTodayReservations"
-        android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:divider="@android:color/darker_gray"
-        android:dividerHeight="1dp"
-        android:layout_marginBottom="16dp"/>
-
-    <Button
-        android:id="@+id/btnUpdateSlots"
+    <LinearLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Update Slot Availability"
-        android:layout_marginBottom="8dp"/>
+        android:padding="16dp">
 
-    <Button
-        android:id="@+id/btnViewBookings"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="View All Bookings"
-        android:layout_marginBottom="8dp"/>
+        <!-- Profile Header Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="24dp">
 
-    <Button
-        android:id="@+id/btnCancelBookings"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Cancel Bookings on behalf of owner"/>
+            <!-- Profile Icon/Image -->
+            <ImageView
+                android:id="@+id/ivProfile"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/ic_profile"
+                android:background="@drawable/circle_background"
+                android:padding="8dp"
+                android:layout_marginEnd="12dp"/>
 
-</LinearLayout>
+            <!-- Welcome Text and Station Info -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvWelcomeOperator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Welcome, Station Operator!"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:paddingBottom="4dp"/>
+
+                <TextView
+                    android:id="@+id/tvStationInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Station: City Central"
+                    android:textSize="14sp"
+                    android:textColor="@color/gray"
+                    android:paddingBottom="2dp"/>
+
+                <TextView
+                    android:id="@+id/tvOperatorId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Operator ID: OP001"
+                    android:textSize="12sp"
+                    android:textColor="@color/dark_gray"/>
+            </LinearLayout>
+
+            <!-- Logout Button -->
+            <ImageButton
+                android:id="@+id/btnLogout"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_logout"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Logout"/>
+        </LinearLayout>
+
+        <!-- Today's Reservations Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Today's Reservations"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:paddingBottom="12dp"/>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="2dp">
+
+            <ListView
+                android:id="@+id/lvTodayReservations"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:divider="@android:color/darker_gray"
+                android:dividerHeight="1dp"/>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Action Buttons -->
+        <Button
+            android:id="@+id/btnUpdateSlots"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Update Slot Availability"
+            android:layout_marginBottom="8dp"
+            style="@style/Widget.AppCompat.Button.Colored"/>
+
+        <Button
+            android:id="@+id/btnViewBookings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="View All Bookings"
+            android:layout_marginBottom="8dp"
+            style="@style/Widget.AppCompat.Button.Borderless"/>
+
+        <Button
+            android:id="@+id/btnViewProfile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="My Profile"
+            android:layout_marginBottom="8dp"
+            style="@style/Widget.AppCompat.Button.Borderless"/>
+
+        <Button
+            android:id="@+id/btnCancelBookings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cancel Bookings on behalf of owner"
+            style="@style/Widget.AppCompat.Button.Borderless"/>
+
+    </LinearLayout>
+</ScrollView>

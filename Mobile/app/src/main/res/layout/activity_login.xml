@@ -31,12 +31,46 @@
         android:inputType="textEmailAddress"
         android:layout_marginBottom="16dp"/>
 
-    <EditText
-        android:id="@+id/etPassword"
+    <!-- Password Field with Eye Icon -->
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/hntPassword"
-        android:inputType="textPassword"
+        android:layout_marginBottom="16dp">
+
+        <EditText
+            android:id="@+id/etPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/hntPassword"
+            android:inputType="textPassword"
+            android:paddingEnd="48dp"
+            android:paddingRight="48dp"/>
+
+        <ImageView
+            android:id="@+id/ivTogglePassword"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="12dp"
+            android:layout_marginRight="12dp"
+            android:src="@drawable/ic_visibility_off"
+            android:contentDescription="Toggle password visibility"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:padding="4dp"
+            android:clickable="true"
+            android:focusable="true"/>
+
+    </RelativeLayout>
+
+    <CheckBox
+        android:id="@+id/cbRememberMe"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start"
+        android:text="Remember Me"
+        android:textColor="@color/text_primary"
         android:layout_marginBottom="24dp"/>
 
     <Button
