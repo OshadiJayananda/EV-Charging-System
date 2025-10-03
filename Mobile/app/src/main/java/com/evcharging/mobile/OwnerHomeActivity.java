@@ -63,7 +63,9 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                                 v -> Toast.makeText(this, "Charging History Clicked", Toast.LENGTH_SHORT).show());
 
                 // Profile Click
-                ivProfile.setOnClickListener(v -> Toast.makeText(this, "Profile Clicked", Toast.LENGTH_SHORT).show());
+                ivProfile.setOnClickListener(v -> {
+                        startActivity(new Intent(this, OwnerProfileActivity.class));
+                });
 
                 // Logout Click
                 btnLogout.setOnClickListener(v -> attemptLogout());
