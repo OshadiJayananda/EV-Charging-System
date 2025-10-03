@@ -108,7 +108,6 @@ public class OperatorHomeActivity extends AppCompatActivity {
         }
 
         private void navigateToProfile() {
-                Toast.makeText(OperatorHomeActivity.this, "Profile Clicked", Toast.LENGTH_SHORT)
-                        .show();
+                startActivity(new Intent(this, OwnerProfileActivity.class));
         }
 }
