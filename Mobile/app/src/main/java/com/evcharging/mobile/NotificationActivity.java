@@ -33,6 +33,7 @@ public class NotificationActivity extends AppCompatActivity
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setTitle("Notifications");
 
         recyclerView = findViewById(R.id.recyclerViewNotifications);
         layoutEmptyState = findViewById(R.id.layoutEmptyState);
