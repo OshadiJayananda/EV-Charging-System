@@ -3,6 +3,7 @@ package com.evcharging.mobile.service;
 import android.content.Context;
 import android.util.Log;
 import com.evcharging.mobile.model.Notification;
+import com.evcharging.mobile.network.ApiClient;
 import com.evcharging.mobile.session.SessionManager;
 import com.microsoft.signalr.HubConnection;
 import com.microsoft.signalr.HubConnectionBuilder;
@@ -24,7 +25,8 @@ public class SignalRService {
     }
 
     private void setupConnection() {
-        String serverUrl = "https://7601b8b9448a.ngrok-free.app/notificationHub"; // Replace with your server URL
+        // Use the same base URL from ApiClient
+        String serverUrl = ApiClient.getBaseUrl() + "/notificationHub";
 
         hubConnection = HubConnectionBuilder.create(serverUrl)
                 .withHeader("Authorization", "Bearer " + sessionManager.getToken())
@@ -40,16 +42,24 @@ public class SignalRService {
     }
 
     public void connect() {
-        if (hubConnection.getConnectionState() == HubConnectionState.DISCONNECTED) {
-            hubConnection.start().blockingAwait();
-            Log.d(TAG, "SignalR connected");
+        try {
+            if (hubConnection.getConnectionState() == HubConnectionState.DISCONNECTED) {
+                hubConnection.start().blockingAwait();
+                Log.d(TAG, "SignalR connected");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to connect to SignalR", e);
         }
     }
 
     public void disconnect() {
-        if (hubConnection.getConnectionState() == HubConnectionState.CONNECTED) {
-            hubConnection.stop();
-            Log.d(TAG, "SignalR disconnected");
+        try {
+            if (hubConnection.getConnectionState() == HubConnectionState.CONNECTED) {
+                hubConnection.stop();
+                Log.d(TAG, "SignalR disconnected");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to disconnect from SignalR", e);
         }
     }
 
@@ -58,6 +68,13 @@ public class SignalRService {
     }
 
     public boolean isConnected() {
-        return hubConnection.getConnectionState() == HubConnectionState.CONNECTED;
+        return hubConnection != null && hubConnection.getConnectionState() == HubConnectionState.CONNECTED;
+    }
+
+    // Method to reconnect with new token (useful after login)
+    public void reconnectWithNewToken() {
+        disconnect();
+        setupConnection();
+        connect();
     }
 }

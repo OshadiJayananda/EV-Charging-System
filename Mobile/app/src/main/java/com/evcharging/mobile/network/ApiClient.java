@@ -1,13 +1,16 @@
 package com.evcharging.mobile.network;
 
 import android.util.Log;
-
+import com.evcharging.mobile.model.Notification;
 import com.evcharging.mobile.session.SessionManager;
-
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.MediaType;
@@ -18,21 +21,64 @@ import okhttp3.Response;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE = "https://21779b13e731.ngrok-free.app";
-
+    private static final String BASE = "https://7601b8b9448a.ngrok-free.app";
     private static final String BASE_URL = BASE + "/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
     private OkHttpClient client;
     private SessionManager sessionManager;
+    private Gson gson;
 
     public ApiClient(SessionManager sessionManager) {
         this.sessionManager = sessionManager;
+        this.gson = new Gson();
         this.client = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
                 .build();
+    }
+
+    // Static method to get base URL for other services
+    public static String getBaseUrl() {
+        return BASE;
+    }
+
+    // Static method to get API base URL
+    public static String getApiBaseUrl() {
+        return BASE_URL;
+    }
+
+    // Notification API Methods
+    public ApiResponse getUserNotifications() {
+        return get("/notifications/user");
+    }
+
+    public ApiResponse markNotificationAsRead(String notificationId) {
+        try {
+            JSONObject data = new JSONObject();
+            data.put("notificationId", notificationId);
+            return post("/notifications/mark-read", data);
+        } catch (JSONException e) {
+            Log.e(TAG, "Error creating mark as read request", e);
+            return new ApiResponse(false, "Request creation error", null);
+        }
+    }
+
+    public ApiResponse deleteNotification(String notificationId) {
+        return delete("/notifications/" + notificationId);
+    }
+
+    // Helper method to parse notifications list
+    public List<Notification> parseNotifications(String json) {
+        try {
+            Type listType = new TypeToken<List<Notification>>() {
+            }.getType();
+            return gson.fromJson(json, listType);
+        } catch (Exception e) {
+            Log.e(TAG, "Error parsing notifications", e);
+            return null;
+        }
     }
 
     // Login
@@ -54,7 +100,6 @@ public class ApiClient {
             String responseBody = response.body() != null ? response.body().string() : "";
 
             Log.d(TAG, "Login response code: " + statusCode);
-            Log.d(TAG, "Login response body: '" + responseBody + "'");
 
             // Handle based on status code
             switch (statusCode) {
@@ -153,7 +198,6 @@ public class ApiClient {
                 JSONObject errorResponse = new JSONObject(responseBody);
                 return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
             }
-
         } catch (Exception e) {
             Log.e(TAG, "GET request error", e);
             return new ApiResponse(false, "Network error occurred", null);
@@ -182,9 +226,34 @@ public class ApiClient {
                 JSONObject errorResponse = new JSONObject(responseBody);
                 return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
             }
-
         } catch (Exception e) {
             Log.e(TAG, "POST request error", e);
+            return new ApiResponse(false, "Network error occurred", null);
+        }
+    }
+
+    public ApiResponse delete(String endpoint) {
+        try {
+            Request.Builder requestBuilder = new Request.Builder()
+                    .url(BASE_URL + endpoint)
+                    .delete();
+
+            String token = sessionManager.getToken();
+            if (token != null) {
+                requestBuilder.addHeader("Authorization", "Bearer " + token);
+            }
+
+            Response response = client.newCall(requestBuilder.build()).execute();
+            String responseBody = response.body().string();
+
+            if (response.isSuccessful()) {
+                return new ApiResponse(true, "Success", responseBody);
+            } else {
+                JSONObject errorResponse = new JSONObject(responseBody);
+                return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "DELETE request error", e);
             return new ApiResponse(false, "Network error occurred", null);
         }
     }

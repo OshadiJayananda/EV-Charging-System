@@ -22,7 +22,7 @@ import com.evcharging.mobile.session.SessionManager;
 
 public class OwnerHomeActivity extends AppCompatActivity implements SignalRService.NotificationListener {
 
-//        private MapView mapView;
+        // private MapView mapView;
         private static final String MAP_VIEW_BUNDLE_KEY = "MapViewBundleKey";
 
         private Button btnReserve, btnBookings, btnHistory;
@@ -30,6 +30,7 @@ public class OwnerHomeActivity extends AppCompatActivity implements SignalRServi
         private ImageView ivProfile;
 
         private SignalRService signalRService;
+        private ApiClient apiClient;
         private static final String CHANNEL_ID = "ev_notifications";
 
         @Override
@@ -56,12 +57,18 @@ public class OwnerHomeActivity extends AppCompatActivity implements SignalRServi
                 btnLogout = findViewById(R.id.btnLogoutOwner);
                 btnNotifications = findViewById(R.id.btnNotifications);
 
-                // Initialize SignalR service
+                // Initialize services
+                apiClient = new ApiClient(new SessionManager(this));
                 signalRService = new SignalRService(this);
                 signalRService.setNotificationListener(this);
 
                 // Create notification channel
                 createNotificationChannel();
+
+                // Update notification button click
+                btnNotifications.setOnClickListener(v -> {
+                        startActivity(new Intent(this, NotificationActivity.class));
+                });
 
                 // Button Clicks
                 btnReserve.setOnClickListener(
@@ -76,11 +83,6 @@ public class OwnerHomeActivity extends AppCompatActivity implements SignalRServi
                 // Profile Click
                 ivProfile.setOnClickListener(v -> {
                         startActivity(new Intent(this, OwnerProfileActivity.class));
-                });
-
-                // Update notification button click
-                btnNotifications.setOnClickListener(v -> {
-                        startActivity(new Intent(this, NotificationActivity.class));
                 });
 
                 // Logout Click
@@ -145,7 +147,6 @@ public class OwnerHomeActivity extends AppCompatActivity implements SignalRServi
         // }
 
         private void attemptLogout() {
-                ApiClient apiClient = new ApiClient(new SessionManager(this));
                 ApiResponse response = apiClient.logout();
 
                 Toast.makeText(
