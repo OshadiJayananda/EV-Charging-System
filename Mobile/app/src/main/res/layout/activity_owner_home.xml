@@ -82,10 +82,22 @@
             android:background="#E0E0E0"
             android:layout_marginBottom="16dp">
 
-            <com.google.android.gms.maps.MapView
-                android:id="@+id/mapView"
+<!--            <com.google.android.gms.maps.MapView-->
+<!--                android:id="@+id/mapView"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="match_parent" />-->
+            <!-- Placeholder instead of MapView -->
+            <TextView
+                android:id="@+id/mapPlaceholder"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="Map Placeholder"
+                android:background="@android:color/darker_gray"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="18sp" />
+
         </FrameLayout>
 
         <!-- Action Buttons -->

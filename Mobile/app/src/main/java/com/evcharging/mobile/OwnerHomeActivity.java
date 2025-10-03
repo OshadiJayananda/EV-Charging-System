@@ -20,7 +20,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class OwnerHomeActivity extends AppCompatActivity {
 
         private MapView mapView;
         private static final String MAP_VIEW_BUNDLE_KEY = "MapViewBundleKey";
@@ -35,13 +35,13 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                 setContentView(R.layout.activity_owner_home);
 
                 // MapView setup
-                mapView = findViewById(R.id.mapView);
-                Bundle mapViewBundle = null;
-                if (savedInstanceState != null) {
-                        mapViewBundle = savedInstanceState.getBundle(MAP_VIEW_BUNDLE_KEY);
-                }
-                mapView.onCreate(mapViewBundle);
-                mapView.getMapAsync(this);
+//                mapView = findViewById(R.id.mapView);
+//                Bundle mapViewBundle = null;
+//                if (savedInstanceState != null) {
+//                        mapViewBundle = savedInstanceState.getBundle(MAP_VIEW_BUNDLE_KEY);
+//                }
+//                mapView.onCreate(mapViewBundle);
+//                mapView.getMapAsync(this);
 
                 // Buttons
                 btnReserve = findViewById(R.id.btnReserveSlot);
@@ -74,61 +74,61 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                 btnLogout.setOnClickListener(v -> attemptLogout());
         }
 
-        @Override
-        public void onMapReady(@NonNull GoogleMap googleMap) {
-                // Example marker at Colombo, Sri Lanka
-                LatLng colombo = new LatLng(6.9271, 79.8612);
-                googleMap.addMarker(new MarkerOptions().position(colombo).title("Charging Station"));
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(colombo, 12));
-        }
-
-        // MapView lifecycle methods
-        @Override
-        protected void onStart() {
-                super.onStart();
-                mapView.onStart();
-        }
-
-        @Override
-        protected void onResume() {
-                super.onResume();
-                mapView.onResume();
-        }
-
-        @Override
-        protected void onPause() {
-                mapView.onPause();
-                super.onPause();
-        }
-
-        @Override
-        protected void onStop() {
-                mapView.onStop();
-                super.onStop();
-        }
-
-        @Override
-        protected void onDestroy() {
-                mapView.onDestroy();
-                super.onDestroy();
-        }
-
-        @Override
-        public void onLowMemory() {
-                super.onLowMemory();
-                mapView.onLowMemory();
-        }
-
-        @Override
-        protected void onSaveInstanceState(@NonNull Bundle outState) {
-                super.onSaveInstanceState(outState);
-                Bundle mapViewBundle = outState.getBundle(MAP_VIEW_BUNDLE_KEY);
-                if (mapViewBundle == null) {
-                        mapViewBundle = new Bundle();
-                        outState.putBundle(MAP_VIEW_BUNDLE_KEY, mapViewBundle);
-                }
-                mapView.onSaveInstanceState(mapViewBundle);
-        }
+//        @Override
+//        public void onMapReady(@NonNull GoogleMap googleMap) {
+//                // Example marker at Colombo, Sri Lanka
+//                LatLng colombo = new LatLng(6.9271, 79.8612);
+//                googleMap.addMarker(new MarkerOptions().position(colombo).title("Charging Station"));
+//                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(colombo, 12));
+//        }
+//
+//        // MapView lifecycle methods
+//        @Override
+//        protected void onStart() {
+//                super.onStart();
+//                mapView.onStart();
+//        }
+//
+//        @Override
+//        protected void onResume() {
+//                super.onResume();
+//                mapView.onResume();
+//        }
+//
+//        @Override
+//        protected void onPause() {
+//                mapView.onPause();
+//                super.onPause();
+//        }
+//
+//        @Override
+//        protected void onStop() {
+//                mapView.onStop();
+//                super.onStop();
+//        }
+//
+//        @Override
+//        protected void onDestroy() {
+//                mapView.onDestroy();
+//                super.onDestroy();
+//        }
+//
+//        @Override
+//        public void onLowMemory() {
+//                super.onLowMemory();
+//                mapView.onLowMemory();
+//        }
+//
+//        @Override
+//        protected void onSaveInstanceState(@NonNull Bundle outState) {
+//                super.onSaveInstanceState(outState);
+//                Bundle mapViewBundle = outState.getBundle(MAP_VIEW_BUNDLE_KEY);
+//                if (mapViewBundle == null) {
+//                        mapViewBundle = new Bundle();
+//                        outState.putBundle(MAP_VIEW_BUNDLE_KEY, mapViewBundle);
+//                }
+//                mapView.onSaveInstanceState(mapViewBundle);
+//        }
 
         private void attemptLogout() {
                 ApiClient apiClient = new ApiClient(new SessionManager(this));
