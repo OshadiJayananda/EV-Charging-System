@@ -26,7 +26,7 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
         private static final String MAP_VIEW_BUNDLE_KEY = "MapViewBundleKey";
 
         private Button btnReserve, btnBookings, btnHistory;
-        private ImageButton btnLogout;
+        private ImageButton btnLogout, btnNotifications;
         private ImageView ivProfile;
 
         @Override
@@ -51,6 +51,7 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                 // Profile & Logout
                 ivProfile = findViewById(R.id.ivProfileOwner);
                 btnLogout = findViewById(R.id.btnLogoutOwner);
+                btnNotifications = findViewById(R.id.btnNotifications);
 
                 // Button Clicks
                 btnReserve.setOnClickListener(
@@ -66,6 +67,8 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                 ivProfile.setOnClickListener(v -> {
                         startActivity(new Intent(this, OwnerProfileActivity.class));
                 });
+
+                btnNotifications.setOnClickListener(v -> Toast.makeText(this, "Notification icon Clicked", Toast.LENGTH_SHORT).show());
 
                 // Logout Click
                 btnLogout.setOnClickListener(v -> attemptLogout());
