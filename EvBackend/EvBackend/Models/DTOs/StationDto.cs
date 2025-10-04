@@ -21,6 +21,7 @@ public class StationDto
     public int Capacity { get; set; }
     public int AvailableSlots { get; set; }
     public bool IsActive { get; set; }
+    public List<SlotDto> Slots { get; set; } = new();
 }
 
 public class CreateStationDto
@@ -29,6 +30,7 @@ public class CreateStationDto
     public string Location { get; set; }
     public string Type { get; set; }
     public int Capacity { get; set; }
+
 }
 
 public class UpdateStationDto
@@ -38,4 +40,7 @@ public class UpdateStationDto
     public string Type { get; set; }
     public int Capacity { get; set; }
     public int AvailableSlots { get; set; }
+
+    // Optional per-slot updates
+    public List<SlotUpdateDto> SlotUpdates { get; set; } = new();
 }

@@ -10,6 +10,7 @@ using DotNetEnv;
 using EvBackend.Services.Interfaces;
 using Microsoft.OpenApi.Models;
 using EvBackend.Hubs;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +36,13 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
     var client = sp.GetRequiredService<IMongoClient>();
     return client.GetDatabase(settings.DatabaseName);
 });
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
 
 // Register UserService
 builder.Services.AddScoped<IUserService, UserService>();

@@ -13,8 +13,8 @@ namespace EvBackend.Entities
     public class Station
     {
         [BsonId] // Marks this as the MongoDB document _id
-        [BsonRepresentation(BsonType.ObjectId)] 
-        public string StationId { get; set; }   
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string StationId { get; set; }
 
         [BsonElement("name")]
         public string Name { get; set; }
@@ -23,7 +23,7 @@ namespace EvBackend.Entities
         public string Location { get; set; }
 
         [BsonElement("latitude")]
-        public double Latitude { get; set; }  
+        public double Latitude { get; set; }
 
         [BsonElement("longitude")]
         public double Longitude { get; set; }
@@ -39,5 +39,8 @@ namespace EvBackend.Entities
 
         [BsonElement("isActive")]
         public bool IsActive { get; set; } = true;
+
+        [BsonElement("slotIds")]
+        public List<string> SlotIds { get; set; } = new();
     }
 }

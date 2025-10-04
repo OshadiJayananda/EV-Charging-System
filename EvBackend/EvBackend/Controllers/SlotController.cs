@@ -32,7 +32,7 @@ namespace EvBackend.Controllers
 
         // Create Slot (Admin/Backoffice/Operator)
         [HttpPost]
-        [Authorize(Roles = "Admin,Backoffice,Operator")]
+        //[Authorize(Roles = "Admin,Backoffice,Operator")]
         public async Task<IActionResult> CreateSlot(string stationId, [FromBody] CreateSlotDto dto)
         {
             if (dto == null || string.IsNullOrWhiteSpace(dto.ConnectorType))
