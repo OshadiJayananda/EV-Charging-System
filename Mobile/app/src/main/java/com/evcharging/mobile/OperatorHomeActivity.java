@@ -11,8 +11,6 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.evcharging.mobile.LoginActivity;
-import com.evcharging.mobile.R;
 import com.evcharging.mobile.db.OperatorRepository;
 import com.evcharging.mobile.session.SessionManager;
 

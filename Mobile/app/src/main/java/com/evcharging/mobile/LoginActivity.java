@@ -2,6 +2,7 @@ package com.evcharging.mobile;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -36,7 +37,7 @@ public class LoginActivity extends AppCompatActivity {
     private SessionManager sessionManager;
 
     private final OkHttpClient httpClient = new OkHttpClient();
-    private static final String BASE_URL = ApiClient.getBaseUrl(); // ✅ use public getter
+    private static final String BASE_URL = ApiClient.getBaseUrl();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,32 +96,40 @@ public class LoginActivity extends AppCompatActivity {
                     try {
                         String responseBody = response.body().string();
                         JSONObject json = new JSONObject(responseBody);
+                        String token = json.optString("token", "");
 
-                        // ✅ Adjust these keys based on your API's real response
-                        String token = json.getString("token");
-                        JSONObject user = json.has("user") ? json.getJSONObject("user") : json;
+                        if (token.isEmpty()) {
+                            runOnUiThread(() ->
+                                    Toast.makeText(LoginActivity.this, "Login failed: No token received", Toast.LENGTH_SHORT).show());
+                            return;
+                        }
 
-                        String operatorId = user.optString("id", "N/A");
-                        String fullName = user.optString("fullName", "Operator");
-                        String email = user.optString("email", "");
-                        String stationId = user.optString("stationId", "");
-                        String stationName = user.optString("stationName", "");
-                        boolean isActive = user.optBoolean("isActive", true);
+                        // ✅ Decode JWT and extract operator info
+                        JSONObject payload = decodeJWT(token);
+                        Log.d("JWT_PAYLOAD", payload.toString(2));
 
+                        String operatorId = payload.optString("nameid", "N/A");
+                        String fullName = payload.optString("FullName", "Operator");
+                        String email = payload.optString("email", "");
+                        String role = payload.optString("role", "");
+                        boolean isActive = true;
+
+                        // ✅ Save session + operator
                         sessionManager.saveToken(token);
-
                         OperatorRepository operatorRepo = new OperatorRepository(LoginActivity.this);
-                        operatorRepo.saveOperator(operatorId, fullName, email, stationId, stationName, isActive);
+                        operatorRepo.saveOperator(operatorId, fullName, email, "", "", isActive);
+
+                        Log.d("DB_DEBUG", "Saved Operator ID: " + operatorId + ", name: " + fullName + ", role: " + role);
 
                         runOnUiThread(() -> {
                             Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
-                            Intent intent = new Intent(LoginActivity.this, com.evcharging.mobile.OperatorHomeActivity.class);
+                            Intent intent = new Intent(LoginActivity.this, OperatorHomeActivity.class);
                             startActivity(intent);
                             finish();
                         });
 
-                    } catch (JSONException e) {
-                        Log.e("Login", "JSON parse error", e);
+                    } catch (Exception e) {
+                        Log.e("Login", "Processing error", e);
                     }
                 } else {
                     runOnUiThread(() ->
@@ -128,5 +137,21 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    // ✅ Decode JWT Token (Base64 middle section)
+    private JSONObject decodeJWT(String jwt) {
+        try {
+            String[] parts = jwt.split("\\.");
+            if (parts.length < 2) return new JSONObject();
+
+            String payload = parts[1];
+            byte[] decodedBytes = Base64.decode(payload, Base64.URL_SAFE | Base64.NO_WRAP);
+            String decodedString = new String(decodedBytes);
+            return new JSONObject(decodedString);
+        } catch (Exception e) {
+            Log.e("JWT", "Failed to decode", e);
+            return new JSONObject();
+        }
     }
 }
