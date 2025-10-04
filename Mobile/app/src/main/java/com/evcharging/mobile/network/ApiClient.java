@@ -136,6 +136,98 @@ public class ApiClient {
         }
     }
 
+    public ApiResponse updateEvOwner(String nic, JSONObject data) {
+        try {
+            RequestBody body = RequestBody.create(data.toString(), JSON);
+            Request.Builder requestBuilder = new Request.Builder()
+                    .url(BASE_URL + "/owners/" + nic)
+                    .put(body);
+
+            String token = sessionManager.getToken();
+            if (token != null) {
+                requestBuilder.addHeader("Authorization", "Bearer " + token);
+            }
+
+            Response response = client.newCall(requestBuilder.build()).execute();
+            String responseBody = response.body().string();
+
+            if (response.isSuccessful()) {
+                return new ApiResponse(true, "Profile updated successfully", responseBody);
+            } else {
+                JSONObject errorResponse = new JSONObject(responseBody);
+                return new ApiResponse(false, errorResponse.optString("message", "Update failed"), null);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Update error", e);
+            return new ApiResponse(false, "Network error occurred", null);
+        }
+    }
+
+    // Generic PATCH helper
+    private ApiResponse patch(String endpoint) {
+        try {
+            Request.Builder requestBuilder = new Request.Builder()
+                    .url(BASE_URL + endpoint)
+                    .patch(RequestBody.create("", JSON));
+
+            String token = sessionManager.getToken();
+            if (token != null)
+                requestBuilder.addHeader("Authorization", "Bearer " + token);
+
+            Response response = client.newCall(requestBuilder.build()).execute();
+            String responseBody = response.body().string();
+
+            if (response.isSuccessful()) {
+                return new ApiResponse(true, "Operation successful", responseBody);
+            } else {
+                JSONObject errorResponse = new JSONObject(responseBody);
+                return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "PATCH request error", e);
+            return new ApiResponse(false, "Network error occurred", null);
+        }
+    }
+
+    // Generic PUT helper
+    private ApiResponse put(String endpoint, JSONObject data) {
+        try {
+            RequestBody body = RequestBody.create(data.toString(), JSON);
+            Request.Builder requestBuilder = new Request.Builder()
+                    .url(BASE_URL + endpoint)
+                    .put(body);
+
+            String token = sessionManager.getToken();
+            if (token != null)
+                requestBuilder.addHeader("Authorization", "Bearer " + token);
+
+            Response response = client.newCall(requestBuilder.build()).execute();
+            String responseBody = response.body().string();
+
+            if (response.isSuccessful()) {
+                return new ApiResponse(true, "Operation successful", responseBody);
+            } else {
+                JSONObject errorResponse = new JSONObject(responseBody);
+                return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "PUT request error", e);
+            return new ApiResponse(false, "Network error occurred", null);
+        }
+    }
+
+
+    // Deactivate EV Owner
+    public ApiResponse deactivateEvOwner(String nic) {
+        return patch("/owners/" + nic + "/deactivate");
+    }
+
+    // Request Reactivation
+    public ApiResponse requestReactivation(String nic) {
+        return patch("/owners/" + nic + "/request-reactivation");
+    }
+
+
     // GET request
     public ApiResponse get(String endpoint) {
         try {
