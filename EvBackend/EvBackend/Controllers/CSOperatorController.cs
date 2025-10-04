@@ -27,8 +27,8 @@ namespace EvBackend.Controllers
             _notificationService = notificationService;
         }
 
-        // ✅ Create Operator
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateOperator([FromBody] CreateCSOperatorDto createCSOperatorDto)
         {
             if (!ModelState.IsValid)
@@ -56,8 +56,8 @@ namespace EvBackend.Controllers
             }
         }
 
-        // ✅ Get Operator by ID
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetOperatorById(string id)
         {
             try
@@ -76,8 +76,8 @@ namespace EvBackend.Controllers
             }
         }
 
-        // ✅ Get All Operators (Paginated)
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllOperators([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             try
@@ -92,8 +92,8 @@ namespace EvBackend.Controllers
             }
         }
 
-        // ✅ Update Operator
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateOperator(string id, [FromBody] CSOperatorDto csOperatorDto)
         {
             if (!ModelState.IsValid)
@@ -117,8 +117,8 @@ namespace EvBackend.Controllers
             }
         }
 
-        // ✅ Change Operator Status (Activate / Deactivate)
         [HttpPatch("{id}/status")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ChangeOperatorStatus(string id, [FromQuery] bool isActive)
         {
             try
