@@ -4,6 +4,7 @@
     package="com.evcharging.mobile">
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -16,6 +17,9 @@
         tools:replace="android:label">
         <activity
             android:name=".OwnerEditProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".NotificationActivity"
             android:exported="false" />
         <activity
             android:name=".OperatorProfileActivity"

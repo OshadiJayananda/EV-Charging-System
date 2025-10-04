@@ -34,6 +34,16 @@ namespace EvBackend.Controllers
             return Ok(notifications);
         }
 
+        // GET /api/notifications/user
+        [HttpGet("user")]
+        [Authorize]
+        public async Task<IActionResult> GetUserNotifications()
+        {
+            var userId = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var notifications = await _notificationService.GetUserNotifications(userId);
+            return Ok(notifications);
+        }
+
         // PATCH /api/notifications/{notificationId}/read
         [HttpPatch("{notificationId}/read")]
         [Authorize]
