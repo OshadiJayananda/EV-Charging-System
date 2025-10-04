@@ -15,7 +15,6 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import ProtectedLayout from "./components/ProtectedLayout";
-import StationManage from "./components/Admin/StationsManage";
 import StationList from "./pages/stations/StationList";
 import StationForm from "./pages/stations/StationForm";
 import StationSlots from "./pages/stations/StationSlots";
