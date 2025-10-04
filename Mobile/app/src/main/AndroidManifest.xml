@@ -15,6 +15,12 @@
         android:usesCleartextTraffic="true"
         tools:replace="android:label">
         <activity
+            android:name=".OperatorProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".OwnerProfileActivity"
+            android:exported="false" />
+        <activity
             android:name=".OperatorHomeActivity"
             android:exported="false" />
         <activity
@@ -25,9 +31,6 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
 
-        <activity
-            android:name=".HomeActivity"
-            android:exported="false" />
         <activity
             android:name=".RegistrationActivity"
             android:exported="false" />
@@ -40,9 +43,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".MainActivity"
-            android:exported="false" />
     </application>
 
 </manifest>

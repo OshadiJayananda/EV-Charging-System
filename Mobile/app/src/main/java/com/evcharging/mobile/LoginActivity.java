@@ -3,10 +3,16 @@ package com.evcharging.mobile;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.InputType;
 import android.text.TextUtils;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -15,14 +21,20 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.evcharging.mobile.network.ApiClient;
 import com.evcharging.mobile.network.ApiResponse;
 import com.evcharging.mobile.session.SessionManager;
+import com.evcharging.mobile.utils.JwtUtils;
 
 public class LoginActivity extends AppCompatActivity {
 
     private EditText etEmail, etPassword;
     private Button btnLogin;
     private TextView tvRegister;
+    private CheckBox cbRememberMe;
+    private ImageView ivTogglePassword;
     private ProgressBar progressBar;
     private ApiClient apiClient;
+    private SessionManager sessionManager;
+
+    private boolean isPasswordVisible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,14 +45,18 @@ public class LoginActivity extends AppCompatActivity {
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
         tvRegister = findViewById(R.id.tvRegister);
+        cbRememberMe = findViewById(R.id.cbRememberMe);
+        ivTogglePassword = findViewById(R.id.ivTogglePassword);
         progressBar = findViewById(R.id.progressBar);
 
-        SessionManager sessionManager = new SessionManager(this);
-
+        sessionManager = new SessionManager(this);
         apiClient = new ApiClient(sessionManager);
 
+        // Load saved credentials if remember me was enabled
+        loadSavedCredentials();
+
         if (sessionManager.isLoggedIn()) {
-            navigateToHome();
+            redirectToRoleHome(sessionManager.getToken());
             finish();
         }
 
@@ -57,15 +73,44 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(new Intent(LoginActivity.this, RegistrationActivity.class));
             }
         });
+
+        ivTogglePassword.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                togglePasswordVisibility();
+            }
+        });
+    }
+
+    private void togglePasswordVisibility() {
+        if (isPasswordVisible) {
+            etPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+            ivTogglePassword.setImageResource(R.drawable.ic_visibility_off);
+            isPasswordVisible = false;
+        } else {
+            etPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+            ivTogglePassword.setImageResource(R.drawable.ic_visibility);
+            isPasswordVisible = true;
+        }
+
+        etPassword.setSelection(etPassword.getText().length());
+    }
+
+    private void loadSavedCredentials() {
+        if (sessionManager.isRememberMeEnabled()) {
+            etEmail.setText(sessionManager.getSavedEmail());
+            etPassword.setText(sessionManager.getSavedPassword());
+            cbRememberMe.setChecked(true);
+        }
     }
 
     private void attemptLogin() {
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
+        boolean rememberMe = cbRememberMe.isChecked();
 
         boolean isValid = true;
 
-        // Validation
         if (TextUtils.isEmpty(email)) {
             etEmail.setError("Email is required");
             etEmail.requestFocus();
@@ -94,22 +139,26 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        new LoginTask().execute(email, password);
+        new LoginTask().execute(email, password, String.valueOf(rememberMe));
     }
 
     private class LoginTask extends AsyncTask<String, Void, ApiResponse> {
+        private String email;
+        private String password;
+        private boolean rememberMe;
+
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            // Show loading state
             btnLogin.setEnabled(false);
             progressBar.setVisibility(View.VISIBLE);
         }
 
         @Override
         protected ApiResponse doInBackground(String... params) {
-            String email = params[0];
-            String password = params[1];
+            email = params[0];
+            password = params[1];
+            rememberMe = Boolean.parseBoolean(params[2]);
             return apiClient.login(email, password);
         }
 
@@ -117,21 +166,29 @@ public class LoginActivity extends AppCompatActivity {
         protected void onPostExecute(ApiResponse response) {
             super.onPostExecute(response);
 
-            // Hide loading state
             btnLogin.setEnabled(true);
             progressBar.setVisibility(View.GONE);
 
-            if (response.isSuccess()) {
+            if (response.isSuccess() && response.getData() != null) {
+                sessionManager.saveCredentials(email, password, rememberMe);
+
                 Toast.makeText(LoginActivity.this, response.getMessage(), Toast.LENGTH_SHORT).show();
-                navigateToHome();
+                redirectToRoleHome(response.getData());
+                finish();
             } else {
                 Toast.makeText(LoginActivity.this, response.getMessage(), Toast.LENGTH_LONG).show();
             }
         }
     }
 
-    private void navigateToHome() {
-        startActivity(new Intent(LoginActivity.this, HomeActivity.class));
-        finish();
+    private void redirectToRoleHome(String token) {
+        String role = JwtUtils.getRoleFromToken(token);
+        if ("owner".equalsIgnoreCase(role)) {
+            startActivity(new Intent(this, OwnerHomeActivity.class));
+        } else if ("operator".equalsIgnoreCase(role)) {
+            startActivity(new Intent(this, OperatorHomeActivity.class));
+        } else {
+            Toast.makeText(this, "Unknown role!", Toast.LENGTH_SHORT).show();
+        }
     }
 }
