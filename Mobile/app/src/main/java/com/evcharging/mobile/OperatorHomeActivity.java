@@ -74,16 +74,15 @@ public class OperatorHomeActivity extends AppCompatActivity {
                         finish();
                 });
 
-                btnUpdateSlots.setOnClickListener(v ->
-                        Toast.makeText(this, "Update Slot Availability clicked", Toast.LENGTH_SHORT).show());
+                btnUpdateSlots.setOnClickListener(v -> Toast
+                                .makeText(this, "Update Slot Availability clicked", Toast.LENGTH_SHORT).show());
 
-                btnViewBookings.setOnClickListener(v ->
-                        Toast.makeText(this, "View All Bookings clicked", Toast.LENGTH_SHORT).show());
+                btnViewBookings.setOnClickListener(
+                                v -> Toast.makeText(this, "View All Bookings clicked", Toast.LENGTH_SHORT).show());
 
-                btnViewProfile.setOnClickListener(v ->
-                        Toast.makeText(this, "My Profile clicked", Toast.LENGTH_SHORT).show());
+                btnViewProfile.setOnClickListener(v -> startActivity(new Intent(this, OperatorHomeActivity.class)));
 
-                btnCancelBookings.setOnClickListener(v ->
-                        Toast.makeText(this, "Cancel Bookings clicked", Toast.LENGTH_SHORT).show());
+                btnCancelBookings.setOnClickListener(
+                                v -> Toast.makeText(this, "Cancel Bookings clicked", Toast.LENGTH_SHORT).show());
         }
 }
