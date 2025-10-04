@@ -13,6 +13,11 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.security.cert.X509Certificate;
+
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -21,7 +26,7 @@ import okhttp3.Response;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE = "https://7601b8b9448a.ngrok-free.app";
+    private static final String BASE = "https://72bf7f2b8578.ngrok-free.app";
     private static final String BASE_URL = BASE + "/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
@@ -32,11 +37,43 @@ public class ApiClient {
     public ApiClient(SessionManager sessionManager) {
         this.sessionManager = sessionManager;
         this.gson = new Gson();
+        
+        // Create OkHttpClient with unsafe SSL for ngrok (development only)
         this.client = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
+                .hostnameVerifier((hostname, session) -> true)
+                .sslSocketFactory(getUnsafeSslContext().getSocketFactory(), getTrustAllCertsManager())
                 .build();
+    }
+
+    private SSLContext getUnsafeSslContext() {
+        try {
+            TrustManager[] trustAllCerts = new TrustManager[]{getTrustAllCertsManager()};
+            SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            return sslContext;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private X509TrustManager getTrustAllCertsManager() {
+        return new X509TrustManager() {
+            @Override
+            public void checkClientTrusted(X509Certificate[] chain, String authType) {
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] chain, String authType) {
+            }
+
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[]{};
+            }
+        };
     }
 
     // Static method to get base URL for other services
