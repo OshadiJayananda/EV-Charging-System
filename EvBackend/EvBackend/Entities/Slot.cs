@@ -20,6 +20,7 @@ namespace EvBackend.Entities
         public string SlotId { get; set; }
 
         public string StationId { get; set; }
+        public int Number { get; set; }
         public string ConnectorType { get; set; }
         public string Status { get; set; } // Available, Booked, Inactive
         public DateTime? StartTime { get; set; }

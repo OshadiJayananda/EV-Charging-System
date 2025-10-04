@@ -16,12 +16,15 @@ namespace EvBackend.Services
     public class StationService : IStationService
     {
         private readonly IMongoCollection<Station> _stations;
+        private readonly IMongoCollection<Slot> _slots;
+
         private readonly GeocodingService _geocoding;
 
 
         public StationService(IMongoDatabase database, GeocodingService geocoding)
         {
             _stations = database.GetCollection<Station>("Stations");
+            _slots = database.GetCollection<Slot>("Slots");
             _geocoding = geocoding;
         }
 
@@ -41,28 +44,234 @@ namespace EvBackend.Services
                 Longitude = coords?.lng ?? 0
             };
 
+            // Insert station first
             await _stations.InsertOneAsync(station);
+
+            // Generate slots
+            var slotIds = new List<Slot>();
+            for (int i = 1; i <= dto.Capacity; i++)
+            {
+                var slot = new Slot
+                {
+                    StationId = station.StationId,
+                    SlotId = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
+                    ConnectorType = dto.Type, // default same as station type
+                    Number = i,
+                    Status = "Available"
+                };
+
+                slotIds.Add(slot);
+            }
+
+            // Insert slots collection
+            await _slots.InsertManyAsync(slotIds);
+
+            // Save slot IDs inside station for quick lookup
+            station.SlotIds = slotIds.Select(s => s.SlotId).ToList();
+
+            // Update station with slot references
+            var filter = Builders<Station>.Filter.Eq(s => s.StationId, station.StationId);
+            var update = Builders<Station>.Update.Set(s => s.SlotIds, station.SlotIds);
+            await _stations.UpdateOneAsync(filter, update);
+
             return ToDto(station);
         }
 
+
+        // public async Task<StationDto> UpdateStationAsync(string stationId, UpdateStationDto dto)
+        // {
+        //     var station = await _stations.Find(s => s.StationId == stationId).FirstOrDefaultAsync();
+        //     if (station == null) return null;
+
+        //     // 1. Update basic station fields
+        //     var filter = Builders<Station>.Filter.Eq(s => s.StationId, stationId);
+        //     var update = Builders<Station>.Update
+        //         .Set(s => s.Name, dto.Name)
+        //         .Set(s => s.Location, dto.Location)
+        //         .Set(s => s.Type, dto.Type)
+        //         .Set(s => s.Capacity, dto.Capacity)
+        //         .Set(s => s.AvailableSlots, dto.AvailableSlots);
+
+        //     await _stations.UpdateOneAsync(filter, update);
+
+        //     // 2. Process explicit slot updates (status/connector/remove)
+        //     if (dto.SlotUpdates != null && dto.SlotUpdates.Any())
+        //     {
+        //         foreach (var slotUpdate in dto.SlotUpdates)
+        //         {
+        //             if (slotUpdate.Action == SlotAction.Remove)
+        //             {
+        //                 var deleteFilter = Builders<Slot>.Filter.Eq(s => s.SlotId, slotUpdate.SlotId);
+        //                 await _slots.DeleteOneAsync(deleteFilter);
+        //                 station.SlotIds.Remove(slotUpdate.SlotId);
+        //             }
+        //             else if (slotUpdate.Action == SlotAction.Update)
+        //             {
+        //                 var filterSlot = Builders<Slot>.Filter.Eq(s => s.SlotId, slotUpdate.SlotId);
+        //                 var updateSlot = Builders<Slot>.Update
+        //                     .Set(s => s.ConnectorType, slotUpdate.ConnectorType)
+        //                     .Set(s => s.Status, slotUpdate.Status);
+
+        //                 await _slots.UpdateOneAsync(filterSlot, updateSlot);
+        //             }
+        //         }
+
+        //         // sync SlotIds back
+        //         await _stations.UpdateOneAsync(
+        //             Builders<Station>.Filter.Eq(s => s.StationId, stationId),
+        //             Builders<Station>.Update.Set(s => s.SlotIds, station.SlotIds)
+        //         );
+        //     }
+
+        //     // 3. Always enforce capacity balancing
+        //     var existingSlots = await _slots.Find(s => s.StationId == stationId).ToListAsync();
+        //     var currentCount = existingSlots.Count;
+
+        //     if (dto.Capacity > currentCount)
+        //     {
+        //         // ➕ Add missing slots
+        //         var newSlots = new List<Slot>();
+        //         for (int i = currentCount + 1; i <= dto.Capacity; i++)
+        //         {
+        //             var slot = new Slot
+        //             {
+        //                 StationId = stationId,
+        //                 Number = i,
+        //                 ConnectorType = dto.Type ?? station.Type,
+        //                 Status = "Available"
+        //             };
+        //             newSlots.Add(slot);
+        //         }
+
+        //         if (newSlots.Any())
+        //         {
+        //             await _slots.InsertManyAsync(newSlots);
+        //             station.SlotIds.AddRange(newSlots.Select(s => s.SlotId));
+        //             await _stations.UpdateOneAsync(filter,
+        //                 Builders<Station>.Update.Set(s => s.SlotIds, station.SlotIds));
+        //         }
+        //     }
+        //     else if (dto.Capacity < currentCount)
+        //     {
+        //         // ➖ Remove extra slots (from the end)
+        //         var slotsToRemove = existingSlots
+        //             .OrderByDescending(s => s.Number)
+        //             .Take(currentCount - dto.Capacity)
+        //             .ToList();
+
+        //         if (slotsToRemove.Any())
+        //         {
+        //             var slotIdsToRemove = slotsToRemove.Select(s => s.SlotId).ToList();
+
+        //             await _slots.DeleteManyAsync(
+        //                 Builders<Slot>.Filter.In(s => s.SlotId, slotIdsToRemove));
+
+        //             station.SlotIds = station.SlotIds.Except(slotIdsToRemove).ToList();
+        //             await _stations.UpdateOneAsync(filter,
+        //                 Builders<Station>.Update.Set(s => s.SlotIds, station.SlotIds));
+        //         }
+        //     }
+
+        //     // 4. Return updated DTO
+        //     var updatedStation = await _stations.Find(s => s.StationId == stationId).FirstOrDefaultAsync();
+        //     return updatedStation != null ? ToDto(updatedStation) : null;
+        // }
+
         public async Task<StationDto> UpdateStationAsync(string stationId, UpdateStationDto dto)
         {
+            var station = await _stations.Find(s => s.StationId == stationId).FirstOrDefaultAsync();
+            if (station == null) return null;
+
+            var coords = await _geocoding.GetCoordinatesAsync(dto.Location);
+
+            // 1. Update basic station fields (capacity excluded, we’ll recalc later)
             var filter = Builders<Station>.Filter.Eq(s => s.StationId, stationId);
             var update = Builders<Station>.Update
                 .Set(s => s.Name, dto.Name)
                 .Set(s => s.Location, dto.Location)
+                .Set(s => s.Latitude, coords?.lat ?? station.Latitude)
+                .Set(s => s.Longitude, coords?.lng ?? station.Longitude)
                 .Set(s => s.Type, dto.Type)
-                .Set(s => s.Capacity, dto.Capacity)
                 .Set(s => s.AvailableSlots, dto.AvailableSlots);
 
-            var options = new FindOneAndUpdateOptions<Station>
-            {
-                ReturnDocument = ReturnDocument.After // return updated doc
-            };
+            await _stations.UpdateOneAsync(filter, update);
 
-            var updatedStation = await _stations.FindOneAndUpdateAsync(filter, update, options);
+            // 2. Handle slot updates
+            if (dto.SlotUpdates != null && dto.SlotUpdates.Any())
+            {
+                foreach (var slotUpdate in dto.SlotUpdates)
+                {
+                    if (slotUpdate.Action == SlotAction.Remove)
+                    {
+                        var deleteFilter = Builders<Slot>.Filter.Eq(s => s.SlotId, slotUpdate.SlotId);
+                        await _slots.DeleteOneAsync(deleteFilter);
+                        station.SlotIds.Remove(slotUpdate.SlotId);
+                    }
+                    else if (slotUpdate.Action == SlotAction.Update)
+                    {
+                        var filterSlot = Builders<Slot>.Filter.Eq(s => s.SlotId, slotUpdate.SlotId);
+                        var updateSlot = Builders<Slot>.Update
+                            .Set(s => s.ConnectorType, slotUpdate.ConnectorType)
+                            .Set(s => s.Status, slotUpdate.Status);
+
+                        await _slots.UpdateOneAsync(filterSlot, updateSlot);
+                    }
+                    else if (slotUpdate.Action == SlotAction.Add)
+                    {
+                        // Get the highest slot number for this station
+                        var lastSlot = await _slots.Find(s => s.StationId == stationId)
+                                                   .SortByDescending(s => s.Number)
+                                                   .FirstOrDefaultAsync();
+
+                        int nextNumber = lastSlot != null ? lastSlot.Number + 1 : 1;
+
+                        var newSlot = new Slot
+                        {
+                            StationId = stationId,
+                            Number = nextNumber,  // 👈 now based on max existing Number
+                            ConnectorType = slotUpdate.ConnectorType,
+                            Status = slotUpdate.Status
+                        };
+
+                        await _slots.InsertOneAsync(newSlot);
+
+                        station.SlotIds.Add(newSlot.SlotId);
+
+                        // Also update station’s slotIds and capacity
+                        await _stations.UpdateOneAsync(
+                            Builders<Station>.Filter.Eq(s => s.StationId, stationId),
+                            Builders<Station>.Update
+                                .Set(s => s.SlotIds, station.SlotIds)
+                                .Set(s => s.Capacity, station.SlotIds.Count)
+                        );
+                    }
+
+                }
+
+                // Sync SlotIds back
+                await _stations.UpdateOneAsync(
+                    Builders<Station>.Filter.Eq(s => s.StationId, stationId),
+                    Builders<Station>.Update.Set(s => s.SlotIds, station.SlotIds)
+                );
+            }
+
+            // 3. Recalculate capacity = number of slots
+            var updatedSlots = await _slots.Find(s => s.StationId == stationId).ToListAsync();
+            var capacity = updatedSlots.Count;
+            var availableSlots = updatedSlots.Count(s => s.Status == "Available");
+
+
+            await _stations.UpdateOneAsync(filter,
+                Builders<Station>.Update
+                .Set(s => s.Capacity, capacity)
+                .Set(s => s.AvailableSlots, availableSlots));
+
+
+            // 4. Return DTO with updated slots
+            var updatedStation = await _stations.Find(s => s.StationId == stationId).FirstOrDefaultAsync();
             return updatedStation != null ? ToDto(updatedStation) : null;
         }
+
 
         public async Task<bool> DeactivateStationAsync(string stationId)
         {
@@ -141,8 +350,11 @@ namespace EvBackend.Services
         }
 
 
-        private static StationDto ToDto(Station station) =>
-            new StationDto
+        private StationDto ToDto(Station station)
+        {
+            var slotEntities = _slots.Find(s => s.StationId == station.StationId).ToList();
+
+            return new StationDto
             {
                 StationId = station.StationId,
                 Name = station.Name,
@@ -152,7 +364,17 @@ namespace EvBackend.Services
                 Type = station.Type,
                 Capacity = station.Capacity,
                 AvailableSlots = station.AvailableSlots,
-                IsActive = station.IsActive
+                IsActive = station.IsActive,
+                Slots = slotEntities.Select(s => new SlotDto
+                {
+                    SlotId = s.SlotId,
+                    StationId = s.StationId,
+                    Number = s.Number,
+                    ConnectorType = s.ConnectorType,
+                    Status = s.Status
+                }).ToList()
             };
+        }
+
     }
 }

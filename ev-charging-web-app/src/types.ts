@@ -37,33 +37,50 @@ export interface ActivateUser {
 // ==============================
 // EV Charging Station types
 // ==============================
+// ==============================
+// Stations
+// ==============================
+
+// Station.ts
+
+export interface Slot {
+  slotId: string;
+  stationId: string;
+  connectorType: string;
+  number: number;
+  status:string
+}
+
+export type StationType = "AC" | "DC";
+
 export interface Station {
-  id: number;
+  stationId: string;
   name: string;
   location: string;
+  type: StationType;
+  capacity: number; 
+  availableSlots: number;   // total slots count
   isActive: boolean;
-  slots: number;
-  // Add other fields as needed
+  slots?: Slot[];           // optional, only when fetching detailed view
 }
 
-export interface CreateStation {
+// Payloads for requests
+export interface CreateStationRequest {
   name: string;
   location: string;
-  slots: number;
+  type: StationType;
+  capacity: number;
+  availableSlots: number;
 }
 
-export interface UpdateStation {
-  id: number;
+export interface UpdateStationRequest {
   name?: string;
   location?: string;
-  slots?: number;
-  isActive?: boolean;
+  type?: StationType;
+  capacity?: number;
+  availableSlots?: number;
 }
 
-export interface DeactivateStation {
-  id: number;
-  reason?: string;
-}
 
 // ==============================
 // Booking types
@@ -139,3 +156,5 @@ export interface UserResponse {
   };
   status?: number;
 }
+
+

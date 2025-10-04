@@ -100,4 +100,19 @@ export const deleteRequest = async <T>(
   }
 };
 
+// PATCH request
+export const patchRequest = async <T>(
+  url: string,
+  data?: object,
+  options?: AxiosRequestConfig
+): Promise<{ data: T; status: number } | null> => {
+  try {
+    const response = await api.patch<T>(url, data, options);
+    return { data: response.data, status: response.status };
+  } catch (error) {
+    return handleError(error, "Error patching data");
+  }
+};
+
+
 export default api;

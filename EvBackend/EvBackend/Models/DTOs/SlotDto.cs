@@ -14,6 +14,7 @@ namespace EvBackend.Models.DTOs
         public string StationId { get; set; }
         public string ConnectorType { get; set; }
         public string Status { get; set; } // Available, Booked, Inactive
+        public int Number { get; set; } // Slot number within the station
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
