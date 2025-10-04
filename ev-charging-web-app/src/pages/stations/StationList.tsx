@@ -79,12 +79,12 @@ const StationList = () => {
                   >
                     Deactivate
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => navigate(`/admin/stations/${s.stationId}/slots`)}
                     className="px-3 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
                   >
                     Manage Slots
-                  </button>
+                  </button> */}
                 </td>
               </tr>
             ))}
