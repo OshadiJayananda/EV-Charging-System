@@ -93,11 +93,10 @@ public class ApiClient {
 
     public ApiResponse markNotificationAsRead(String notificationId) {
         try {
-            JSONObject data = new JSONObject();
-            data.put("notificationId", notificationId);
-            return post("/notifications/mark-read", data);
-        } catch (JSONException e) {
-            Log.e(TAG, "Error creating mark as read request", e);
+            String endpoint = "/notifications/" + notificationId + "/read";
+            return patch(endpoint, null);
+        } catch (Exception e) {
+            Log.e(TAG, "Error marking notification as read", e);
             return new ApiResponse(false, "Request creation error", null);
         }
     }
@@ -265,6 +264,37 @@ public class ApiClient {
             }
         } catch (Exception e) {
             Log.e(TAG, "POST request error", e);
+            return new ApiResponse(false, "Network error occurred", null);
+        }
+    }
+
+    //Patch request
+    public ApiResponse patch(String endpoint, JSONObject data) {
+        try {
+            RequestBody body = data != null
+                    ? RequestBody.create(data.toString(), JSON)
+                    : RequestBody.create("", JSON); // empty body if none provided
+
+            Request.Builder requestBuilder = new Request.Builder()
+                    .url(BASE_URL + endpoint)
+                    .patch(body);
+
+            String token = sessionManager.getToken();
+            if (token != null) {
+                requestBuilder.addHeader("Authorization", "Bearer " + token);
+            }
+
+            Response response = client.newCall(requestBuilder.build()).execute();
+            String responseBody = response.body() != null ? response.body().string() : "";
+
+            if (response.isSuccessful()) {
+                return new ApiResponse(true, "Success", responseBody);
+            } else {
+                JSONObject errorResponse = new JSONObject(responseBody);
+                return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "PATCH request error", e);
             return new ApiResponse(false, "Network error occurred", null);
         }
     }

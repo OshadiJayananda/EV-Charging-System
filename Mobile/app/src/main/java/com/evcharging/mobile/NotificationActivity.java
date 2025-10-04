@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.evcharging.mobile.adapter.NotificationAdapter;
 import com.evcharging.mobile.model.Notification;
 import com.evcharging.mobile.network.ApiClient;
+import com.evcharging.mobile.network.ApiResponse;
 import com.evcharging.mobile.session.SessionManager;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,28 +51,33 @@ public class NotificationActivity extends AppCompatActivity
     }
 
     private void loadNotifications() {
-        // Show loading or call API to get notifications
-        // For now, showing empty state
-        updateEmptyState();
+        // Call API to get notifications in background thread
+        new Thread(() -> {
+            ApiResponse response = apiClient.getUserNotifications();
 
-        // TODO: Implement API call
-        /*
-         * apiClient.getUserNotifications(new ApiCallback<List<Notification>>() {
-         * 
-         * @Override
-         * public void onSuccess(List<Notification> result) {
-         * notifications.clear();
-         * notifications.addAll(result);
-         * adapter.notifyDataSetChanged();
-         * updateEmptyState();
-         * }
-         * 
-         * @Override
-         * public void onError(String error) {
-         * Toast.makeText(NotificationActivity.this, error, Toast.LENGTH_SHORT).show();
-         * }
-         * });
-         */
+            // Switch back to UI thread to update views
+            runOnUiThread(() -> {
+                if (response.isSuccess() && response.getData() != null) {
+                    // Parse the notifications from JSON response
+                    List<Notification> notificationList = apiClient.parseNotifications(response.getData());
+
+                    if (notificationList != null) {
+                        notifications.clear();
+                        notifications.addAll(notificationList);
+                        adapter.notifyDataSetChanged();
+                    } else {
+                        Toast.makeText(this, "Failed to parse notifications", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    // Show error message
+                    String errorMessage = response.getMessage() != null ? response.getMessage() : "Failed to load notifications";
+                    Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
+                }
+
+                // Update empty state regardless of success/failure
+                updateEmptyState();
+            });
+        }).start();
     }
 
     private void updateEmptyState() {
@@ -86,14 +92,41 @@ public class NotificationActivity extends AppCompatActivity
 
     @Override
     public void onMarkAsRead(String notificationId) {
-        // TODO: Call API to mark notification as read
-        Toast.makeText(this, "Marked as read", Toast.LENGTH_SHORT).show();
+        // Call API to mark notification as read in background thread
+        new Thread(() -> {
+            ApiResponse response = apiClient.markNotificationAsRead(notificationId);
+
+            runOnUiThread(() -> {
+                if (response.isSuccess()) {
+                    Toast.makeText(this, "Marked as read", Toast.LENGTH_SHORT).show();
+                    // Refresh notifications to get updated status
+                    loadNotifications();
+                } else {
+                    String errorMessage = response.getMessage() != null ? response.getMessage() : "Failed to mark as read";
+                    Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }).start();
     }
 
     @Override
     public void onDelete(String notificationId) {
-        // TODO: Call API to delete notification
-        Toast.makeText(this, "Notification deleted", Toast.LENGTH_SHORT).show();
+        // Call API to delete notification in background thread
+        new Thread(() -> {
+            ApiResponse response = apiClient.deleteNotification(notificationId);
+
+            runOnUiThread(() -> {
+                if (response.isSuccess()) {
+                    Toast.makeText(this, "Notification deleted", Toast.LENGTH_SHORT).show();
+                    // No need to refresh - adapter already removes item
+                } else {
+                    String errorMessage = response.getMessage() != null ? response.getMessage() : "Failed to delete notification";
+                    Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
+                    // Refresh to restore deleted item on failure
+                    loadNotifications();
+                }
+            });
+        }).start();
     }
 
     @Override
