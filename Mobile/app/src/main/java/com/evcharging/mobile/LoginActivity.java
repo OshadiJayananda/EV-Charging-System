@@ -1,40 +1,42 @@
 package com.evcharging.mobile;
 
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.text.InputType;
-import android.text.TextUtils;
-import android.text.method.HideReturnsTransformationMethod;
-import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import com.evcharging.mobile.network.ApiClient;
-import com.evcharging.mobile.network.ApiResponse;
+
+import com.evcharging.mobile.db.OperatorRepository;
 import com.evcharging.mobile.session.SessionManager;
-import com.evcharging.mobile.utils.JwtUtils;
+import com.evcharging.mobile.network.ApiClient;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class LoginActivity extends AppCompatActivity {
 
     private EditText etEmail, etPassword;
     private Button btnLogin;
-    private TextView tvRegister;
-    private CheckBox cbRememberMe;
-    private ImageView ivTogglePassword;
     private ProgressBar progressBar;
-    private ApiClient apiClient;
     private SessionManager sessionManager;
 
-    private boolean isPasswordVisible = false;
+    private final OkHttpClient httpClient = new OkHttpClient();
+    private static final String BASE_URL = ApiClient.getBaseUrl(); // ✅ use public getter
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,151 +46,87 @@ public class LoginActivity extends AppCompatActivity {
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
-        tvRegister = findViewById(R.id.tvRegister);
-        cbRememberMe = findViewById(R.id.cbRememberMe);
-        ivTogglePassword = findViewById(R.id.ivTogglePassword);
         progressBar = findViewById(R.id.progressBar);
-
         sessionManager = new SessionManager(this);
-        apiClient = new ApiClient(sessionManager);
 
-        // Load saved credentials if remember me was enabled
-        loadSavedCredentials();
-
-        if (sessionManager.isLoggedIn()) {
-            redirectToRoleHome(sessionManager.getToken());
-            finish();
-        }
-
-        btnLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                attemptLogin();
-            }
-        });
-
-        tvRegister.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(LoginActivity.this, RegistrationActivity.class));
-            }
-        });
-
-        ivTogglePassword.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                togglePasswordVisibility();
-            }
-        });
-    }
-
-    private void togglePasswordVisibility() {
-        if (isPasswordVisible) {
-            etPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
-            ivTogglePassword.setImageResource(R.drawable.ic_visibility_off);
-            isPasswordVisible = false;
-        } else {
-            etPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
-            ivTogglePassword.setImageResource(R.drawable.ic_visibility);
-            isPasswordVisible = true;
-        }
-
-        etPassword.setSelection(etPassword.getText().length());
-    }
-
-    private void loadSavedCredentials() {
-        if (sessionManager.isRememberMeEnabled()) {
-            etEmail.setText(sessionManager.getSavedEmail());
-            etPassword.setText(sessionManager.getSavedPassword());
-            cbRememberMe.setChecked(true);
-        }
+        btnLogin.setOnClickListener(v -> attemptLogin());
     }
 
     private void attemptLogin() {
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
-        boolean rememberMe = cbRememberMe.isChecked();
 
-        boolean isValid = true;
-
-        if (TextUtils.isEmpty(email)) {
-            etEmail.setError("Email is required");
-            etEmail.requestFocus();
-            isValid = false;
-        }
-
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            etEmail.setError("Please enter a valid email");
-            etEmail.requestFocus();
-            isValid = false;
-        }
-
-        if (TextUtils.isEmpty(password)) {
-            etPassword.setError("Password is required");
-            etPassword.requestFocus();
-            isValid = false;
-        }
-
-        if (password.length() < 6) {
-            etPassword.setError("Password must be at least 6 characters");
-            etPassword.requestFocus();
-            isValid = false;
-        }
-
-        if (!isValid) {
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Enter email and password", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        new LoginTask().execute(email, password, String.valueOf(rememberMe));
-    }
+        progressBar.setVisibility(View.VISIBLE);
 
-    private class LoginTask extends AsyncTask<String, Void, ApiResponse> {
-        private String email;
-        private String password;
-        private boolean rememberMe;
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            btnLogin.setEnabled(false);
-            progressBar.setVisibility(View.VISIBLE);
+        JSONObject jsonBody = new JSONObject();
+        try {
+            jsonBody.put("email", email);
+            jsonBody.put("password", password);
+        } catch (JSONException e) {
+            Log.e("Login", "JSON build error", e);
         }
 
-        @Override
-        protected ApiResponse doInBackground(String... params) {
-            email = params[0];
-            password = params[1];
-            rememberMe = Boolean.parseBoolean(params[2]);
-            return apiClient.login(email, password);
-        }
+        RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.parse("application/json"));
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/auth/login")
+                .post(body)
+                .build();
 
-        @Override
-        protected void onPostExecute(ApiResponse response) {
-            super.onPostExecute(response);
-
-            btnLogin.setEnabled(true);
-            progressBar.setVisibility(View.GONE);
-
-            if (response.isSuccess() && response.getData() != null) {
-                sessionManager.saveCredentials(email, password, rememberMe);
-
-                Toast.makeText(LoginActivity.this, response.getMessage(), Toast.LENGTH_SHORT).show();
-                redirectToRoleHome(response.getData());
-                finish();
-            } else {
-                Toast.makeText(LoginActivity.this, response.getMessage(), Toast.LENGTH_LONG).show();
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(() -> {
+                    progressBar.setVisibility(View.GONE);
+                    Toast.makeText(LoginActivity.this, "Network error", Toast.LENGTH_SHORT).show();
+                });
+                Log.e("Login", "API call failed", e);
             }
-        }
-    }
 
-    private void redirectToRoleHome(String token) {
-        String role = JwtUtils.getRoleFromToken(token);
-        if ("owner".equalsIgnoreCase(role)) {
-            startActivity(new Intent(this, OwnerHomeActivity.class));
-        } else if ("operator".equalsIgnoreCase(role)) {
-            startActivity(new Intent(this, OperatorHomeActivity.class));
-        } else {
-            Toast.makeText(this, "Unknown role!", Toast.LENGTH_SHORT).show();
-        }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                runOnUiThread(() -> progressBar.setVisibility(View.GONE));
+
+                if (response.isSuccessful()) {
+                    try {
+                        String responseBody = response.body().string();
+                        JSONObject json = new JSONObject(responseBody);
+
+                        // ✅ Adjust these keys based on your API's real response
+                        String token = json.getString("token");
+                        JSONObject user = json.has("user") ? json.getJSONObject("user") : json;
+
+                        String operatorId = user.optString("id", "N/A");
+                        String fullName = user.optString("fullName", "Operator");
+                        String email = user.optString("email", "");
+                        String stationId = user.optString("stationId", "");
+                        String stationName = user.optString("stationName", "");
+                        boolean isActive = user.optBoolean("isActive", true);
+
+                        sessionManager.saveToken(token);
+
+                        OperatorRepository operatorRepo = new OperatorRepository(LoginActivity.this);
+                        operatorRepo.saveOperator(operatorId, fullName, email, stationId, stationName, isActive);
+
+                        runOnUiThread(() -> {
+                            Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
+                            Intent intent = new Intent(LoginActivity.this, com.evcharging.mobile.OperatorHomeActivity.class);
+                            startActivity(intent);
+                            finish();
+                        });
+
+                    } catch (JSONException e) {
+                        Log.e("Login", "JSON parse error", e);
+                    }
+                } else {
+                    runOnUiThread(() ->
+                            Toast.makeText(LoginActivity.this, "Invalid credentials", Toast.LENGTH_SHORT).show());
+                }
+            }
+        });
     }
 }
