@@ -26,7 +26,7 @@ import okhttp3.Response;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE = "https://72bf7f2b8578.ngrok-free.app";
+    private static final String BASE = "https://625bda7b3622.ngrok-free.app";
     private static final String BASE_URL = BASE + "/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
@@ -37,7 +37,7 @@ public class ApiClient {
     public ApiClient(SessionManager sessionManager) {
         this.sessionManager = sessionManager;
         this.gson = new Gson();
-        
+
         // Create OkHttpClient with unsafe SSL for ngrok (development only)
         this.client = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
@@ -50,7 +50,7 @@ public class ApiClient {
 
     private SSLContext getUnsafeSslContext() {
         try {
-            TrustManager[] trustAllCerts = new TrustManager[]{getTrustAllCertsManager()};
+            TrustManager[] trustAllCerts = new TrustManager[] { getTrustAllCertsManager() };
             SSLContext sslContext = SSLContext.getInstance("SSL");
             sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
             return sslContext;
@@ -71,7 +71,7 @@ public class ApiClient {
 
             @Override
             public X509Certificate[] getAcceptedIssuers() {
-                return new X509Certificate[]{};
+                return new X509Certificate[] {};
             }
         };
     }
@@ -133,9 +133,9 @@ public class ApiClient {
 
             Response response = client.newCall(request).execute();
             int statusCode = response.code();
-            String responseBody = response.body() != null ? response.body().string() : "";
-
             Log.d(TAG, "Login response code: " + statusCode);
+            String responseBody = response.body() != null ? response.body().string() : "";
+            Log.d(TAG, "Login response " + responseBody);
 
             // Handle based on status code
             switch (statusCode) {
@@ -199,7 +199,7 @@ public class ApiClient {
                     .post(body)
                     .build();
             Response response = client.newCall(request).execute();
-            String responseBody = response.body().string();
+            String responseBody = response.body() != null ? response.body().string() : "";
             if (response.isSuccessful()) {
                 return new ApiResponse(true, "Registration successful", null);
             } else {
@@ -224,13 +224,21 @@ public class ApiClient {
             if (token != null) {
                 requestBuilder.addHeader("Authorization", "Bearer " + token);
             }
+            Log.e(TAG, "GET Request url: " + BASE_URL + endpoint);
 
             Response response = client.newCall(requestBuilder.build()).execute();
-            String responseBody = response.body().string();
+            Log.e(TAG, "GET Response code: " + response.code());
+
+            String responseBody = response.body() != null ? response.body().string() : "";
+            Log.e(TAG, "GET Response body: " + response.body());
 
             if (response.isSuccessful()) {
                 return new ApiResponse(true, "Success", responseBody);
             } else {
+                if (responseBody == null || responseBody.isEmpty()) {
+                    Log.e(TAG, "Empty response for endpoint: " + endpoint);
+                    return new ApiResponse(false, "Empty response from server (code " + response.code() + ")", null);
+                }
                 JSONObject errorResponse = new JSONObject(responseBody);
                 return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
             }
@@ -268,7 +276,7 @@ public class ApiClient {
         }
     }
 
-    //Patch request
+    // Patch request
     public ApiResponse patch(String endpoint, JSONObject data) {
         try {
             RequestBody body = data != null
