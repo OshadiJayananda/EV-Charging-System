@@ -39,3 +39,12 @@ jobs:
       - name: Run unit tests
         run: dotnet test EvBackend.Tests/EvBackend.Tests.csproj --no-build --verbosity normal
         working-directory: EvBackend
+
+      # Deploy to deploy branch if tests pass
+      - name: Deploy to deploy branch
+        if: success()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B deploy
+          git push -f origin deploy
