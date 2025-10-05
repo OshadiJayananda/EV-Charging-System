@@ -187,10 +187,27 @@ namespace EvBackend.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ActivateByBackoffice(string nic)
         {
-            var ok = await _evOwnerService.ChangeEVOwnerStatus(nic, true);
-            if (!ok) return NotFound(new { message = "EV Owner not found." });
-            return Ok(new { message = "Account activated." });
+            try
+            {
+                var owner = await _evOwnerService.GetEVOwnerByNIC(nic);
+                if (owner == null)
+                    return NotFound(new { message = "EV Owner not found." });
+
+                if (owner.IsActive)
+                    return BadRequest(new { message = "Account is already active." });
+
+                var ok = await _evOwnerService.ChangeEVOwnerStatus(nic, true);
+                if (!ok)
+                    return BadRequest(new { message = "Failed to activate account." });
+
+                return Ok(new { message = $"EV Owner {owner.FullName} activated successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Unexpected server error", error = ex.Message });
+            }
         }
+
 
         [HttpPatch("{nic}/request-reactivation")]
         [Authorize(Roles = "Owner")]
@@ -215,6 +232,22 @@ namespace EvBackend.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [HttpGet("reactivation-count")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetReactivationRequestCount()
+        {
+            try
+            {
+                var count = await _evOwnerService.GetReactivationRequestCount();
+                return Ok(new { count });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to fetch reactivation count", error = ex.Message });
+            }
+        }
+
 
 
     }

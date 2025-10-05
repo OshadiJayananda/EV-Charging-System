@@ -151,6 +151,13 @@ namespace EvBackend.Services
             return result.ModifiedCount > 0;
         }
 
+        public async Task<int> GetReactivationRequestCount()
+        {
+            var count = await _owners.CountDocumentsAsync(o => o.ReactivationRequested == true);
+            return (int)count;
+        }
+
+
 
     }
 }
