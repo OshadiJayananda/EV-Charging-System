@@ -95,12 +95,11 @@ namespace EvBackend.Services
             });
         }
 
-        public async Task<CSOperatorDto> UpdateOperator(string id, CSOperatorDto dto)
+        public async Task<CSOperatorDto> UpdateOperator(string id, UpdateCSOperatorDto dto)
         {
             var update = Builders<CSOperator>.Update
                 .Set(o => o.FullName, dto.FullName)
                 .Set(o => o.Email, dto.Email)
-                .Set(o => o.Role, dto.Role)
                 .Set(o => o.IsActive, dto.IsActive)
                 .Set(o => o.StationId, dto.StationId)
                 .Set(o => o.StationName, dto.StationName)

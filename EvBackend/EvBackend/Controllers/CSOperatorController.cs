@@ -41,6 +41,10 @@ namespace EvBackend.Controllers
                 var response = await _csOperatorService.CreateOperator(createCSOperatorDto);
                 return Ok(response);
             }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
             catch (AuthenticationException ex)
             {
                 return Unauthorized(new { message = ex.Message });
@@ -94,7 +98,7 @@ namespace EvBackend.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateOperator(string id, [FromBody] CSOperatorDto csOperatorDto)
+        public async Task<IActionResult> UpdateOperator(string id, [FromBody] UpdateCSOperatorDto csOperatorDto)
         {
             if (!ModelState.IsValid)
             {
