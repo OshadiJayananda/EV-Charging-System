@@ -30,7 +30,6 @@ namespace EvBackend.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> RegisterOwner([FromBody] CreateEVOwnerDto createEVOwnerDto)
         {
-            // Inline: Validates model and delegates to EV Owner service to create owner account.
             if (!ModelState.IsValid)
             {
                 return BadRequest(new { message = "Invalid owner registration data." });
@@ -51,77 +50,6 @@ namespace EvBackend.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                return StatusCode(500, new { message = "An unexpected error occurred." });
-            }
-        }
-
-        [HttpPatch("status/{nic?}")]
-        [Authorize(Roles = "Owner,Admin")]
-        public async Task<IActionResult> ChangeEVOwnerStatus(string? nic, [FromQuery] bool isActivate)
-        {
-            // Inline: Handles role-based activation/deactivation rules for owners and admins.
-            // Admins can only activate
-            if (User.IsInRole("Admin"))
-            {
-                if (!isActivate)
-                {
-                    return StatusCode(403, new { message = "Admin can only activate accounts." });
-                }
-
-                if (string.IsNullOrWhiteSpace(nic))
-                {
-                    return BadRequest(new { message = "NIC is required for admin." });
-                }
-            }
-            // Owners can only deactivate their own account
-            else if (User.IsInRole("Owner"))
-            {
-                if (isActivate)
-                {
-                    return StatusCode(403, new { message = "Owners cannot activate accounts." });
-                }
-
-                var userNic = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                nic = userNic;
-
-                if (string.IsNullOrWhiteSpace(nic))
-                {
-                    return BadRequest(new { message = "Unable to identify your account." });
-                }
-            }
-            else
-            {
-                return Forbid();
-            }
-
-            try
-            {
-                var result = await _evOwnerService.ChangeEVOwnerStatus(nic, isActivate);
-
-                if (!result)
-                {
-                    return NotFound(new { message = "EV Owner not found." });
-                }
-
-                if (!result)
-                {
-                    return BadRequest(new
-                    {
-                        message = isActivate
-                        ? "EV Owner is already activated."
-                        : "EV Owner is already deactivated."
-                    });
-                }
-                if (!result)
-                {
-                    return NotFound(new { message = "EV Owner not found." });
-                }
-
-                return Ok(new { message = "EV Owner status updated successfully." });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
                 return StatusCode(500, new { message = "An unexpected error occurred." });
             }
         }
@@ -151,7 +79,7 @@ namespace EvBackend.Controllers
         [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> GetOwner(string nic)
         {
-            var isOwner = User.IsInRole("OWNER");
+            var isOwner = User.IsInRole("Owner");
             if (isOwner)
             {
                 var userNic = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -208,7 +136,6 @@ namespace EvBackend.Controllers
             }
         }
 
-
         [HttpPatch("{nic}/request-reactivation")]
         [Authorize(Roles = "Owner")]
         public async Task<IActionResult> RequestReactivation(string nic)
@@ -248,7 +175,55 @@ namespace EvBackend.Controllers
             }
         }
 
+        [HttpGet("reactivation-requests")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetReactivationRequests()
+        {
+            try
+            {
+                var requests = await _evOwnerService.GetEVOwnersWithReactivationRequests();
+                return Ok(requests);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to fetch reactivation requests", error = ex.Message });
+            }
+        }
 
 
+        // [HttpGet("reactivation-requests")]
+        // [Authorize(Roles = "Admin")]
+        // public async Task<IActionResult> GetReactivationRequests()
+        // {
+        //     try
+        //     {
+        //         // Get EV Owners with reactivation requests
+        //         var ownersWithRequests = await _evOwnerService.GetEVOwnersWithReactivationRequests();
+
+        //         _logger.LogInformation("GetReactivationRequests: Fetched {Count} reactivation requests.", ownersWithRequests.Count());
+        //         return Ok(ownersWithRequests);
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         _logger.LogError(ex, "GetReactivationRequests: Unexpected error occurred.");
+        //         return StatusCode(500, new { message = "Unexpected error occurred" });
+        //     }
+        // }
+
+        [HttpPatch("{nic}/clear-reactivation")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ClearReactivationRequest(string nic)
+        {
+            try
+            {
+                var ok = await _evOwnerService.ClearReactivationRequest(nic);
+                if (!ok) return NotFound(new { message = "EV Owner not found or no reactivation request to clear." });
+                return Ok(new { message = "Reactivation request cleared successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to clear reactivation request", error = ex.Message });
+            }
+        }
     }
 }

@@ -157,7 +157,31 @@ namespace EvBackend.Services
             return (int)count;
         }
 
+        public async Task<IEnumerable<EVOwnerDto>> GetEVOwnersWithReactivationRequests()
+        {
+            var owners = await _owners.Find(o => o.ReactivationRequested == true && o.IsActive == false)
+                .ToListAsync();
 
+            var dtos = owners.Select(owner => new EVOwnerDto
+            {
+                FullName = owner.FullName,
+                Email = owner.Email,
+                Phone = owner.Phone,
+                IsActive = owner.IsActive,
+                ReactivationRequested = owner.ReactivationRequested,
+                CreatedAt = owner.CreatedAt,
+                NIC = owner.NIC
+            });
+
+            return dtos;
+        }
+
+        public async Task<bool> ClearReactivationRequest(string nic)
+        {
+            var update = Builders<EVOwner>.Update.Set(o => o.ReactivationRequested, false);
+            var result = await _owners.UpdateOneAsync(o => o.NIC == nic, update);
+            return result.ModifiedCount > 0;
+        }
 
     }
 }
