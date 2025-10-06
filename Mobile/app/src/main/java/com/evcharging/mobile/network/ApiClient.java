@@ -10,6 +10,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -26,7 +27,7 @@ import okhttp3.Response;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE = "https://ev-charging-backend-dbgvakf8dshwddff.canadacentral-01.azurewebsites.net";
+    private static final String BASE = "https://c10012521d1b.ngrok-free.app";
     private static final String BASE_URL = BASE + "/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
@@ -195,7 +196,7 @@ public class ApiClient {
             registerData.put("password", password);
             RequestBody body = RequestBody.create(registerData.toString(), JSON);
             Request request = new Request.Builder()
-                    .url(BASE_URL + "/auth/register")
+                    .url(BASE_URL + "/owners/register")
                     .post(body)
                     .build();
             Response response = client.newCall(request).execute();
@@ -435,7 +436,6 @@ public class ApiClient {
             return new ApiResponse(false, "Network error occurred", null);
         }
     }
-
 
     // Deactivate EV Owner
     public ApiResponse deactivateEvOwner(String nic) {

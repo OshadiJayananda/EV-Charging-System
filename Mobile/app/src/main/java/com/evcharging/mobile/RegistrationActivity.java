@@ -15,79 +15,78 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.evcharging.mobile.network.ApiClient;
 import com.evcharging.mobile.network.ApiResponse;
+import com.evcharging.mobile.service.OwnerService;
 import com.evcharging.mobile.session.SessionManager;
 
 public class RegistrationActivity extends AppCompatActivity {
 
-    private EditText etName, etEmail, etPassword, etConfirmPassword;
+    private EditText etFullName, etEmail, etPhone, etNIC, etPassword, etConfirmPassword;
     private Button btnRegister;
     private ProgressBar progressBar;
     private TextView txtBackToLogin;
-    private ApiClient apiClient;
+    private OwnerService ownerService;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_registration);
 
-        etName = findViewById(R.id.etName);
+        etFullName = findViewById(R.id.etFullName);
         etEmail = findViewById(R.id.etEmail);
+        etPhone = findViewById(R.id.etPhone);
+        etNIC = findViewById(R.id.etNIC);
         etPassword = findViewById(R.id.etPassword);
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
         btnRegister = findViewById(R.id.btnRegister);
         progressBar = findViewById(R.id.progressBar);
-
         txtBackToLogin = findViewById(R.id.btnGoToLogin);
 
-        SessionManager sessionManager = new SessionManager(this);
-        apiClient = new ApiClient(sessionManager);
+        ownerService = new OwnerService();
 
-        btnRegister.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                attemptRegistration();
-            }
-        });
+        btnRegister.setOnClickListener(view -> attemptRegistration());
 
-        txtBackToLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Navigate back to LoginActivity
-                startActivity(new Intent(RegistrationActivity.this, LoginActivity.class));
-                finish();
-            }
+        txtBackToLogin.setOnClickListener(v -> {
+            startActivity(new Intent(RegistrationActivity.this, LoginActivity.class));
+            finish();
         });
     }
 
     private void attemptRegistration() {
-        String name = etName.getText().toString().trim();
+        String fullName = etFullName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
+        String phone = etPhone.getText().toString().trim();
+        String nic = etNIC.getText().toString().trim();
         String password = etPassword.getText().toString();
         String confirmPassword = etConfirmPassword.getText().toString();
 
         boolean isValid = true;
 
-        if (TextUtils.isEmpty(name)) {
-            etName.setError("Name is required");
-            etName.requestFocus();
+        if (TextUtils.isEmpty(fullName)) {
+            etFullName.setError("Full Name is required");
+            etFullName.requestFocus();
             isValid = false;
         }
 
-        if (TextUtils.isEmpty(email)) {
-            etEmail.setError("Email is required");
-            etEmail.requestFocus();
-            isValid = false;
-        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            etEmail.setError("Please enter a valid email");
+        if (TextUtils.isEmpty(email) || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            etEmail.setError("Valid Email is required");
             etEmail.requestFocus();
             isValid = false;
         }
 
-        if (TextUtils.isEmpty(password)) {
-            etPassword.setError("Password is required");
-            etPassword.requestFocus();
+        if (TextUtils.isEmpty(phone)) {
+            etPhone.setError("Phone is required");
+            etPhone.requestFocus();
             isValid = false;
-        } else if (password.length() < 6) {
+        }
+
+        if (TextUtils.isEmpty(nic)) {
+            etNIC.setError("NIC is required");
+            etNIC.requestFocus();
+            isValid = false;
+        }
+
+        if (TextUtils.isEmpty(password) || password.length() < 6) {
             etPassword.setError("Password must be at least 6 characters");
             etPassword.requestFocus();
             isValid = false;
@@ -99,12 +98,9 @@ public class RegistrationActivity extends AppCompatActivity {
             isValid = false;
         }
 
-        if (!isValid) {
-            return;
-        }
+        if (!isValid) return;
 
-        // Execute registration task
-        new RegistrationTask().execute(name, email, password);
+        new RegistrationTask().execute(nic, fullName, email, phone, password);
     }
 
     private class RegistrationTask extends AsyncTask<String, Void, ApiResponse> {
@@ -117,10 +113,14 @@ public class RegistrationActivity extends AppCompatActivity {
 
         @Override
         protected ApiResponse doInBackground(String... params) {
-            String name = params[0];
-            String email = params[1];
-            String password = params[2];
-            return apiClient.register(name, email, password);
+            String nic = params[0];
+            String fullName = params[1];
+            String email = params[2];
+            String phone = params[3];
+            String password = params[4];
+
+            // Call new API endpoint
+            return ownerService.registerOwner(nic, fullName, email, phone, password);
         }
 
         @Override
@@ -134,7 +134,55 @@ public class RegistrationActivity extends AppCompatActivity {
                 startActivity(new Intent(RegistrationActivity.this, LoginActivity.class));
                 finish();
             } else {
-                Toast.makeText(RegistrationActivity.this, response.getMessage(), Toast.LENGTH_LONG).show();
+                // Clear previous errors
+                etNIC.setError(null);
+                etFullName.setError(null);
+                etEmail.setError(null);
+                etPhone.setError(null);
+                etPassword.setError(null);
+                etConfirmPassword.setError(null);
+
+                // Check if the response contains field-specific errors
+                String message = response.getMessage();
+                if (message != null && message.contains(":")) {
+                    // Parse messages per field
+                    String[] lines = message.split("\n");
+                    for (String line : lines) {
+                        String[] parts = line.split(":", 2);
+                        if (parts.length == 2) {
+                            String field = parts[0].trim();
+                            String errorMsg = parts[1].trim();
+                            switch (field.toLowerCase()) {
+                                case "nic":
+                                    etNIC.setError(errorMsg);
+                                    etNIC.requestFocus();
+                                    break;
+                                case "fullname":
+                                    etFullName.setError(errorMsg);
+                                    etFullName.requestFocus();
+                                    break;
+                                case "email":
+                                    etEmail.setError(errorMsg);
+                                    etEmail.requestFocus();
+                                    break;
+                                case "phone":
+                                    etPhone.setError(errorMsg);
+                                    etPhone.requestFocus();
+                                    break;
+                                case "password":
+                                    etPassword.setError(errorMsg);
+                                    etPassword.requestFocus();
+                                    break;
+                            }
+                        } else {
+                            // Fallback: show as Toast
+                            Toast.makeText(RegistrationActivity.this, line.trim(), Toast.LENGTH_LONG).show();
+                        }
+                    }
+                } else {
+                    // Generic error fallback
+                    Toast.makeText(RegistrationActivity.this, message, Toast.LENGTH_LONG).show();
+                }
             }
         }
     }
