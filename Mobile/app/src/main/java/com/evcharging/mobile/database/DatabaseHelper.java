@@ -43,18 +43,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // Create table SQL statement
     private static final String CREATE_TABLE_USER =
-        "CREATE TABLE " + TABLE_USER + " (" +
-        COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-        COLUMN_USER_ID + " TEXT NOT NULL UNIQUE, " +
-        COLUMN_FULL_NAME + " TEXT NOT NULL, " +
-        COLUMN_EMAIL + " TEXT NOT NULL, " +
-        COLUMN_ROLE + " TEXT NOT NULL, " +
-        COLUMN_STATION_ID + " TEXT, " + // Nullable field
-        COLUMN_STATION_NAME + " TEXT, " + // Nullable field
-        COLUMN_STATION_LOCATION + " TEXT, " + // Nullable field
-        COLUMN_IS_ACTIVE + " INTEGER DEFAULT 1, " +
-        COLUMN_CREATED_AT + " TEXT NOT NULL" +
-        ")";
+            "CREATE TABLE " + TABLE_USER + " (" +
+                    COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    COLUMN_USER_ID + " TEXT NOT NULL UNIQUE, " +
+                    COLUMN_FULL_NAME + " TEXT NOT NULL, " +
+                    COLUMN_EMAIL + " TEXT NOT NULL, " +
+                    COLUMN_ROLE + " TEXT NOT NULL, " +
+                    COLUMN_STATION_ID + " TEXT, " + // Nullable field
+                    COLUMN_STATION_NAME + " TEXT, " + // Nullable field
+                    COLUMN_STATION_LOCATION + " TEXT, " + // Nullable field
+                    COLUMN_IS_ACTIVE + " INTEGER DEFAULT 1, " +
+                    COLUMN_CREATED_AT + " TEXT NOT NULL" +
+                    ")";
 
     // Singleton instance
     private static DatabaseHelper instance;
@@ -156,14 +156,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         // Query to get the first (and only) user record
         Cursor cursor = db.query(
-            TABLE_USER,
-            null, // Select all columns
-            null, // No WHERE clause
-            null, // No WHERE args
-            null, // No GROUP BY
-            null, // No HAVING
-            COLUMN_ID + " DESC", // ORDER BY id DESC (get latest)
-            "1" // LIMIT 1
+                TABLE_USER,
+                null, // Select all columns
+                null, // No WHERE clause
+                null, // No WHERE args
+                null, // No GROUP BY
+                null, // No HAVING
+                COLUMN_ID + " DESC", // ORDER BY id DESC (get latest)
+                "1" // LIMIT 1
         );
 
         try {
@@ -257,10 +257,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         try {
             int rowsUpdated = db.update(
-                TABLE_USER,
-                values,
-                COLUMN_USER_ID + " = ?",
-                new String[]{userId}
+                    TABLE_USER,
+                    values,
+                    COLUMN_USER_ID + " = ?",
+                    new String[]{userId}
             );
 
             if (rowsUpdated > 0) {
