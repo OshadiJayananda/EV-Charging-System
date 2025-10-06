@@ -21,34 +21,51 @@ public class JwtUtils {
     private static final String TAG = "JwtUtils";
 
     /**
-     * Get user role from JWT token
-     *
-     * @param token JWT token string
-     * @return User role or null if not found
+     * Safely get user role from JWT token.
+     * Will never throw — returns null or "Unknown" if malformed.
      */
     public static String getRoleFromToken(String token) {
         try {
-            // JWT format: header.payload.signature
+            if (token == null || token.trim().isEmpty()) {
+                Log.w(TAG, "Token is null or empty");
+                return null;
+            }
+
             String[] parts = token.split("\\.");
-            if (parts.length < 2) return null;
+            if (parts.length < 2) {
+                Log.w(TAG, "Invalid JWT format: expected 3 parts, got " + parts.length);
+                return null;
+            }
 
             String payload = parts[1];
-            byte[] decodedBytes = Base64.decode(payload, Base64.URL_SAFE);
+            // Decode payload (Base64URL-safe)
+            byte[] decodedBytes = Base64.decode(payload, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
             String decodedPayload = new String(decodedBytes);
 
             JSONObject json = new JSONObject(decodedPayload);
-            return json.optString("role"); // assumes the JWT has a "role" claim
+
+            // Try common role keys used in backend
+            String role =
+                    json.optString("role",
+                    json.optString("Role",
+                    json.optString("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", null)));
+
+            if (role == null || role.isEmpty()) {
+                Log.w(TAG, "Role not found in token payload: " + decodedPayload);
+                return "Unknown";
+            }
+
+            Log.d(TAG, "Extracted role from token: " + role);
+            return role;
+
         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            Log.e(TAG, "Error extracting role from JWT: " + e.getMessage(), e);
+            return "Unknown";
         }
     }
 
     /**
-     * Decode JWT token and extract payload as JSONObject
-     *
-     * @param token JWT token string
-     * @return JSONObject containing token payload, or null if error
+     * Decode JWT payload as JSONObject
      */
     public static JSONObject decodeToken(String token) {
         try {
@@ -57,16 +74,14 @@ public class JwtUtils {
                 return null;
             }
 
-            // JWT format: header.payload.signature
             String[] parts = token.split("\\.");
             if (parts.length < 2) {
                 Log.e(TAG, "Invalid JWT format. Expected 3 parts, got: " + parts.length);
                 return null;
             }
 
-            // Decode the payload (second part)
             String payload = parts[1];
-            byte[] decodedBytes = Base64.decode(payload, Base64.URL_SAFE);
+            byte[] decodedBytes = Base64.decode(payload, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
             String decodedPayload = new String(decodedBytes);
 
             Log.d(TAG, "JWT Decoded Payload: " + decodedPayload);
