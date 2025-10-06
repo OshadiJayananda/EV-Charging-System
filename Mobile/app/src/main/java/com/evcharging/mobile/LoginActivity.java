@@ -88,6 +88,7 @@ public class LoginActivity extends AppCompatActivity {
                 Log.e("Login", "API call failed", e);
             }
 
+
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 runOnUiThread(() -> progressBar.setVisibility(View.GONE));
@@ -95,31 +96,35 @@ public class LoginActivity extends AppCompatActivity {
                 if (response.isSuccessful()) {
                     try {
                         String responseBody = response.body().string();
+                        Log.d("LOGIN_RESPONSE", responseBody);  // Ensure you are logging the response body
+
                         JSONObject json = new JSONObject(responseBody);
                         String token = json.optString("token", "");
 
                         if (token.isEmpty()) {
-                            runOnUiThread(() ->
-                                    Toast.makeText(LoginActivity.this, "Login failed: No token received", Toast.LENGTH_SHORT).show());
+                            runOnUiThread(() -> {
+                                Toast.makeText(LoginActivity.this, "Login failed: No token received", Toast.LENGTH_SHORT).show();
+                            });
                             return;
                         }
 
-                        // ✅ Decode JWT and extract operator info
+                        // Decode JWT
                         JSONObject payload = decodeJWT(token);
                         Log.d("JWT_PAYLOAD", payload.toString(2));
 
                         String operatorId = payload.optString("nameid", "N/A");
                         String fullName = payload.optString("FullName", "Operator");
                         String email = payload.optString("email", "");
-                        String role = payload.optString("role", "");
                         boolean isActive = true;
+                        String stationId = "68d7ae5c7c0e7440603da96d"; // Static for testing
+                        String stationName = "EV Station - Negombo";  // Static for testing
 
-                        // ✅ Save session + operator
                         sessionManager.saveToken(token);
-                        OperatorRepository operatorRepo = new OperatorRepository(LoginActivity.this);
-                        operatorRepo.saveOperator(operatorId, fullName, email, "", "", isActive);
 
-                        Log.d("DB_DEBUG", "Saved Operator ID: " + operatorId + ", name: " + fullName + ", role: " + role);
+                        OperatorRepository operatorRepo = new OperatorRepository(LoginActivity.this);
+                        operatorRepo.saveOperator(operatorId, fullName, email, stationId, stationName, isActive);
+
+                        Log.d("DB_DEBUG", "Saved Operator ID: " + operatorId + ", StationID: " + stationId);
 
                         runOnUiThread(() -> {
                             Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
@@ -132,14 +137,14 @@ public class LoginActivity extends AppCompatActivity {
                         Log.e("Login", "Processing error", e);
                     }
                 } else {
-                    runOnUiThread(() ->
-                            Toast.makeText(LoginActivity.this, "Invalid credentials", Toast.LENGTH_SHORT).show());
+                    runOnUiThread(() -> Toast.makeText(LoginActivity.this, "Invalid credentials", Toast.LENGTH_SHORT).show());
                 }
             }
+
         });
     }
 
-    // ✅ Decode JWT Token (Base64 middle section)
+    // Decode JWT Token (Base64 middle section)
     private JSONObject decodeJWT(String jwt) {
         try {
             String[] parts = jwt.split("\\.");

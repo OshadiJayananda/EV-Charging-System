@@ -4,4 +4,11 @@
     <string name="hntEmail">Email</string>
     <string name="hntPassword">Password</string>
     <string name="txtNoAccount">"Don't have an account? Register"</string>
+    <string name="booking_id_label">Booking ID</string>
+    <string name="ev_owner_registration">EV Owner Registration</string>
+    <string name="owner_id">Owner ID:</string>
+    <string name="status">Status:</string>
+    <string name="time">Time:</string>
+
+
 </resources>

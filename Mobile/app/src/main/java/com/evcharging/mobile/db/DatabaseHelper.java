@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "evcharging.db";
-    private static final int DATABASE_VERSION = 2; // ⚠️ increment version to force rebuild
+    private static final int DATABASE_VERSION = 2; // Incremented for new schema changes
 
     // Operator Table
     public static final String TABLE_OPERATOR = "Operator";
@@ -38,7 +38,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + COL_OP_EMAIL + " TEXT, "
                 + COL_OP_STATION_ID + " TEXT, "
                 + COL_OP_STATION_NAME + " TEXT, "
-                + COL_OP_IS_ACTIVE + " INTEGER)";
+                + COL_OP_IS_ACTIVE + " INTEGER)"; // Storing boolean as INTEGER (0 or 1)
 
         String CREATE_BOOKING_TABLE = "CREATE TABLE " + TABLE_BOOKING + "("
                 + COL_BK_ID + " TEXT PRIMARY KEY, "
@@ -46,7 +46,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + COL_BK_OWNER_ID + " TEXT, "
                 + COL_BK_STATUS + " TEXT, "
                 + COL_BK_START + " TEXT, "
-                + COL_BK_END + " TEXT)";
+                + COL_BK_END + " TEXT)"; // Start and End time as TEXT (ISO format string)
 
         db.execSQL(CREATE_OPERATOR_TABLE);
         db.execSQL(CREATE_BOOKING_TABLE);
@@ -54,8 +54,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // Drop older tables if they exist and create new ones
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_OPERATOR);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_BOOKING);
-        onCreate(db);
+        onCreate(db); // Recreate the tables
     }
 }
