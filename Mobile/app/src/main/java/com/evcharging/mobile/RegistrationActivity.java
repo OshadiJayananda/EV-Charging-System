@@ -3,10 +3,12 @@ package com.evcharging.mobile;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,11 +23,13 @@ import com.evcharging.mobile.session.SessionManager;
 public class RegistrationActivity extends AppCompatActivity {
 
     private EditText etFullName, etEmail, etPhone, etNIC, etPassword, etConfirmPassword;
+    private ImageView ivTogglePassword, ivToggleConfirmPassword;
     private Button btnRegister;
     private ProgressBar progressBar;
     private TextView txtBackToLogin;
     private OwnerService ownerService;
-
+    private boolean isPasswordVisible = false;
+    private boolean isConfirmPasswordVisible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,9 +42,43 @@ public class RegistrationActivity extends AppCompatActivity {
         etNIC = findViewById(R.id.etNIC);
         etPassword = findViewById(R.id.etPassword);
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
+        ivTogglePassword = findViewById(R.id.ivTogglePassword);
+        ivToggleConfirmPassword = findViewById(R.id.ivToggleConfirmPassword);
         btnRegister = findViewById(R.id.btnRegister);
         progressBar = findViewById(R.id.progressBar);
         txtBackToLogin = findViewById(R.id.btnGoToLogin);
+
+        // Toggle for main password
+        ivTogglePassword.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                isPasswordVisible = !isPasswordVisible;
+                if (isPasswordVisible) {
+                    etPassword.setInputType(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                    ivTogglePassword.setImageResource(R.drawable.ic_visibility);
+                } else {
+                    etPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                    ivTogglePassword.setImageResource(R.drawable.ic_visibility_off);
+                }
+                etPassword.setSelection(etPassword.getText().length());
+            }
+        });
+
+        // Toggle for confirm password
+        ivToggleConfirmPassword.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                isConfirmPasswordVisible = !isConfirmPasswordVisible;
+                if (isConfirmPasswordVisible) {
+                    etConfirmPassword.setInputType(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                    ivToggleConfirmPassword.setImageResource(R.drawable.ic_visibility);
+                } else {
+                    etConfirmPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                    ivToggleConfirmPassword.setImageResource(R.drawable.ic_visibility_off);
+                }
+                etConfirmPassword.setSelection(etConfirmPassword.getText().length());
+            }
+        });
 
         ownerService = new OwnerService();
 

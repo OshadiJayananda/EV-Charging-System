@@ -69,11 +69,12 @@ public class OwnerService {
                 if (jsonResponse.has("errors")) {
                     JSONObject errors = jsonResponse.getJSONObject("errors");
                     StringBuilder errorsMessage = new StringBuilder();
-                    for (Iterator<String> it = errors.keys(); it.hasNext(); ) {
+                    for (Iterator<String> it = errors.keys(); it.hasNext();) {
                         String key = it.next();
                         for (int i = 0; i < errors.getJSONArray(key).length(); i++) {
                             errorsMessage.append(errors.getJSONArray(key).getString(i));
-                            if (i < errors.getJSONArray(key).length() - 1) errorsMessage.append(" ");
+                            if (i < errors.getJSONArray(key).length() - 1)
+                                errorsMessage.append(" ");
                         }
                         errorsMessage.append("\n");
                     }
