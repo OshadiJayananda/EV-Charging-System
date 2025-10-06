@@ -134,6 +134,7 @@ public class ApiClient {
             Response response = client.newCall(request).execute();
             int statusCode = response.code();
             Log.d(TAG, "Login response code: " + statusCode);
+            Log.d(TAG, "Login response code: " + statusCode);
             String responseBody = response.body() != null ? response.body().string() : "";
             Log.d(TAG, "Login response " + responseBody);
 
