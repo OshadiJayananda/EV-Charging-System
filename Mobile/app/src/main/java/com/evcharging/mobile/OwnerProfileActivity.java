@@ -23,7 +23,7 @@ public class OwnerProfileActivity extends AppCompatActivity {
     private ImageButton btnBack;
     private SessionManager sessionManager;
     private ApiClient apiClient;
-    private String nic = "991234567V";
+    private String nic = "2000123456";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,9 +45,7 @@ public class OwnerProfileActivity extends AppCompatActivity {
 
         btnBack.setOnClickListener(v -> finish());
 
-        btnEditProfile.setOnClickListener(v ->
-                startActivity(new Intent(this, OwnerEditProfileActivity.class))
-        );
+        btnEditProfile.setOnClickListener(v -> startActivity(new Intent(this, OwnerEditProfileActivity.class)));
 
         btnDeactivate.setOnClickListener(v -> new DeactivateTask().execute());
         btnRequestReactivation.setOnClickListener(v -> new ReactivationTask().execute());

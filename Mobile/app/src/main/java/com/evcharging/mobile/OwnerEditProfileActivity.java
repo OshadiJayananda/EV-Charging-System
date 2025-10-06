@@ -1,22 +1,26 @@
 package com.evcharging.mobile;
 
+import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
-import com.evcharging.mobile.network.ApiClient;
+
 import com.evcharging.mobile.network.ApiResponse;
+import com.evcharging.mobile.service.OwnerService;
 import com.evcharging.mobile.session.SessionManager;
-import org.json.JSONObject;
 
 public class OwnerEditProfileActivity extends AppCompatActivity {
-    private EditText etName, etEmail;
+
+    private EditText etName, etEmail, etPhone;
     private Button btnSaveChanges;
-    private ApiClient apiClient;
-    private SessionManager sessionManager;
-    private String nic = "991234567V";
+    private OwnerService ownerService;
+
+    // For testing - you can replace this with sessionManager.getNic() later
+    private String nic = "2000123456";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,10 +29,10 @@ public class OwnerEditProfileActivity extends AppCompatActivity {
 
         etName = findViewById(R.id.etName);
         etEmail = findViewById(R.id.etEmail);
+        etPhone = findViewById(R.id.etPhone);
         btnSaveChanges = findViewById(R.id.btnSaveChanges);
 
-        sessionManager = new SessionManager(this);
-        apiClient = new ApiClient(sessionManager);
+        ownerService = new OwnerService();
 
         btnSaveChanges.setOnClickListener(v -> new UpdateProfileTask().execute());
     }
@@ -36,21 +40,26 @@ public class OwnerEditProfileActivity extends AppCompatActivity {
     private class UpdateProfileTask extends AsyncTask<Void, Void, ApiResponse> {
         @Override
         protected ApiResponse doInBackground(Void... voids) {
-            try {
-                JSONObject data = new JSONObject();
-                data.put("name", etName.getText().toString());
-                data.put("email", etEmail.getText().toString());
-                return apiClient.updateEvOwner(nic, data);
-            } catch (Exception e) {
-                return new ApiResponse(false, "JSON error", null);
+            @SuppressLint("WrongThread")
+            String fullName = etName.getText().toString().trim();
+            @SuppressLint("WrongThread")
+            String email = etEmail.getText().toString().trim();
+            @SuppressLint("WrongThread")
+            String phone = etPhone.getText().toString().trim();
+
+            if (fullName.isEmpty() || email.isEmpty() || phone.isEmpty()) {
+                return new ApiResponse(false, "All fields are required", null);
             }
+
+            return ownerService.updateEvOwner(nic, fullName, email, phone);
         }
 
         @Override
         protected void onPostExecute(ApiResponse response) {
             Toast.makeText(OwnerEditProfileActivity.this, response.getMessage(), Toast.LENGTH_SHORT).show();
-            if (response.isSuccess())
+            if (response.isSuccess()) {
                 finish();
+            }
         }
     }
 }
