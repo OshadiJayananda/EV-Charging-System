@@ -24,6 +24,19 @@ interface Operator {
   IsActive: boolean;
   isActive?: boolean;
   CreatedAt?: string;
+  stationId?: string;
+  stationName?: string;
+  stationLocation?: string;
+}
+
+interface Station {
+  stationId: string;
+  name: string;
+  location: string;
+  type: string;
+  capacity: number;
+  availableSlots: number;
+  isActive: boolean;
 }
 
 interface UserDetails {
@@ -46,6 +59,18 @@ interface UserDetails {
   _id?: string;
   id?: string;
   role: "Owner" | "Operator";
+  stationId?: string;
+  stationName?: string;
+  stationLocation?: string;
+}
+
+interface CreateOperatorForm {
+  fullName: string;
+  email: string;
+  password: string;
+  stationId: string;
+  stationName: string;
+  stationLocation: string;
 }
 
 function UserManagement() {
@@ -55,6 +80,7 @@ function UserManagement() {
   );
   const [operators, setOperators] = useState<Operator[]>([]);
   const [owners, setOwners] = useState<EVOwner[]>([]);
+  const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [activeTab, setActiveTab] = useState<
@@ -62,10 +88,22 @@ function UserManagement() {
   >("operators");
   const [selectedUser, setSelectedUser] = useState<UserDetails | null>(null);
   const [showUserDetails, setShowUserDetails] = useState<boolean>(false);
+  const [showCreateOperator, setShowCreateOperator] = useState<boolean>(false);
+  const [creatingOperator, setCreatingOperator] = useState<boolean>(false);
+
+  const [operatorForm, setOperatorForm] = useState<CreateOperatorForm>({
+    fullName: "",
+    email: "",
+    password: "",
+    stationId: "",
+    stationName: "",
+    stationLocation: "",
+  });
 
   // Fetch all data on component mount
   useEffect(() => {
     fetchUserData();
+    fetchStations();
   }, []);
 
   const fetchUserData = async (): Promise<void> => {
@@ -82,12 +120,26 @@ function UserManagement() {
         setReactivationRequests(reactivationResponse.data);
       }
 
-      // Fetch operators
-      const operatorsResponse = await api.get("/users?role=Operator");
-      console.log("Operators:", operatorsResponse?.data);
-      if (operatorsResponse?.data) {
-        setOperators(operatorsResponse.data);
+      // Fetch operators - Try both endpoints
+      let operatorsData = [];
+      try {
+        // First try the operators endpoint
+        const operatorsResponse = await api.get("/operators");
+        console.log("Operators from /operators:", operatorsResponse?.data);
+        if (operatorsResponse?.data) {
+          operatorsData = operatorsResponse.data;
+        }
+      } catch (operatorsError) {
+        console.log("Failed to fetch from /operators, trying /users endpoint");
+        // Fallback to users endpoint
+        const usersResponse = await api.get("/users?role=Operator");
+        console.log("Operators from /users:", usersResponse?.data);
+        if (usersResponse?.data) {
+          operatorsData = usersResponse.data;
+        }
       }
+
+      setOperators(operatorsData);
 
       // Fetch owners
       const ownersResponse = await api.get("/users?role=Owner");
@@ -105,6 +157,76 @@ function UserManagement() {
     }
   };
 
+  const fetchStations = async (): Promise<void> => {
+    try {
+      const response = await api.get("/station");
+      if (response?.data) {
+        setStations(response.data);
+      }
+    } catch (err) {
+      console.error("Error fetching stations:", err);
+      toast.error("Failed to fetch stations");
+    }
+  };
+
+  const handleStationChange = (stationId: string) => {
+    const selectedStation = stations.find(
+      (station) => station.stationId === stationId
+    );
+    if (selectedStation) {
+      setOperatorForm({
+        ...operatorForm,
+        stationId: selectedStation.stationId,
+        stationName: selectedStation.name,
+        stationLocation: selectedStation.location,
+      });
+    }
+  };
+
+  const handleCreateOperator = async (): Promise<void> => {
+    if (
+      !operatorForm.fullName ||
+      !operatorForm.email ||
+      !operatorForm.password ||
+      !operatorForm.stationId
+    ) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    try {
+      setCreatingOperator(true);
+      const result = await api.post("/operators", operatorForm);
+
+      if (result?.status === 200 || result?.status === 201) {
+        toast.success("Operator created successfully");
+        setShowCreateOperator(false);
+        setOperatorForm({
+          fullName: "",
+          email: "",
+          password: "",
+          stationId: "",
+          stationName: "",
+          stationLocation: "",
+        });
+
+        // Force refresh of operators list
+        await fetchUserData();
+
+        // Also switch to operators tab to show the new operator
+        setActiveTab("operators");
+      } else {
+        toast.error(result?.data?.message || "Failed to create operator");
+      }
+    } catch (err: any) {
+      const errorMessage =
+        err?.response?.data?.message || "Error creating operator";
+      toast.error(errorMessage);
+      console.error("Error creating operator:", err);
+    } finally {
+      setCreatingOperator(false);
+    }
+  };
   const handleActivateUser = async (
     id: string,
     isOwner: boolean = false
@@ -186,7 +308,8 @@ function UserManagement() {
         const operator = user as Operator;
         const userId = operator._id || operator.id;
         if (userId) {
-          const result = await api.get(`/users/${userId}`);
+          // Use the operator-specific endpoint instead of users endpoint
+          const result = await api.get(`/operators/${userId}`);
 
           if (result?.data) {
             setSelectedUser({ ...result.data, role: "Operator" });
@@ -196,12 +319,29 @@ function UserManagement() {
       }
     } catch (err: any) {
       console.error("Error fetching user details:", err);
-      toast.error(
-        err?.response?.data?.message || "Failed to fetch user details"
-      );
+
+      // Fallback: Use the available data without making API call
+      if (!isOwner) {
+        const operator = user as Operator;
+        setSelectedUser({
+          id: operator._id || operator.id,
+          fullName: getUserDisplayName(operator),
+          email: getUserEmail(operator),
+          role: "Operator",
+          isActive: getUserStatus(operator),
+          stationId: operator.stationId,
+          stationName: operator.stationName,
+          stationLocation: operator.stationLocation,
+          createdAt: operator.CreatedAt,
+        });
+        setShowUserDetails(true);
+      } else {
+        toast.error(
+          err?.response?.data?.message || "Failed to fetch user details"
+        );
+      }
     }
   };
-
   // Helper functions that handle both uppercase and lowercase properties
   const getUserDisplayName = (
     user: EVOwner | Operator | UserDetails
@@ -277,6 +417,16 @@ function UserManagement() {
     }
   };
 
+  const getStationInfo = (user: EVOwner | Operator | UserDetails): string => {
+    if ("role" in user && user.role === "Operator") {
+      return user.stationName || user.stationLocation || "N/A";
+    } else if ("stationName" in user) {
+      const operator = user as Operator;
+      return operator.stationName || operator.stationLocation || "N/A";
+    }
+    return "N/A";
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -287,7 +437,15 @@ function UserManagement() {
 
   return (
     <div className="p-6 space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
+        <button
+          onClick={() => setShowCreateOperator(true)}
+          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+        >
+          Create Operator
+        </button>
+      </div>
 
       {/* Reactivation Requests Section */}
       {reactivationRequests.length > 0 && (
@@ -407,6 +565,9 @@ function UserManagement() {
                         Email: {getUserEmail(operator)}
                       </p>
                       <p className="text-sm text-gray-600">
+                        Station: {getStationInfo(operator)}
+                      </p>
+                      <p className="text-sm text-gray-600">
                         Status:{" "}
                         <span
                           className={`ml-1 ${
@@ -517,6 +678,133 @@ function UserManagement() {
         </div>
       )}
 
+      {/* Create Operator Modal */}
+      {showCreateOperator && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Create New Operator</h3>
+              <button
+                onClick={() => setShowCreateOperator(false)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  value={operatorForm.fullName}
+                  onChange={(e) =>
+                    setOperatorForm({
+                      ...operatorForm,
+                      fullName: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="Enter full name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={operatorForm.email}
+                  onChange={(e) =>
+                    setOperatorForm({ ...operatorForm, email: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="Enter email address"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Password *
+                </label>
+                <input
+                  type="password"
+                  value={operatorForm.password}
+                  onChange={(e) =>
+                    setOperatorForm({
+                      ...operatorForm,
+                      password: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="Enter password (min 6 characters)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Station *
+                </label>
+                <select
+                  value={operatorForm.stationId}
+                  onChange={(e) => handleStationChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="">Select a station</option>
+                  {stations
+                    .filter((station) => station.isActive)
+                    .map((station) => (
+                      <option key={station.stationId} value={station.stationId}>
+                        {station.name} - {station.location}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {operatorForm.stationId && (
+                <div className="bg-gray-50 p-3 rounded-md">
+                  <h4 className="font-semibold text-sm mb-2">
+                    Selected Station:
+                  </h4>
+                  <p className="text-sm">
+                    <strong>Name:</strong> {operatorForm.stationName}
+                  </p>
+                  <p className="text-sm">
+                    <strong>Location:</strong> {operatorForm.stationLocation}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowCreateOperator(false)}
+                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
+                disabled={creatingOperator}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateOperator}
+                disabled={
+                  creatingOperator ||
+                  !operatorForm.fullName ||
+                  !operatorForm.email ||
+                  !operatorForm.password ||
+                  !operatorForm.stationId
+                }
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {creatingOperator ? "Creating..." : "Create Operator"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* User Details Modal */}
       {showUserDetails && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -551,6 +839,15 @@ function UserManagement() {
                   <div>
                     <label className="font-semibold">Phone:</label>
                     <p className="mt-1">{getUserPhone(selectedUser)}</p>
+                  </div>
+                </>
+              )}
+
+              {selectedUser.role === "Operator" && (
+                <>
+                  <div>
+                    <label className="font-semibold">Station:</label>
+                    <p className="mt-1">{getStationInfo(selectedUser)}</p>
                   </div>
                 </>
               )}

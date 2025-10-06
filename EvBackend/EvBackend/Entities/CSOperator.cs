@@ -5,7 +5,6 @@
 // Created On: 13/09/2025
 // --------------------------------------------------------------
 
-
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace EvBackend.Entities
@@ -20,5 +19,11 @@ namespace EvBackend.Entities
 
         [BsonElement("stationLocation")]
         public string StationLocation { get; set; }
+
+        // Ensure CreatedAt is properly initialized
+        public CSOperator()
+        {
+            CreatedAt = DateTime.UtcNow;
+        }
     }
 }

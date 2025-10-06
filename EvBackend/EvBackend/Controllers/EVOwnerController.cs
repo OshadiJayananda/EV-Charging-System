@@ -119,6 +119,7 @@ namespace EvBackend.Controllers
                 return StatusCode(500, new { message = "Failed to deactivate account", error = ex.Message });
             }
         }
+
         [HttpPatch("{nic}/activate")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ActivateByBackoffice(string nic)
