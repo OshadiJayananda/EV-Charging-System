@@ -1,24 +1,22 @@
 ﻿// --------------------------------------------------------------
 // File Name: CSOperator.cs
 // Author: Hasindu Koshitha
-// Description: Database entity representing a charging station operator
-// Created On: 13/09/2025
+// Description: Represents a Charging Station Operator user
 // --------------------------------------------------------------
 
-
 using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson;
 
 namespace EvBackend.Entities
 {
     public class CSOperator : User
     {
-        [BsonElement("stationId")]
-        public string StationId { get; set; }
+        // ✅ No need to re-declare StationId, StationName, StationLocation
+        // They already exist in base class User
 
-        [BsonElement("stationName")]
-        public string StationName { get; set; }
-
-        [BsonElement("stationLocation")]
-        public string StationLocation { get; set; }
+        public CSOperator() : base()
+        {
+            Role = "Operator"; // Ensure consistency
+        }
     }
 }

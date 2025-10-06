@@ -26,7 +26,7 @@ import okhttp3.Response;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE = "https://ev-charging-backend-dbgvakf8dshwddff.canadacentral-01.azurewebsites.net";
+    private static final String BASE = "https://87ce258e3dbe.ngrok-free.app";
     private static final String BASE_URL = BASE + "/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
@@ -128,6 +128,7 @@ public class ApiClient {
             RequestBody body = RequestBody.create(loginData.toString(), JSON);
             Request request = new Request.Builder()
                     .url(BASE_URL + "/auth/login")
+                    .addHeader("X-Client-Type", "Mobile")   // 👈 Add this header
                     .post(body)
                     .build();
 
@@ -448,4 +449,21 @@ public class ApiClient {
     public ApiResponse requestReactivation(String nic) {
         return patch("/owners/" + nic + "/request-reactivation");
     }
+
+    // Fetch bookings by station
+    public ApiResponse getBookingsByStation(String stationId) {
+        try {
+            if (stationId == null || stationId.isEmpty() || stationId.equals("string")) {
+                return new ApiResponse(false, "No station assigned", null);
+            }
+
+            String endpoint = "/bookings/station/" + stationId;
+            Log.d(TAG, "Fetching bookings for station: " + stationId);
+            return get(endpoint);
+        } catch (Exception e) {
+            Log.e(TAG, "Error fetching bookings by station", e);
+            return new ApiResponse(false, "Error fetching bookings", null);
+        }
+    }
+
 }

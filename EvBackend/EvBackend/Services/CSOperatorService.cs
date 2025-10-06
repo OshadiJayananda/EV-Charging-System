@@ -36,7 +36,7 @@ namespace EvBackend.Services
                 FullName = dto.FullName,
                 Email = dto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                Role = "CSOperator",
+                Role = "Operator",
                 IsActive = dto.IsActive,
                 StationId = dto.StationId,
                 StationName = dto.StationName,
