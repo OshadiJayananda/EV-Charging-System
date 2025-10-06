@@ -78,6 +78,7 @@ export default function Login() {
         formData,
         {
           headers: {
+            "Content-Type": "application/json",
             "X-Client-Type": "Web",
           },
         }

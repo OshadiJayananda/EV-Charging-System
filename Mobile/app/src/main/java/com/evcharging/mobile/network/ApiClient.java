@@ -128,7 +128,7 @@ public class ApiClient {
             RequestBody body = RequestBody.create(loginData.toString(), JSON);
             Request request = new Request.Builder()
                     .url(BASE_URL + "/auth/login")
-                    .addHeader("X-Client-Type", "Mobile")   // 👈 Add this header
+                    .addHeader("X-Client-Type", "Mobile")   
                     .post(body)
                     .build();
 
@@ -200,6 +200,7 @@ public class ApiClient {
             Request request = new Request.Builder()
                     .url(BASE_URL + "/auth/register")
                     .post(body)
+                    .addHeader("X-Client-Type", "Mobile");
                     .build();
             Response response = client.newCall(request).execute();
             String responseBody = response.body() != null ? response.body().string() : "";
@@ -222,6 +223,8 @@ public class ApiClient {
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
                     .get();
+                    .addHeader("X-Client-Type", "Mobile");
+
 
             String token = sessionManager.getToken();
             if (token != null) {
@@ -258,6 +261,8 @@ public class ApiClient {
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
                     .post(body);
+                    .addHeader("X-Client-Type", "Mobile");
+
 
             String token = sessionManager.getToken();
             if (token != null) {
@@ -289,6 +294,8 @@ public class ApiClient {
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
                     .patch(body);
+                    .addHeader("X-Client-Type", "Mobile");
+
 
             String token = sessionManager.getToken();
             if (token != null) {
@@ -315,6 +322,8 @@ public class ApiClient {
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
                     .delete();
+                    .addHeader("X-Client-Type", "Mobile");
+
 
             String token = sessionManager.getToken();
             if (token != null) {
@@ -391,6 +400,8 @@ public class ApiClient {
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
                     .patch(RequestBody.create("", JSON));
+                    .addHeader("X-Client-Type", "Mobile");
+
 
             String token = sessionManager.getToken();
             if (token != null)
@@ -419,6 +430,8 @@ public class ApiClient {
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
                     .put(body);
+                    .addHeader("X-Client-Type", "Mobile");
+
 
             String token = sessionManager.getToken();
             if (token != null)
