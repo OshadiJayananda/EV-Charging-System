@@ -160,7 +160,17 @@ public class ApiClient {
                     return new ApiResponse(true, "Login successful (no content returned)", null);
 
                 case 401: // Unauthorized
-                    return new ApiResponse(false, "Unauthorized: Invalid email or password", null);
+                
+                case 403: // Forbidden (Access denied from this platform)
+                    String errMsg = "Access denied: You are not allowed to log in from this app.";
+                    if (!responseBody.isEmpty()) {
+                        try {
+                            JSONObject errorJson = new JSONObject(responseBody);
+                            String msg = errorJson.optString("message", null);
+                            if (msg != null && !msg.isEmpty()) errMsg = msg;
+                        } catch (Exception ignored) {}
+                    }
+                    return new ApiResponse(false, errMsg, null);
 
                 case 404: // Not Found
                     return new ApiResponse(false, "Login endpoint not found", null);
