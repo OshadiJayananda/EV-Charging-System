@@ -135,7 +135,9 @@ public class ApiClient {
             int statusCode = response.code();
             Log.d(TAG, "Login response code: " + statusCode);
             String responseBody = response.body() != null ? response.body().string() : "";
-            Log.d(TAG, "Login response " + responseBody);
+
+            Log.d(TAG, "Login response code: " + statusCode);
+            Log.d(TAG, "Login response body: '" + responseBody + "'");
 
             // Handle based on status code
             switch (statusCode) {
