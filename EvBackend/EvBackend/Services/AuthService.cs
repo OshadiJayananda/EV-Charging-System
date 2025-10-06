@@ -40,15 +40,14 @@ namespace EvBackend.Services
             string[] webRoles = new[] { "Admin", "Operator" };
             string[] mobileRoles = new[] { "Operator", "Owner" };
 
-            // Try to find user in Users collection
             var user = await _users.Find(u => u.Email == loginDto.Email).FirstOrDefaultAsync();
             if (user != null && user.IsActive)
             {
                 if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
                     throw new AuthenticationException("Invalid credentials");
 
-                if ((isWeb && !webRoles.Contains(user.Role)) || (!isWeb && !mobileRoles.Contains(user.Role)))
-                    throw new AuthenticationException("Access denied from this platform");
+                // if ((isWeb && !webRoles.Contains(user.Role)) || (!isWeb && !mobileRoles.Contains(user.Role)))
+                //     throw new AuthenticationException("Access denied from this platform");
 
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var secretKey = _config["Jwt:Key"] ?? _config["Jwt__Key"];
@@ -114,7 +113,6 @@ namespace EvBackend.Services
                 };
             }
 
-            // Try to find user in EVOwners collection
             var evOwner = await _evOwners.Find(o => o.Email == loginDto.Email).FirstOrDefaultAsync();
             if (evOwner != null)
             {

@@ -127,39 +127,45 @@ public class OperatorHomeActivity extends AppCompatActivity {
                                 }
 
                                 try {
-                                        JSONArray jsonArray = new JSONArray(response.getData());
-                                        ArrayList<String> bookingsList = new ArrayList<>();
+                                        Log.d("BOOKINGS", "Raw response data: " + response.getData());
 
-                                        String today = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+                                        JSONArray jsonArray = new JSONArray(response.getData());
+                                        Log.d("BOOKINGS", "JSONArray length: " + jsonArray.length());
+
+                                        ArrayList<String> bookingsList = new ArrayList<>();
 
                                         for (int i = 0; i < jsonArray.length(); i++) {
                                                 JSONObject obj = jsonArray.getJSONObject(i);
-                                                String date = obj.optString("date", "");
-                                                String status = obj.optString("status", "");
-                                                String ownerName = obj.optString("evOwnerName", "Unknown");
-                                                String time = obj.optString("slotTime", "-");
+                                                Log.d("BOOKINGS", "Parsed booking " + (i + 1) + ": " + obj.toString());
 
-                                                // Only show today's bookings
-                                                if (date.contains(today)) {
-                                                        bookingsList.add(time + " - " + ownerName + " - " + status);
-                                                }
+                                                String id = obj.optString("bookingId", "N/A");
+                                                String status = obj.optString("status", "N/A");
+                                                String startTime = obj.optString("startTime", "N/A");
+                                                String endTime = obj.optString("endTime", "N/A");
+
+                                                bookingsList.add("ID: " + id + "\n" +
+                                                        "Start: " + startTime + "\n" +
+                                                        "End: " + endTime + "\n" +
+                                                        "Status: " + status);
                                         }
+
+                                        Log.d("BOOKINGS", "Final list size: " + bookingsList.size());
 
                                         if (bookingsList.isEmpty()) {
-                                                bookingsList.add("No bookings for today");
+                                                bookingsList.add("No bookings found for this station");
                                         }
 
-                                        ArrayAdapter<String> adapter = new ArrayAdapter<>(OperatorHomeActivity.this,
-                                                android.R.layout.simple_list_item_1, bookingsList);
+                                        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                                                OperatorHomeActivity.this,
+                                                android.R.layout.simple_list_item_1,
+                                                bookingsList
+                                        );
                                         lvTodayReservations.setAdapter(adapter);
 
-                                        Log.d("BOOKINGS", "Loaded " + bookingsList.size() + " bookings");
-                                } catch (Exception e) {
+                                        } catch (Exception e) {
                                         Log.e("BOOKINGS", "Error parsing bookings: " + e.getMessage());
-                                        String[] msg = {"Error loading bookings"};
-                                        lvTodayReservations.setAdapter(new ArrayAdapter<>(OperatorHomeActivity.this,
-                                                android.R.layout.simple_list_item_1, msg));
-                                }
+                                        }
+
                         }
                 }.execute();
         }

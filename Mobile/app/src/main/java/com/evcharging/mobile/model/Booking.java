@@ -1,47 +1,50 @@
 package com.evcharging.mobile.model;
 
 public class Booking {
-    private String id;
-    private String evOwnerName;
-    private String evOwnerEmail;
+    private String bookingId;
     private String stationId;
-    private String slotTime;
-    private String date;
+    private String slotId;
+    private String ownerId;
     private String status;
+    private String startTime;
+    private String endTime;
 
     public Booking() {}
 
-    public Booking(String id, String evOwnerName, String evOwnerEmail,
-                   String stationId, String slotTime, String date, String status) {
-        this.id = id;
-        this.evOwnerName = evOwnerName;
-        this.evOwnerEmail = evOwnerEmail;
+    public Booking(String bookingId, String stationId, String slotId, String ownerId,
+                   String status, String startTime, String endTime) {
+        this.bookingId = bookingId;
         this.stationId = stationId;
-        this.slotTime = slotTime;
-        this.date = date;
+        this.slotId = slotId;
+        this.ownerId = ownerId;
         this.status = status;
+        this.startTime = startTime;
+        this.endTime = endTime;
     }
 
     // Getters
-    public String getId() { return id; }
-    public String getEvOwnerName() { return evOwnerName; }
-    public String getEvOwnerEmail() { return evOwnerEmail; }
+    public String getBookingId() { return bookingId; }
     public String getStationId() { return stationId; }
-    public String getSlotTime() { return slotTime; }
-    public String getDate() { return date; }
+    public String getSlotId() { return slotId; }
+    public String getOwnerId() { return ownerId; }
     public String getStatus() { return status; }
+    public String getStartTime() { return startTime; }
+    public String getEndTime() { return endTime; }
 
     // Setters
-    public void setId(String id) { this.id = id; }
-    public void setEvOwnerName(String evOwnerName) { this.evOwnerName = evOwnerName; }
-    public void setEvOwnerEmail(String evOwnerEmail) { this.evOwnerEmail = evOwnerEmail; }
+    public void setBookingId(String bookingId) { this.bookingId = bookingId; }
     public void setStationId(String stationId) { this.stationId = stationId; }
-    public void setSlotTime(String slotTime) { this.slotTime = slotTime; }
-    public void setDate(String date) { this.date = date; }
+    public void setSlotId(String slotId) { this.slotId = slotId; }
+    public void setOwnerId(String ownerId) { this.ownerId = ownerId; }
     public void setStatus(String status) { this.status = status; }
+    public void setStartTime(String startTime) { this.startTime = startTime; }
+    public void setEndTime(String endTime) { this.endTime = endTime; }
 
     @Override
     public String toString() {
-        return slotTime + " - " + evOwnerName + " - " + status;
+        return "Booking ID: " + bookingId + "\n" +
+               "Status: " + status + "\n" +
+               "Start: " + startTime + "\n" +
+               "End: " + endTime;
     }
 }
