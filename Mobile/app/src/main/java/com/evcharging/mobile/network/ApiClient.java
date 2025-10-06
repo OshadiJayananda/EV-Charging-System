@@ -1,14 +1,22 @@
 package com.evcharging.mobile.network;
 
 import android.util.Log;
-
+import com.evcharging.mobile.model.Notification;
 import com.evcharging.mobile.session.SessionManager;
-
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.security.cert.X509Certificate;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -18,54 +26,118 @@ import okhttp3.Response;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE = "https://dcc8d0c08176.ngrok-free.app"; // Ensure ngrok is active
-
+    private static final String BASE = "https://ev-charging-backend-dbgvakf8dshwddff.canadacentral-01.azurewebsites.net";
     private static final String BASE_URL = BASE + "/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
     private OkHttpClient client;
     private SessionManager sessionManager;
+    private Gson gson;
 
     public ApiClient(SessionManager sessionManager) {
         this.sessionManager = sessionManager;
+        this.gson = new Gson();
+
+        // Create OkHttpClient with unsafe SSL for ngrok (development only)
         this.client = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
+                .hostnameVerifier((hostname, session) -> true)
+                .sslSocketFactory(getUnsafeSslContext().getSocketFactory(), getTrustAllCertsManager())
                 .build();
     }
 
-    // Static method to get the Base URL for API requests
+    private SSLContext getUnsafeSslContext() {
+        try {
+            TrustManager[] trustAllCerts = new TrustManager[] { getTrustAllCertsManager() };
+            SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            return sslContext;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private X509TrustManager getTrustAllCertsManager() {
+        return new X509TrustManager() {
+            @Override
+            public void checkClientTrusted(X509Certificate[] chain, String authType) {
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] chain, String authType) {
+            }
+
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[] {};
+            }
+        };
+    }
+
+    // Static method to get base URL for other services
     public static String getBaseUrl() {
+        return BASE;
+    }
+
+    // Static method to get API base URL
+    public static String getApiBaseUrl() {
         return BASE_URL;
     }
 
-    // Login API call
+    // Notification API Methods
+    public ApiResponse getUserNotifications() {
+        return get("/notifications/user");
+    }
+
+    public ApiResponse markNotificationAsRead(String notificationId) {
+        try {
+            String endpoint = "/notifications/" + notificationId + "/read";
+            return patch(endpoint, null);
+        } catch (Exception e) {
+            Log.e(TAG, "Error marking notification as read", e);
+            return new ApiResponse(false, "Request creation error", null);
+        }
+    }
+
+    public ApiResponse deleteNotification(String notificationId) {
+        return delete("/notifications/" + notificationId);
+    }
+
+    // Helper method to parse notifications list
+    public List<Notification> parseNotifications(String json) {
+        try {
+            Type listType = new TypeToken<List<Notification>>() {
+            }.getType();
+            return gson.fromJson(json, listType);
+        } catch (Exception e) {
+            Log.e(TAG, "Error parsing notifications", e);
+            return null;
+        }
+    }
+
+    // Login
     public ApiResponse login(String email, String password) {
         try {
-            // Prepare JSON payload for login
+            // Prepare JSON payload
             JSONObject loginData = new JSONObject();
             loginData.put("email", email);
             loginData.put("password", password);
 
-            // Prepare request body
             RequestBody body = RequestBody.create(loginData.toString(), JSON);
-
-            // Prepare the request
             Request request = new Request.Builder()
                     .url(BASE_URL + "/auth/login")
                     .post(body)
                     .build();
 
-            // Execute request
             Response response = client.newCall(request).execute();
             int statusCode = response.code();
-            String responseBody = response.body() != null ? response.body().string() : "";
-
             Log.d(TAG, "Login response code: " + statusCode);
-            Log.d(TAG, "Login response body: '" + responseBody + "'");
+            String responseBody = response.body() != null ? response.body().string() : "";
+            Log.d(TAG, "Login response " + responseBody);
 
-            // Handle response based on status code
+            // Handle based on status code
             switch (statusCode) {
                 case 200: // OK
                     if (!responseBody.isEmpty()) {
@@ -81,8 +153,14 @@ public class ApiClient {
                         return new ApiResponse(false, "Login failed: empty response", null);
                     }
 
+                case 204: // No Content
+                    return new ApiResponse(true, "Login successful (no content returned)", null);
+
                 case 401: // Unauthorized
                     return new ApiResponse(false, "Unauthorized: Invalid email or password", null);
+
+                case 404: // Not Found
+                    return new ApiResponse(false, "Login endpoint not found", null);
 
                 default: // Other errors
                     if (!responseBody.isEmpty()) {
@@ -91,7 +169,7 @@ public class ApiClient {
                             String message = errorResponse.optString("message", "Unknown error");
                             return new ApiResponse(false, message, null);
                         } catch (JSONException e) {
-                            // If the response is not a valid JSON
+                            // Response not JSON
                             return new ApiResponse(false, "Unexpected error occurred! Contact Administration", null);
                         }
                     } else {
@@ -99,13 +177,16 @@ public class ApiClient {
                     }
             }
 
-        } catch (IOException | JSONException e) {
-            Log.e(TAG, "Network or JSON error during login", e);
-            return new ApiResponse(false, "Network or JSON error occurred", null);
+        } catch (IOException e) {
+            Log.e(TAG, "Network error during login", e);
+            return new ApiResponse(false, "Network error occurred", null);
+        } catch (JSONException e) {
+            Log.e(TAG, "JSON parsing error during login", e);
+            return new ApiResponse(false, "Response parsing error", null);
         }
     }
 
-    // Register API call
+    // register
     public ApiResponse register(String name, String email, String password) {
         try {
             JSONObject registerData = new JSONObject();
@@ -118,7 +199,7 @@ public class ApiClient {
                     .post(body)
                     .build();
             Response response = client.newCall(request).execute();
-            String responseBody = response.body().string();
+            String responseBody = response.body() != null ? response.body().string() : "";
             if (response.isSuccessful()) {
                 return new ApiResponse(true, "Registration successful", null);
             } else {
@@ -143,17 +224,24 @@ public class ApiClient {
             if (token != null) {
                 requestBuilder.addHeader("Authorization", "Bearer " + token);
             }
+            Log.e(TAG, "GET Request url: " + BASE_URL + endpoint);
 
             Response response = client.newCall(requestBuilder.build()).execute();
-            String responseBody = response.body().string();
+            Log.e(TAG, "GET Response code: " + response.code());
+
+            String responseBody = response.body() != null ? response.body().string() : "";
+            Log.e(TAG, "GET Response body: " + response.body());
 
             if (response.isSuccessful()) {
                 return new ApiResponse(true, "Success", responseBody);
             } else {
+                if (responseBody == null || responseBody.isEmpty()) {
+                    Log.e(TAG, "Empty response for endpoint: " + endpoint);
+                    return new ApiResponse(false, "Empty response from server (code " + response.code() + ")", null);
+                }
                 JSONObject errorResponse = new JSONObject(responseBody);
                 return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
             }
-
         } catch (Exception e) {
             Log.e(TAG, "GET request error", e);
             return new ApiResponse(false, "Network error occurred", null);
@@ -182,9 +270,65 @@ public class ApiClient {
                 JSONObject errorResponse = new JSONObject(responseBody);
                 return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
             }
-
         } catch (Exception e) {
             Log.e(TAG, "POST request error", e);
+            return new ApiResponse(false, "Network error occurred", null);
+        }
+    }
+
+    // Patch request
+    public ApiResponse patch(String endpoint, JSONObject data) {
+        try {
+            RequestBody body = data != null
+                    ? RequestBody.create(data.toString(), JSON)
+                    : RequestBody.create("", JSON); // empty body if none provided
+
+            Request.Builder requestBuilder = new Request.Builder()
+                    .url(BASE_URL + endpoint)
+                    .patch(body);
+
+            String token = sessionManager.getToken();
+            if (token != null) {
+                requestBuilder.addHeader("Authorization", "Bearer " + token);
+            }
+
+            Response response = client.newCall(requestBuilder.build()).execute();
+            String responseBody = response.body() != null ? response.body().string() : "";
+
+            if (response.isSuccessful()) {
+                return new ApiResponse(true, "Success", responseBody);
+            } else {
+                JSONObject errorResponse = new JSONObject(responseBody);
+                return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "PATCH request error", e);
+            return new ApiResponse(false, "Network error occurred", null);
+        }
+    }
+
+    public ApiResponse delete(String endpoint) {
+        try {
+            Request.Builder requestBuilder = new Request.Builder()
+                    .url(BASE_URL + endpoint)
+                    .delete();
+
+            String token = sessionManager.getToken();
+            if (token != null) {
+                requestBuilder.addHeader("Authorization", "Bearer " + token);
+            }
+
+            Response response = client.newCall(requestBuilder.build()).execute();
+            String responseBody = response.body().string();
+
+            if (response.isSuccessful()) {
+                return new ApiResponse(true, "Success", responseBody);
+            } else {
+                JSONObject errorResponse = new JSONObject(responseBody);
+                return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "DELETE request error", e);
             return new ApiResponse(false, "Network error occurred", null);
         }
     }
@@ -200,7 +344,6 @@ public class ApiClient {
         return new ApiResponse(true, "Logged out successfully", null);
     }
 
-    // Clear all session data (login credentials)
     public ApiResponse logoutAndForget() {
         try {
             post("/auth/logout", new JSONObject());
@@ -210,5 +353,97 @@ public class ApiClient {
 
         sessionManager.clearAll();
         return new ApiResponse(true, "Logged out and credentials cleared", null);
+    }
+
+    public ApiResponse updateEvOwner(String nic, JSONObject data) {
+        try {
+            RequestBody body = RequestBody.create(data.toString(), JSON);
+            Request.Builder requestBuilder = new Request.Builder()
+                    .url(BASE_URL + "/owners/" + nic)
+                    .put(body);
+
+            String token = sessionManager.getToken();
+            if (token != null) {
+                requestBuilder.addHeader("Authorization", "Bearer " + token);
+            }
+
+            Response response = client.newCall(requestBuilder.build()).execute();
+            String responseBody = response.body().string();
+
+            if (response.isSuccessful()) {
+                return new ApiResponse(true, "Profile updated successfully", responseBody);
+            } else {
+                JSONObject errorResponse = new JSONObject(responseBody);
+                return new ApiResponse(false, errorResponse.optString("message", "Update failed"), null);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Update error", e);
+            return new ApiResponse(false, "Network error occurred", null);
+        }
+    }
+
+    // Generic PATCH helper
+    private ApiResponse patch(String endpoint) {
+        try {
+            Request.Builder requestBuilder = new Request.Builder()
+                    .url(BASE_URL + endpoint)
+                    .patch(RequestBody.create("", JSON));
+
+            String token = sessionManager.getToken();
+            if (token != null)
+                requestBuilder.addHeader("Authorization", "Bearer " + token);
+
+            Response response = client.newCall(requestBuilder.build()).execute();
+            String responseBody = response.body().string();
+
+            if (response.isSuccessful()) {
+                return new ApiResponse(true, "Operation successful", responseBody);
+            } else {
+                JSONObject errorResponse = new JSONObject(responseBody);
+                Log.e(TAG, "PATCH response status code " + response.code() + " response body" + responseBody);
+                return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "PATCH request error", e);
+            return new ApiResponse(false, "Network error occurred", null);
+        }
+    }
+
+    // Generic PUT helper
+    private ApiResponse put(String endpoint, JSONObject data) {
+        try {
+            RequestBody body = RequestBody.create(data.toString(), JSON);
+            Request.Builder requestBuilder = new Request.Builder()
+                    .url(BASE_URL + endpoint)
+                    .put(body);
+
+            String token = sessionManager.getToken();
+            if (token != null)
+                requestBuilder.addHeader("Authorization", "Bearer " + token);
+
+            Response response = client.newCall(requestBuilder.build()).execute();
+            String responseBody = response.body().string();
+
+            if (response.isSuccessful()) {
+                return new ApiResponse(true, "Operation successful", responseBody);
+            } else {
+                JSONObject errorResponse = new JSONObject(responseBody);
+                return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "PUT request error", e);
+            return new ApiResponse(false, "Network error occurred", null);
+        }
+    }
+
+
+    // Deactivate EV Owner
+    public ApiResponse deactivateEvOwner(String nic) {
+        return patch("/owners/" + nic + "/deactivate");
+    }
+
+    // Request Reactivation
+    public ApiResponse requestReactivation(String nic) {
+        return patch("/owners/" + nic + "/request-reactivation");
     }
 }
