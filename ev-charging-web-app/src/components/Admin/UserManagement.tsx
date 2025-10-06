@@ -500,14 +500,7 @@ function UserManagement() {
                       >
                         View Details
                       </button>
-                      {owner.isActive ? (
-                        <button
-                          onClick={() => handleDeactivateUser(owner.nic, true)}
-                          className="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 text-sm transition-colors"
-                        >
-                          Deactivate
-                        </button>
-                      ) : (
+                      {!owner.isActive && (
                         <button
                           onClick={() => handleActivateUser(owner.nic, true)}
                           className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm transition-colors"
