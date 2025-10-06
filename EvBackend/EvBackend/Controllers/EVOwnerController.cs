@@ -106,11 +106,19 @@ namespace EvBackend.Controllers
             if (!string.Equals(userNic, nic, StringComparison.OrdinalIgnoreCase))
                 return Forbid();
 
-            var ok = await _evOwnerService.ChangeEVOwnerStatus(nic, false);
-            if (!ok) return NotFound(new { message = "EV Owner not found." });
-            return Ok(new { message = "Account deactivated." });
+            try
+            {
+                // First clear any existing reactivation request when user deactivates themselves
+                await _evOwnerService.ClearReactivationRequest(nic);
+                var ok = await _evOwnerService.ChangeEVOwnerStatus(nic, false);
+                if (!ok) return NotFound(new { message = "EV Owner not found." });
+                return Ok(new { message = "Account deactivated." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to deactivate account", error = ex.Message });
+            }
         }
-
         [HttpPatch("{nic}/activate")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ActivateByBackoffice(string nic)

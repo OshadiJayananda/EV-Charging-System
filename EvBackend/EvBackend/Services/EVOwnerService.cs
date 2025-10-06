@@ -27,7 +27,22 @@ namespace EvBackend.Services
 
         public async Task<bool> ChangeEVOwnerStatus(string nic, bool isActive)
         {
-            var update = Builders<EVOwner>.Update.Set(o => o.IsActive, isActive);
+            var updateBuilder = Builders<EVOwner>.Update;
+            UpdateDefinition<EVOwner> update;
+
+            if (isActive)
+            {
+                // When activating, clear the reactivation request and set active
+                update = updateBuilder
+                    .Set(o => o.IsActive, true)
+                    .Set(o => o.ReactivationRequested, false);
+            }
+            else
+            {
+                // When deactivating, just set active to false (keep reactivation request as is)
+                update = updateBuilder.Set(o => o.IsActive, false);
+            }
+
             var result = await _owners.UpdateOneAsync(o => o.NIC == nic, update);
 
             var owner = await _owners.Find(o => o.NIC == nic).FirstOrDefaultAsync();
@@ -140,17 +155,23 @@ namespace EvBackend.Services
             var owner = await _owners.Find(o => o.NIC == nic).FirstOrDefaultAsync();
             if (owner == null) throw new KeyNotFoundException("EV Owner not found");
 
+            // Check if account is already active
             if (owner.IsActive)
                 throw new InvalidOperationException("Account is already active.");
 
+            // Check if reactivation is already requested
             if (owner.ReactivationRequested)
-                throw new InvalidOperationException("Reactivation already requested.");
+                throw new InvalidOperationException("Reactivation already requested. Please wait for admin approval.");
 
+            // Set reactivation requested to true
             var update = Builders<EVOwner>.Update.Set(o => o.ReactivationRequested, true);
             var result = await _owners.UpdateOneAsync(o => o.NIC == nic, update);
+
+            // Notify admins about the reactivation request
+            await _notificationService.SendNotificationToAdmins($"EV owner {owner.FullName} has requested account reactivation.");
+
             return result.ModifiedCount > 0;
         }
-
         public async Task<int> GetReactivationRequestCount()
         {
             var count = await _owners.CountDocumentsAsync(o => o.ReactivationRequested == true);
