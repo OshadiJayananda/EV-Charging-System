@@ -369,4 +369,25 @@ public class SessionManager {
             Log.d(TAG, "Logout complete, credentials preserved");
         }
     }
+
+    /**
+     * Save or update the logged-in user in the database
+     *
+     * @param user User object to save
+     * @return true if successfully saved/updated, false otherwise
+     */
+    public boolean saveLoggedInUser(User user) {
+        if (user == null) {
+            Log.e(TAG, "Cannot save null user");
+            return false;
+        }
+
+        boolean saved = dbHelper.saveUser(user);
+        if (saved) {
+            Log.d(TAG, "User saved/updated in database: " + user.getEmail());
+        } else {
+            Log.e(TAG, "Failed to save user in database: " + user.getEmail());
+        }
+        return saved;
+    }
 }

@@ -45,10 +45,13 @@ public class OwnerProfileActivity extends AppCompatActivity {
         btnBack = findViewById(R.id.btnBack);
 
         btnBack.setOnClickListener(v -> finish());
-        btnEditProfile.setOnClickListener(v -> startActivity(new Intent(this, OwnerEditProfileActivity.class)));
+        btnEditProfile.setOnClickListener(v ->
+                startActivity(new Intent(this, OwnerEditProfileActivity.class)));
 
-        loadUserProfile();
+        // Load profile from API
+        new LoadProfileTask().execute();
 
+        // Deactivate button
         btnDeactivate.setOnClickListener(v ->
                 new androidx.appcompat.app.AlertDialog.Builder(this)
                         .setTitle("Deactivate Account")
@@ -58,6 +61,7 @@ public class OwnerProfileActivity extends AppCompatActivity {
                         .show()
         );
 
+        // Reactivation button
         btnRequestReactivation.setOnClickListener(v ->
                 new androidx.appcompat.app.AlertDialog.Builder(this)
                         .setTitle("Request Reactivation")
@@ -68,24 +72,45 @@ public class OwnerProfileActivity extends AppCompatActivity {
         );
     }
 
-    private void loadUserProfile() {
-        User user = sessionManager.getLoggedInUser();
-        if (user != null) {
-            tvName.setText(user.getFullName() != null ? user.getFullName() : "N/A");
-            tvEmail.setText(user.getEmail() != null ? user.getEmail() : "N/A");
-            tvNic.setText(user.getUserId() != null ? "NIC: " + user.getUserId() : "NIC: N/A");
+    /**
+     * Load user profile from API
+     */
+    private class LoadProfileTask extends AsyncTask<Void, Void, User> {
+        @Override
+        protected User doInBackground(Void... voids) {
+            ApiResponse response = apiClient.getUser();
+            if (response.isSuccess() && response.getData() != null) {
+                // Parse JSON into User object
+                return apiClient.parseLoggedOwner(response.getData());
+            }
+            return null;
+        }
 
-            // Show status
-            if (user.isActive()) {
-                tvAccountStatus.setText("Active");
-                tvAccountStatus.setTextColor(getResources().getColor(R.color.green));
-                btnDeactivate.setVisibility(View.VISIBLE);
-                btnRequestReactivation.setVisibility(View.GONE);
+        @Override
+        protected void onPostExecute(User user) {
+            if (user != null) {
+                // Save updated user to session
+                sessionManager.saveLoggedInUser(user);
+
+                // Update UI
+                tvName.setText(user.getFullName() != null ? user.getFullName() : "N/A");
+                tvEmail.setText(user.getEmail() != null ? user.getEmail() : "N/A");
+                tvNic.setText(user.getUserId() != null ? "NIC: " + user.getUserId() : "NIC: N/A");
+
+                if (user.isActive()) {
+                    tvAccountStatus.setText("Active");
+                    tvAccountStatus.setTextColor(getResources().getColor(R.color.green));
+                    btnDeactivate.setVisibility(View.VISIBLE);
+                    btnRequestReactivation.setVisibility(View.GONE);
+                } else {
+                    tvAccountStatus.setText("Deactivated");
+                    tvAccountStatus.setTextColor(getResources().getColor(R.color.red));
+                    btnDeactivate.setVisibility(View.GONE);
+                    btnRequestReactivation.setVisibility(View.VISIBLE);
+                }
             } else {
-                tvAccountStatus.setText("Deactivated");
-                tvAccountStatus.setTextColor(getResources().getColor(R.color.red));
-                btnDeactivate.setVisibility(View.GONE);
-                btnRequestReactivation.setVisibility(View.VISIBLE);
+                Toast.makeText(OwnerProfileActivity.this,
+                        "Failed to load profile", Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -109,23 +134,41 @@ public class OwnerProfileActivity extends AppCompatActivity {
         protected void onPostExecute(ApiResponse response) {
             Toast.makeText(OwnerProfileActivity.this, response.getMessage(), Toast.LENGTH_SHORT).show();
             if (response.isSuccess()) {
-                // Update UI after deactivation
-                loadUserProfile();
+                new LoadProfileTask().execute(); // Refresh profile after deactivation
             }
         }
     }
 
     private class ReactivationTask extends AsyncTask<Void, Void, ApiResponse> {
-        private final String nic = getOwnerNic();
+        private final String nic;
+
+        public ReactivationTask() {
+            this.nic = getOwnerNic();
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            if (nic == null || nic.isEmpty()) {
+                Toast.makeText(OwnerProfileActivity.this, "NIC is empty!", Toast.LENGTH_SHORT).show();
+                cancel(true); // Stop the AsyncTask from executing
+            }
+        }
 
         @Override
         protected ApiResponse doInBackground(Void... voids) {
+            if (isCancelled()) return null; // In case task was cancelled in onPreExecute
             return apiClient.requestReactivation(nic);
         }
 
         @Override
         protected void onPostExecute(ApiResponse response) {
+            if (response == null) return; // Task was cancelled
             Toast.makeText(OwnerProfileActivity.this, response.getMessage(), Toast.LENGTH_SHORT).show();
+            if (response.isSuccess()) {
+                new LoadProfileTask().execute(); // Refresh profile after reactivation
+            }
         }
     }
+
 }

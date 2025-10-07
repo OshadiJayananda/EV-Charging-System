@@ -2,6 +2,7 @@ package com.evcharging.mobile.network;
 
 import android.util.Log;
 import com.evcharging.mobile.model.Notification;
+import com.evcharging.mobile.model.User;
 import com.evcharging.mobile.session.SessionManager;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -27,7 +28,7 @@ import okhttp3.Response;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE = "https://d5d3f12b08d7.ngrok-free.app";
+    private static final String BASE = "https://17bef1417165.ngrok-free.app";
     private static final String BASE_URL = BASE + "/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
@@ -511,6 +512,51 @@ public class ApiClient {
         } catch (Exception e) {
             Log.e(TAG, "Error fetching bookings by station", e);
             return new ApiResponse(false, "Error fetching bookings", null);
+        }
+    }
+
+    public ApiResponse getUser(){
+        return get("/auth/me");
+    }
+
+    /**
+     * Parse user JSON string to User object
+     *
+     * @param json JSON string from API (e.g., /auth/me)
+     * @return User object or null if parsing fails
+     */
+    public User parseLoggedOwner(String json) {
+        if (json == null || json.isEmpty()) {
+            Log.e(TAG, "Cannot parse user: empty JSON");
+            return null;
+        }
+
+        try {
+            JSONObject obj = new JSONObject(json);
+
+            String nic = obj.optString("nic", null);
+            String fullName = obj.optString("fullName", null);
+            String email = obj.optString("email", null);
+            String phone = obj.optString("phone", null);
+            boolean isActive = obj.optBoolean("isActive", false);
+            boolean reactivationRequested = obj.optBoolean("reactivationRequested", false);
+            String createdAt = obj.optString("createdAt", null);
+
+            User user = new User();
+            user.setUserId(nic);
+            user.setFullName(fullName);
+            user.setEmail(email);
+            user.setPhone(phone);
+            user.setActive(isActive);
+            user.setReactivationRequested(reactivationRequested);
+            user.setCreatedAt(createdAt);
+            user.setRole("Owner");
+
+            return user;
+
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing user JSON", e);
+            return null;
         }
     }
 

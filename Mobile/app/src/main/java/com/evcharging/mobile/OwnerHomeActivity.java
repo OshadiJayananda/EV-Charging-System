@@ -5,6 +5,7 @@ import android.app.NotificationManager;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -41,6 +42,9 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
 
         private SignalRService signalRService;
         private ApiClient apiClient;
+        private TextView tvNotificationCount;
+        private int notificationCount = 0;
+
 
         @Override
         protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +59,7 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                 ivProfile = findViewById(R.id.ivProfileOwner);
                 btnLogout = findViewById(R.id.btnLogoutOwner);
                 btnNotifications = findViewById(R.id.btnNotifications);
+                tvNotificationCount = findViewById(R.id.tvNotificationCount);
 
                 tvWelcomeOwner = findViewById(R.id.tvWelcomeOwner);
                 tvOwnerId = findViewById(R.id.tvOwnerId);
@@ -228,6 +233,8 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
         public void onNotificationReceived(Notification notification) {
                 runOnUiThread(() -> {
                         // Show toast
+                        notificationCount++;
+                        updateNotificationCount();
                         Toast.makeText(this, notification.getMessage(), Toast.LENGTH_LONG).show();
 
                         // Show system notification
@@ -264,4 +271,14 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                         notificationManager.notify((int) System.currentTimeMillis(), builder.build());
                 }
         }
+
+        private void updateNotificationCount() {
+                if (notificationCount > 0) {
+                        tvNotificationCount.setVisibility(View.VISIBLE);
+                        tvNotificationCount.setText(String.valueOf(notificationCount));
+                } else {
+                        tvNotificationCount.setVisibility(View.GONE);
+                }
+        }
+
 }

@@ -1,45 +1,36 @@
 package com.evcharging.mobile.model;
 
-/**
- * User - Model class representing a user in the EV Charging system
- *
- * Purpose: Local representation of user data extracted from JWT and stored in SQLite
- * Supports both EV Owners and CS Operators with nullable station fields for operators
- * who haven't been assigned to a station yet.
- *
- * Author: System
- * Created: 2025-10-06
- */
 public class User {
 
     // User identification
-    private String userId;          // NIC from JWT (unique identifier)
-    private String fullName;        // User's full name
-    private String email;           // User's email address
-    private String role;            // User role: "Owner", "Operator", "Admin", etc.
+    private String userId; // NIC from JWT (unique identifier)
+    private String fullName; // User's full name
+    private String email; // User's email address
+    private String role; // User role: "Owner", "Operator", "Admin", etc.
 
     // Station information (for CS Operators only - nullable)
-    private String stationId;       // ID of assigned station (null if not assigned)
-    private String stationName;     // Name of assigned station (null if not assigned)
+    private String stationId; // ID of assigned station (null if not assigned)
+    private String stationName; // Name of assigned station (null if not assigned)
     private String stationLocation; // Location of assigned station (null if not assigned)
 
     // User status
-    private boolean isActive;       // Whether user account is active
-    private String createdAt;       // Account creation timestamp
+    private boolean isActive; // Whether user account is active
+    private String createdAt; // Account creation timestamp
+    private String phone; // User phone number
+    private boolean reactivationRequested; // Flag for reactivation request
 
     /**
      * Default constructor
      */
     public User() {
-        // Empty constructor for flexibility
     }
 
     /**
-     * Full constructor for creating user with all details
+     * Full constructor for users with station
      */
     public User(String userId, String fullName, String email, String role,
-                String stationId, String stationName, String stationLocation,
-                boolean isActive, String createdAt) {
+            String stationId, String stationName, String stationLocation,
+            boolean isActive, String createdAt) {
         this.userId = userId;
         this.fullName = fullName;
         this.email = email;
@@ -52,10 +43,10 @@ public class User {
     }
 
     /**
-     * Constructor for users without station (EV Owners or unassigned operators)
+     * Constructor for users without station
      */
     public User(String userId, String fullName, String email, String role,
-                boolean isActive, String createdAt) {
+            boolean isActive, String createdAt, String phone, boolean reactivationRequested) {
         this.userId = userId;
         this.fullName = fullName;
         this.email = email;
@@ -65,10 +56,11 @@ public class User {
         this.stationLocation = null;
         this.isActive = isActive;
         this.createdAt = createdAt;
+        this.phone = phone;
+        this.reactivationRequested = reactivationRequested;
     }
 
-    // Getters and Setters
-
+    // Getters & Setters
     public String getUserId() {
         return userId;
     }
@@ -141,74 +133,55 @@ public class User {
         this.createdAt = createdAt;
     }
 
-    // Utility methods
+    public String getPhone() {
+        return phone;
+    }
 
-    /**
-     * Check if user is an operator
-     *
-     * @return true if role is "Operator" (case-insensitive)
-     */
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public boolean isReactivationRequested() {
+        return reactivationRequested;
+    }
+
+    public void setReactivationRequested(boolean reactivationRequested) {
+        this.reactivationRequested = reactivationRequested;
+    }
+
+    // Utility methods
     public boolean isOperator() {
         return role != null && role.equalsIgnoreCase("operator");
     }
 
-    /**
-     * Check if user is an EV Owner
-     *
-     * @return true if role is "Owner" (case-insensitive)
-     */
     public boolean isOwner() {
         return role != null && role.equalsIgnoreCase("owner");
     }
 
-    /**
-     * Check if user is an admin
-     *
-     * @return true if role is "Admin" (case-insensitive)
-     */
     public boolean isAdmin() {
         return role != null && role.equalsIgnoreCase("admin");
     }
 
-    /**
-     * Check if operator has station assigned
-     * Only relevant for operators
-     *
-     * @return true if stationId is not null and not empty
-     */
     public boolean hasStationAssigned() {
         return stationId != null && !stationId.trim().isEmpty();
     }
 
-    /**
-     * Get display name for station info
-     * Returns formatted station info or "Not Assigned" if no station
-     *
-     * @return Formatted station string
-     */
     public String getStationDisplayInfo() {
-        if (hasStationAssigned()) {
+        if (hasStationAssigned())
             return stationName + " (" + stationId + ")";
-        }
         return "Not Assigned";
     }
 
-    /**
-     * Get short role name for display
-     *
-     * @return "Operator", "Owner", "Admin" or the role as-is
-     */
     public String getRoleDisplayName() {
-        if (role == null) return "Unknown";
-
-        // Capitalize first letter for display
+        if (role == null)
+            return "Unknown";
         String normalized = role.toLowerCase();
-        if (normalized.equals("csoperator")) return "Operator";
-        if (normalized.equals("operator")) return "Operator";
-        if (normalized.equals("owner")) return "Owner";
-        if (normalized.equals("admin")) return "Admin";
-
-        // Return as-is with first letter capitalized
+        if (normalized.equals("csoperator") || normalized.equals("operator"))
+            return "Operator";
+        if (normalized.equals("owner"))
+            return "Owner";
+        if (normalized.equals("admin"))
+            return "Admin";
         return role.substring(0, 1).toUpperCase() + role.substring(1).toLowerCase();
     }
 
@@ -224,6 +197,8 @@ public class User {
                 ", stationLocation='" + stationLocation + '\'' +
                 ", isActive=" + isActive +
                 ", createdAt='" + createdAt + '\'' +
+                ", phone='" + phone + '\'' +
+                ", reactivationRequested=" + reactivationRequested +
                 '}';
     }
 }
