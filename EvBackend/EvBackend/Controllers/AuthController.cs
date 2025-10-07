@@ -22,12 +22,14 @@ namespace EvBackend.Controllers
         private readonly IAuthService _authService;
         private readonly IUserService _userService;
         private readonly IEVOwnerService _evOwnerService;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IAuthService authService, IUserService userService, IEVOwnerService evOwnerService)
+        public AuthController(IAuthService authService, IUserService userService, IEVOwnerService evOwnerService, ILogger<AuthController> logger)
         {
             _authService = authService;
             _userService = userService;
             _evOwnerService = evOwnerService;
+            _logger = logger;
         }
 
         [HttpPost("login")]
@@ -47,65 +49,72 @@ namespace EvBackend.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                _logger.LogError(ex, "An unexpected error occurred during login.");
                 return StatusCode(500, new { message = "An unexpected error occurred." });
             }
         }
 
-        // Verifies token validity and returns current user information
         [HttpGet("me")]
         [Authorize]
         public async Task<IActionResult> Me()
         {
-            var role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-            var userId = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-            var nic = "";
-
-            if (role == "Owner")
+            try
             {
-                nic = userId;
-                userId = "";
-            }
+                var role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+                var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
-            if (role == null)
-                return Unauthorized(new { message = "Invalid token" });
+                var nic = "";
 
-            if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(nic))
-                return Unauthorized(new { message = "Invalid token" });
-
-            // Check if EVOwner by NIC
-            if (!string.IsNullOrEmpty(nic) && role == "Owner")
-            {
-                var owner = await _evOwnerService.GetEVOwnerByNIC(nic);
-                if (owner != null)
+                if (role == "Owner")
                 {
-                    return Ok(new EVOwnerDto
+                    nic = userId;
+                    userId = "";
+                }
+
+                if (role == null)
+                    return Unauthorized(new { message = "Invalid token" });
+
+                if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(nic))
+                    return Unauthorized(new { message = "Invalid token" });
+
+                // Check if EVOwner by NIC
+                if (!string.IsNullOrEmpty(nic) && role == "Owner")
+                {
+                    var owner = await _evOwnerService.GetEVOwnerByNIC(nic);
+                    if (owner != null)
                     {
-                        NIC = owner.NIC,
-                        FullName = owner.FullName,
-                        Email = owner.Email,
-                        IsActive = owner.IsActive,
-                        CreatedAt = owner.CreatedAt
+                        return Ok(new EVOwnerDto
+                        {
+                            NIC = owner.NIC,
+                            FullName = owner.FullName,
+                            Email = owner.Email,
+                            IsActive = owner.IsActive,
+                            CreatedAt = owner.CreatedAt
+                        });
+                    }
+                }
+
+                // Otherwise, fallback to normal User
+                var user = await _userService.GetUserById(userId);
+                if (user != null)
+                {
+                    return Ok(new UserDto
+                    {
+                        Id = user.Id,
+                        FullName = user.FullName,
+                        Email = user.Email,
+                        Role = user.Role,
+                        IsActive = user.IsActive
                     });
                 }
-            }
 
-            // Otherwise, fallback to normal User
-            var user = await _userService.GetUserById(userId);
-            if (user != null)
+                return NotFound(new { message = "User not found" });
+            }
+            catch (Exception ex)
             {
-                return Ok(new UserDto
-                {
-                    Id = user.Id,
-                    FullName = user.FullName,
-                    Email = user.Email,
-                    Role = user.Role,
-                    IsActive = user.IsActive
-                });
+                _logger.LogError(ex, "An error occurred while fetching user details.");
+                return StatusCode(500, new { message = "An unexpected error occurred." });
             }
-
-            return NotFound(new { message = "User not found" });
         }
 
         [HttpPost("logout")]
@@ -137,7 +146,7 @@ namespace EvBackend.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                _logger.LogError(ex, "An unexpected error occurred during password reset.");
                 return StatusCode(500, new { message = "An unexpected error occurred." });
             }
         }
@@ -156,7 +165,7 @@ namespace EvBackend.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                _logger.LogError(ex, "An unexpected error occurred during forgot password process.");
                 return StatusCode(500, new { message = "An unexpected error occurred." });
             }
         }

@@ -50,12 +50,12 @@ public async Task<LoginResponseDto> AuthenticateUser(LoginDto loginDto, HttpRequ
             throw new AuthenticationException("Invalid credentials");
 
         // ✅ Enforce platform-based access rules
-        bool allowed =
-            (isWeb && webRoles.Contains(user.Role)) ||
-            (isMobile && mobileRoles.Contains(user.Role));
+        // bool allowed =
+        //     (isWeb && webRoles.Contains(user.Role)) ||
+        //     (isMobile && mobileRoles.Contains(user.Role));
 
-        if (!allowed)
-            throw new AuthenticationException("Access denied from this platform");
+        // if (!allowed)
+        //     throw new AuthenticationException("Access denied from this platform");
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var secretKey = _config["Jwt:Key"] ?? _config["Jwt__Key"];
@@ -108,12 +108,12 @@ public async Task<LoginResponseDto> AuthenticateUser(LoginDto loginDto, HttpRequ
         if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, evOwner.PasswordHash))
             throw new AuthenticationException("Invalid credentials");
 
-        bool allowed =
-            (isWeb && webRoles.Contains("Owner")) ||
-            (isMobile && mobileRoles.Contains("Owner"));
+        // bool allowed =
+        //     (isWeb && webRoles.Contains("Owner")) ||
+        //     (isMobile && mobileRoles.Contains("Owner"));
 
-        if (!allowed)
-            throw new AuthenticationException("Access denied from this platform");
+        // if (!allowed)
+        //     throw new AuthenticationException("Access denied from this platform");
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var secretKey = _config["Jwt:Key"] ?? _config["Jwt__Key"];

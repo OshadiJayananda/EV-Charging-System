@@ -179,6 +179,39 @@ namespace EvBackend.Controllers
             }
         }
 
+        [HttpGet("station/{stationId}/today")]
+        [Authorize(Roles = "Operator,Admin,Backoffice")]
+        public async Task<IActionResult> GetTodayBookingsByStation(string stationId)
+        {
+            try
+            {
+                var list = await _bookingService.GetTodayApprovedBookingsAsync(stationId);
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500, new { message = "Unexpected error" });
+            }
+        }
+
+        [HttpGet("station/{stationId}/upcoming")]
+        [Authorize(Roles = "Operator,Admin,Backoffice")]
+        public async Task<IActionResult> GetUpcomingBookingsByStation(string stationId)
+        {
+            try
+            {
+                var list = await _bookingService.GetUpcomingApprovedBookingsAsync(stationId);
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500, new { message = "Unexpected error" });
+            }
+        }
+
+
         // ---------------------------
         // 📌 Operator Endpoints
         // ---------------------------
@@ -206,6 +239,32 @@ namespace EvBackend.Controllers
                 return StatusCode(500, new { message = "Unexpected error" });
             }
         }
+
+            [HttpPatch("{bookingId}/start")]
+            [Authorize(Roles = "Operator,Admin,Backoffice")]
+            public async Task<IActionResult> StartCharging(string bookingId)
+            {
+                var operatorId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+                try
+                {
+                    var ok = await _bookingService.StartChargingAsync(bookingId, operatorId);
+                    if (!ok) return NotFound(new { message = "Booking not found or already started" });
+
+                    return Ok(new { message = "Booking marked as Charging" });
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    return Forbid();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                    return StatusCode(500, new { message = "Unexpected error" });
+                }
+            }
+
+
 
         [HttpPatch("{bookingId}/finalize")]
         [Authorize(Roles = "Operator,Admin,Backoffice")]
