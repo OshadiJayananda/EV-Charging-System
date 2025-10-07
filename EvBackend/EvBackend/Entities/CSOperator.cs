@@ -9,14 +9,14 @@ using MongoDB.Bson;
 
 namespace EvBackend.Entities
 {
+    [BsonIgnoreExtraElements]
     public class CSOperator : User
     {
-        // ✅ No need to re-declare StationId, StationName, StationLocation
-        // They already exist in base class User
-
+        [BsonElement("ReactivationRequested")]
+        public bool ReactivationRequested { get; set; } = false;
         public CSOperator() : base()
         {
-            Role = "Operator"; // Ensure consistency
+            Role = "Operator";
         }
     }
 }

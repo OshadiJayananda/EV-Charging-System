@@ -34,6 +34,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace EvBackend.Entities
 {
+    [BsonIgnoreExtraElements]
     public class Slot
     {
         [BsonId]
