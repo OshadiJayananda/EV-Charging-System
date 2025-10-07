@@ -13,7 +13,7 @@ namespace EvBackend.Entities
     {
         // ✅ No need to re-declare StationId, StationName, StationLocation
         // They already exist in base class User
-
+        // public bool ReactivationRequested { get; set; } = false;
         public CSOperator() : base()
         {
             Role = "Operator"; // Ensure consistency

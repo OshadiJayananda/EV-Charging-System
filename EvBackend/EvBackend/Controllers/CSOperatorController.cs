@@ -61,11 +61,19 @@ namespace EvBackend.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Operator")]
         public async Task<IActionResult> GetOperatorById(string id)
         {
             try
             {
+                // If user is Operator, they can only view their own details
+                if (User.IsInRole("Operator"))
+                {
+                    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                    if (userId != id)
+                        return Forbid();
+                }
+
                 var response = await _csOperatorService.GetOperatorById(id);
                 if (response == null)
                 {
@@ -97,7 +105,7 @@ namespace EvBackend.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Operator")]
         public async Task<IActionResult> UpdateOperator(string id, [FromBody] UpdateCSOperatorDto csOperatorDto)
         {
             if (!ModelState.IsValid)
@@ -107,6 +115,14 @@ namespace EvBackend.Controllers
 
             try
             {
+                // If user is Operator, they can only update their own details
+                if (User.IsInRole("Operator"))
+                {
+                    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                    if (userId != id)
+                        return Forbid();
+                }
+
                 var response = await _csOperatorService.UpdateOperator(id, csOperatorDto);
                 if (response == null)
                 {
@@ -139,6 +155,98 @@ namespace EvBackend.Controllers
             {
                 Console.WriteLine(ex.Message);
                 return StatusCode(500, new { message = "An unexpected error occurred." });
+            }
+        }
+
+        [HttpPatch("{id}/deactivate")]
+        [Authorize(Roles = "Operator")]
+        public async Task<IActionResult> DeactivateSelf(string id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId != id)
+                return Forbid();
+
+            try
+            {
+                // First clear any existing reactivation request when operator deactivates themselves
+                await _csOperatorService.ClearReactivationRequest(id);
+                var ok = await _csOperatorService.ChangeOperatorStatus(id, false);
+                if (!ok) return NotFound(new { message = "Operator not found." });
+                return Ok(new { message = "Account deactivated." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to deactivate account", error = ex.Message });
+            }
+        }
+
+        [HttpPatch("{id}/request-reactivation")]
+        [Authorize(Roles = "Operator")]
+        public async Task<IActionResult> RequestReactivation(string id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId != id)
+                return Forbid();
+
+            try
+            {
+                var ok = await _csOperatorService.RequestReactivation(id);
+                if (!ok) return BadRequest(new { message = "Could not request reactivation." });
+                return Ok(new { message = "Reactivation request submitted successfully." });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { message = "Operator not found." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("reactivation-count")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetReactivationRequestCount()
+        {
+            try
+            {
+                var count = await _csOperatorService.GetReactivationRequestCount();
+                return Ok(new { count });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to fetch reactivation count", error = ex.Message });
+            }
+        }
+
+        [HttpGet("reactivation-requests")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetReactivationRequests()
+        {
+            try
+            {
+                var requests = await _csOperatorService.GetOperatorsWithReactivationRequests();
+                return Ok(requests);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to fetch reactivation requests", error = ex.Message });
+            }
+        }
+
+        [HttpPatch("{id}/clear-reactivation")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ClearReactivationRequest(string id)
+        {
+            try
+            {
+                var ok = await _csOperatorService.ClearReactivationRequest(id);
+                if (!ok) return NotFound(new { message = "Operator not found or no reactivation request to clear." });
+                return Ok(new { message = "Reactivation request cleared successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to clear reactivation request", error = ex.Message });
             }
         }
     }

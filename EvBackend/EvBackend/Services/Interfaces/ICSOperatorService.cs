@@ -17,5 +17,11 @@ namespace EvBackend.Services.Interfaces
         Task<PagedResultDto<CSOperatorDto>> GetAllPaginatedOperators(int page, int pageSize);
         Task<CSOperatorDto> UpdateOperator(string id, UpdateCSOperatorDto dto);
         Task<bool> ChangeOperatorStatus(string id, bool isActive);
+
+        // Reactivation methods
+        Task<bool> RequestReactivation(string id);
+        Task<int> GetReactivationRequestCount();
+        Task<IEnumerable<CSOperatorDto>> GetOperatorsWithReactivationRequests();
+        Task<bool> ClearReactivationRequest(string id);
     }
 }

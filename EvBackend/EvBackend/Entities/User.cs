@@ -11,6 +11,7 @@ using MongoDB.Bson;
 
 namespace EvBackend.Entities
 {
+    [BsonIgnoreExtraElements]
     public class User
     {
         [BsonId]
