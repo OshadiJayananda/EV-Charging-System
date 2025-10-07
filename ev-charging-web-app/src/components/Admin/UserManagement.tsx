@@ -416,8 +416,10 @@ function UserManagement() {
         // Refresh current tab data
         if (isOwner) {
           await fetchOwners();
+          setActiveTab("owners");
         } else {
           await fetchOperators();
+          setActiveTab("operators");
         }
       } else {
         toast.error(result?.data?.message || "Failed to activate user");
@@ -461,7 +463,8 @@ function UserManagement() {
 
       if (result?.status === 200) {
         toast.success("Reactivation request cleared successfully");
-        await fetchUserData(); // Refresh data
+        await fetchUserData();
+        setActiveTab("owners"); // Refresh data
       } else {
         toast.error(
           result?.data?.message || "Failed to clear reactivation request"
