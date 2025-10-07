@@ -21,7 +21,7 @@ public class OwnerProfileActivity extends AppCompatActivity {
 
     private TextView tvName, tvEmail, tvNic, tvAccountStatus;
     private ImageView ivProfilePic;
-    private Button btnEditProfile, btnDeactivate, btnRequestReactivation;
+    private Button btnEditProfile, btnForgetUser, btnDeactivate, btnRequestReactivation;
     private ImageButton btnBack;
     private SessionManager sessionManager;
     private ApiClient apiClient;
@@ -43,6 +43,7 @@ public class OwnerProfileActivity extends AppCompatActivity {
         btnDeactivate = findViewById(R.id.btnDeactivate);
         btnRequestReactivation = findViewById(R.id.btnRequestReactivation);
         btnBack = findViewById(R.id.btnBack);
+        btnForgetUser = findViewById(R.id.btnForgetUser);
 
         btnBack.setOnClickListener(v -> finish());
         btnEditProfile.setOnClickListener(v ->
@@ -72,6 +73,13 @@ public class OwnerProfileActivity extends AppCompatActivity {
                         .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
                         .show()
         );
+
+        btnForgetUser.setOnClickListener(v -> {
+            sessionManager.clearAll();
+            Toast.makeText(this, "User data cleared", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+        });
     }
 
     /**
