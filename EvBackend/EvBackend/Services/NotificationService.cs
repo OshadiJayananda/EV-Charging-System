@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using MongoDB.Driver;
 using EvBackend.Hubs;
 using EvBackend.Services.Interfaces;
+using MongoDB.Bson;
 
 namespace EvBackend.Services
 {
@@ -23,6 +24,7 @@ namespace EvBackend.Services
         {
             var notification = new Notification
             {
+                Id = ObjectId.GenerateNewId().ToString(),
                 UserId = userId,
                 Message = message,
                 CreatedAt = DateTime.UtcNow,

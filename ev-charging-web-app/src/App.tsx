@@ -18,6 +18,7 @@ import ProtectedLayout from "./components/ProtectedLayout";
 import StationList from "./pages/stations/StationList";
 import StationForm from "./pages/stations/StationForm";
 import StationSlots from "./pages/stations/StationSlots";
+import UserManagement from "./components/Admin/UserManagement";
 
 function App() {
   const location = useLocation();
@@ -61,8 +62,15 @@ function App() {
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/stations" element={<StationList />} />
               <Route path="/admin/stations/new" element={<StationForm />} />
-              <Route path="/admin/stations/edit/:stationId" element={<StationForm isEdit />} />
-              <Route path="/admin/stations/:stationId/slots" element={<StationSlots />} />
+              <Route
+                path="/admin/stations/edit/:stationId"
+                element={<StationForm isEdit />}
+              />
+              <Route
+                path="/admin/stations/:stationId/slots"
+                element={<StationSlots />}
+              />
+              <Route path="/admin/Users" element={<UserManagement />} />
             </Route>
           </Route>
 

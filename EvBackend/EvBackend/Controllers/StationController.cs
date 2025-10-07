@@ -155,4 +155,7 @@ namespace EvBackend.Controllers
 
         
     }
+
+    //need to assign operator to station
+
 }

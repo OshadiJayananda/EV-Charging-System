@@ -1,4 +1,7 @@
+import { useNavigate } from "react-router-dom";
+
 function AdminDashboard() {
+  const navigate = useNavigate();
   return (
     <div className="p-6 space-y-6">
       <h2 className="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
@@ -10,7 +13,10 @@ function AdminDashboard() {
           <p className="text-gray-600 mb-4">
             Create, edit, or deactivate EV Owners and operators.
           </p>
-          <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          <button
+            onClick={() => navigate("/admin/users")}
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
             Go
           </button>
         </div>
@@ -20,7 +26,10 @@ function AdminDashboard() {
           <p className="text-gray-600 mb-4">
             Add new charging stations or update existing ones.
           </p>
-          <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          <button
+            onClick={() => navigate("/admin/stations")}
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
             Go
           </button>
         </div>
