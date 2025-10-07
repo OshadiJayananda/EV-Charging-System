@@ -48,6 +48,8 @@ public class OwnerProfileActivity extends AppCompatActivity {
         btnEditProfile.setOnClickListener(v ->
                 startActivity(new Intent(this, OwnerEditProfileActivity.class)));
 
+        showLocalUserProfile();
+
         // Load profile from API
         new LoadProfileTask().execute();
 
@@ -171,4 +173,24 @@ public class OwnerProfileActivity extends AppCompatActivity {
         }
     }
 
+    private void showLocalUserProfile() {
+        User localUser = sessionManager.getLoggedInUser();
+        if (localUser != null) {
+            tvName.setText(localUser.getFullName() != null ? localUser.getFullName() : "N/A");
+            tvEmail.setText(localUser.getEmail() != null ? localUser.getEmail() : "N/A");
+            tvNic.setText(localUser.getUserId() != null ? "NIC: " + localUser.getUserId() : "NIC: N/A");
+
+            if (localUser.isActive()) {
+                tvAccountStatus.setText("Active");
+                tvAccountStatus.setTextColor(getResources().getColor(R.color.green));
+                btnDeactivate.setVisibility(View.VISIBLE);
+                btnRequestReactivation.setVisibility(View.GONE);
+            } else {
+                tvAccountStatus.setText("Deactivated");
+                tvAccountStatus.setTextColor(getResources().getColor(R.color.red));
+                btnDeactivate.setVisibility(View.GONE);
+                btnRequestReactivation.setVisibility(View.VISIBLE);
+            }
+        }
+    }
 }
