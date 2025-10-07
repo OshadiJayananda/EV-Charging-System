@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -15,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 
 import com.evcharging.mobile.model.Notification;
+import com.evcharging.mobile.model.User;
 import com.evcharging.mobile.network.ApiClient;
 import com.evcharging.mobile.network.ApiResponse;
 import com.evcharging.mobile.service.SignalRService;
@@ -35,6 +37,7 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
         private Button btnReserve, btnBookings, btnHistory;
         private ImageButton btnLogout, btnNotifications;
         private ImageView ivProfile;
+        private TextView tvWelcomeOwner;
 
         private SignalRService signalRService;
         private ApiClient apiClient;
@@ -52,6 +55,13 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                 ivProfile = findViewById(R.id.ivProfileOwner);
                 btnLogout = findViewById(R.id.btnLogoutOwner);
                 btnNotifications = findViewById(R.id.btnNotifications);
+
+                tvWelcomeOwner = findViewById(R.id.tvWelcomeOwner);
+
+                String ownerName = getOwnerName();
+
+                tvWelcomeOwner.setText("Welcome, " + ownerName + "!");
+
 
                 // Initialize MapView
                 Bundle mapViewBundle = null;
@@ -71,6 +81,22 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
 
                 // Button actions
                 setupButtonActions();
+        }
+
+        private String getOwnerName() {
+                SessionManager sessionManager = new SessionManager(this);
+
+                User loggedInUser = sessionManager.getLoggedInUser();
+
+                String ownerName = "EV Owner";
+
+                if (loggedInUser != null && loggedInUser.getFullName() != null) {
+                        String fullName = loggedInUser.getFullName().trim();
+                        // Split by space and take the first part
+                        String[] nameParts = fullName.split("\\s+");
+                        ownerName = nameParts.length > 0 ? nameParts[0] : fullName;
+                }
+                return ownerName;
         }
 
         private void setupButtonActions() {

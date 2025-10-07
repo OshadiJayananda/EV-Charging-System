@@ -135,6 +135,8 @@ public class JwtUtils {
                 fullName = payload.optString("name");
             } else if (payload.has("fullName")) {
                 fullName = payload.optString("fullName");
+            } else if (payload.has("FullName")) {        // <-- ADD THIS
+                fullName = payload.optString("FullName");
             } else if (payload.has("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name")) {
                 fullName = payload.optString("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
             }
