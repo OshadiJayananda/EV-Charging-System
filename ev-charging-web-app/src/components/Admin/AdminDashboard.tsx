@@ -26,7 +26,10 @@ function AdminDashboard() {
           <p className="text-gray-600 mb-4">
             Add new charging stations or update existing ones.
           </p>
-          <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          <button
+            onClick={() => navigate("/admin/stations")}
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
             Go
           </button>
         </div>

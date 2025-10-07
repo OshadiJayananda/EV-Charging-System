@@ -103,7 +103,7 @@ export default function ProtectedLayout() {
       </aside>
 
       {/* Page Content */}
-      <main className="flex-1">
+      <main className="flex-1 overflow-y-auto max-h-[calc(100vh-8vh)]">
         <Outlet />
       </main>
     </div>
