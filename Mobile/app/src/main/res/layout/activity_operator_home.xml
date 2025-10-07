@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:fitsSystemWindows="true">
+    android:fitsSystemWindows="true"
+    android:background="@color/white">
 
     <LinearLayout
         android:orientation="vertical"
@@ -11,7 +12,7 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <!-- Profile Header Section -->
+        <!-- 🔹 Profile Header Section -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -19,15 +20,16 @@
             android:gravity="center_vertical"
             android:paddingBottom="24dp">
 
-            <!-- Profile Icon/Image -->
+            <!-- Profile Icon -->
             <ImageView
                 android:id="@+id/ivProfile"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
                 android:src="@drawable/ic_profile"
                 android:background="@drawable/circle_background"
-                android:padding="8dp"
-                android:layout_marginEnd="12dp"/>
+                android:padding="10dp"
+                android:layout_marginEnd="12dp"
+                android:contentDescription="Profile Picture" />
 
             <!-- Welcome Text and Station Info -->
             <LinearLayout
@@ -40,27 +42,28 @@
                     android:id="@+id/tvWelcomeOperator"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Welcome, Station Operator!"
+                    android:text="Welcome, Operator!"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    android:paddingBottom="4dp"/>
+                    android:textColor="@color/black"
+                    android:paddingBottom="4dp" />
 
                 <TextView
                     android:id="@+id/tvStationInfo"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Station: City Central"
+                    android:text="Station: Pending"
                     android:textSize="14sp"
                     android:textColor="@color/gray"
-                    android:paddingBottom="2dp"/>
+                    android:paddingBottom="2dp" />
 
                 <TextView
                     android:id="@+id/tvOperatorId"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Operator ID: OP001"
+                    android:text="Operator ID: -"
                     android:textSize="12sp"
-                    android:textColor="@color/dark_gray"/>
+                    android:textColor="@color/dark_gray" />
             </LinearLayout>
 
             <!-- Logout Button -->
@@ -70,23 +73,24 @@
                 android:layout_height="40dp"
                 android:src="@drawable/ic_logout"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Logout"/>
+                android:contentDescription="Logout" />
         </LinearLayout>
 
-        <!-- Today's Reservations Section -->
+        <!-- 🔹 Today's Reservations Section -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Today's Reservations"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:paddingBottom="12dp"/>
+            android:textColor="@color/black"
+            android:paddingBottom="12dp" />
 
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="200dp"
             android:layout_marginBottom="24dp"
-            app:cardCornerRadius="8dp"
+            app:cardCornerRadius="10dp"
             app:cardElevation="2dp">
 
             <ListView
@@ -94,17 +98,18 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:divider="@android:color/darker_gray"
-                android:dividerHeight="1dp"/>
+                android:dividerHeight="1dp"
+                android:padding="4dp" />
         </androidx.cardview.widget.CardView>
 
-        <!-- Action Buttons -->
+        <!-- 🔹 Action Buttons -->
         <Button
             android:id="@+id/btnUpdateSlots"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Update Slot Availability"
             android:layout_marginBottom="8dp"
-            style="@style/Widget.AppCompat.Button.Colored"/>
+            style="@style/Widget.AppCompat.Button.Colored" />
 
         <Button
             android:id="@+id/btnViewBookings"
@@ -112,7 +117,7 @@
             android:layout_height="wrap_content"
             android:text="View All Bookings"
             android:layout_marginBottom="8dp"
-            style="@style/Widget.AppCompat.Button.Borderless"/>
+            style="@style/Widget.AppCompat.Button.Colored" />
 
         <Button
             android:id="@+id/btnViewProfile"
@@ -120,14 +125,14 @@
             android:layout_height="wrap_content"
             android:text="My Profile"
             android:layout_marginBottom="8dp"
-            style="@style/Widget.AppCompat.Button.Borderless"/>
+            style="@style/Widget.AppCompat.Button.Colored" />
 
         <Button
             android:id="@+id/btnCancelBookings"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Cancel Bookings on behalf of owner"
-            style="@style/Widget.AppCompat.Button.Borderless"/>
+            style="@style/Widget.AppCompat.Button.Colored" />
 
     </LinearLayout>
 </ScrollView>

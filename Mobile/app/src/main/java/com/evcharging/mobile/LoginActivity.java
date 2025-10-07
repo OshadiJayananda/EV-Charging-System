@@ -171,10 +171,28 @@ public class LoginActivity extends AppCompatActivity {
 
             if (response.isSuccess() && response.getData() != null) {
                 sessionManager.saveCredentials(email, password, rememberMe);
-
                 Toast.makeText(LoginActivity.this, response.getMessage(), Toast.LENGTH_SHORT).show();
-                redirectToRoleHome(response.getData());
-                finish();
+
+                // Verify token role before navigating
+                String token = response.getData();
+                String role = JwtUtils.getRoleFromToken(token);
+
+                if (role == null || role.equals("Unknown")) {
+                    Toast.makeText(LoginActivity.this, "Invalid or unsupported login token", Toast.LENGTH_SHORT).show();
+                    sessionManager.clearToken();
+                    return;
+                }
+                
+                if (role.equalsIgnoreCase("operator") || role.equalsIgnoreCase("owner")) {
+                    redirectToRoleHome(token);
+                    finish();
+                } else {
+                    // Unauthorized role (like Admin)
+                    sessionManager.clearToken();
+                    Toast.makeText(LoginActivity.this,
+                            "Access denied: This role cannot log in from the mobile app.",
+                            Toast.LENGTH_LONG).show();
+                }
             } else {
                 Toast.makeText(LoginActivity.this, response.getMessage(), Toast.LENGTH_LONG).show();
             }

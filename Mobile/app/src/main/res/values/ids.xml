@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="tvName" type="id"></item>
+    <item name="tvEmail" type="id"></item>
+    <item name="tvRole" type="id"></item>
+    <item name="tvUserId" type="id"></item>
+    <item name="tvStation" type="id"></item>
+    <item name="tvStationLoc" type="id"></item>
+    <item name="tvActive" type="id"></item>
+</resources>
