@@ -90,6 +90,37 @@ namespace EvBackend.Services
             };
         }
 
+        public async Task<PagedResultDto<CSOperatorDto>> GetAllPaginatedOperators(int page, int pageSize)
+        {
+            var filter = Builders<CSOperator>.Filter.Eq(op => op.Role, "Operator");
+
+            var totalCount = await _operators.CountDocumentsAsync(filter);
+
+            var ops = await _operators.Find(filter)
+                .Skip((page - 1) * pageSize)
+                .Limit(pageSize)
+                .ToListAsync();
+
+            var operatorDtos = ops.Select(op => new CSOperatorDto
+            {
+                Id = op.Id,
+                FullName = op.FullName,
+                Email = op.Email,
+                Role = op.Role,
+                IsActive = op.IsActive,
+                CreatedAt = op.CreatedAt,
+                StationId = op.StationId,
+                StationName = op.StationName,
+                StationLocation = op.StationLocation
+            });
+
+            return new PagedResultDto<CSOperatorDto>
+            {
+                Items = operatorDtos,
+                TotalCount = totalCount
+            };
+        }
+
         public async Task<IEnumerable<CSOperatorDto>> GetAllOperators(int page, int pageSize)
         {
             var filter = Builders<CSOperator>.Filter.Eq(op => op.Role, "Operator");

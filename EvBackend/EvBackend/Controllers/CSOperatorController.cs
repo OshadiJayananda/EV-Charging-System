@@ -86,7 +86,7 @@ namespace EvBackend.Controllers
         {
             try
             {
-                var response = await _csOperatorService.GetAllOperators(page, pageSize);
+                var response = await _csOperatorService.GetAllPaginatedOperators(page, pageSize);
                 return Ok(response);
             }
             catch (Exception ex)

@@ -14,6 +14,7 @@ namespace EvBackend.Services.Interfaces
         Task<CSOperatorDto> CreateOperator(CreateCSOperatorDto dto);
         Task<CSOperatorDto> GetOperatorById(string id);
         Task<IEnumerable<CSOperatorDto>> GetAllOperators(int page, int pageSize);
+        Task<PagedResultDto<CSOperatorDto>> GetAllPaginatedOperators(int page, int pageSize);
         Task<CSOperatorDto> UpdateOperator(string id, UpdateCSOperatorDto dto);
         Task<bool> ChangeOperatorStatus(string id, bool isActive);
     }
