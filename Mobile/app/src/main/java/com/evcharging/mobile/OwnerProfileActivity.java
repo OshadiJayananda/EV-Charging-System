@@ -46,8 +46,7 @@ public class OwnerProfileActivity extends AppCompatActivity {
         btnForgetUser = findViewById(R.id.btnForgetUser);
 
         btnBack.setOnClickListener(v -> finish());
-        btnEditProfile.setOnClickListener(v ->
-                startActivity(new Intent(this, OwnerEditProfileActivity.class)));
+        btnEditProfile.setOnClickListener(v -> startActivity(new Intent(this, OwnerEditProfileActivity.class)));
 
         showLocalUserProfile();
 
@@ -55,31 +54,32 @@ public class OwnerProfileActivity extends AppCompatActivity {
         new LoadProfileTask().execute();
 
         // Deactivate button
-        btnDeactivate.setOnClickListener(v ->
-                new androidx.appcompat.app.AlertDialog.Builder(this)
-                        .setTitle("Deactivate Account")
-                        .setMessage("Are you sure you want to deactivate your account?")
-                        .setPositiveButton("Yes", (dialog, which) -> new DeactivateTask().execute())
-                        .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
-                        .show()
-        );
+        btnDeactivate.setOnClickListener(v -> new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Deactivate Account")
+                .setMessage("Are you sure you want to deactivate your account?")
+                .setPositiveButton("Yes", (dialog, which) -> new DeactivateTask().execute())
+                .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
+                .show());
 
         // Reactivation button
-        btnRequestReactivation.setOnClickListener(v ->
-                new androidx.appcompat.app.AlertDialog.Builder(this)
-                        .setTitle("Request Reactivation")
-                        .setMessage("Do you want to request reactivation of your account?")
-                        .setPositiveButton("Yes", (dialog, which) -> new ReactivationTask().execute())
-                        .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
-                        .show()
-        );
+        btnRequestReactivation.setOnClickListener(v -> new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Request Reactivation")
+                .setMessage("Do you want to request reactivation of your account?")
+                .setPositiveButton("Yes", (dialog, which) -> new ReactivationTask().execute())
+                .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
+                .show());
 
-        btnForgetUser.setOnClickListener(v -> {
-            sessionManager.clearAll();
-            Toast.makeText(this, "User data cleared", Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(this, LoginActivity.class));
-            finish();
-        });
+        btnForgetUser.setOnClickListener(v -> new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Forget User")
+                .setMessage("Do you want to forget your user data?")
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    sessionManager.clearAll();
+                    Toast.makeText(this, "User data cleared", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(this, LoginActivity.class));
+                    finish();
+                })
+                .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
+                .show());
     }
 
     /**
@@ -167,13 +167,15 @@ public class OwnerProfileActivity extends AppCompatActivity {
 
         @Override
         protected ApiResponse doInBackground(Void... voids) {
-            if (isCancelled()) return null; // In case task was cancelled in onPreExecute
+            if (isCancelled())
+                return null; // In case task was cancelled in onPreExecute
             return apiClient.requestReactivation(nic);
         }
 
         @Override
         protected void onPostExecute(ApiResponse response) {
-            if (response == null) return; // Task was cancelled
+            if (response == null)
+                return; // Task was cancelled
             Toast.makeText(OwnerProfileActivity.this, response.getMessage(), Toast.LENGTH_SHORT).show();
             if (response.isSuccess()) {
                 new LoadProfileTask().execute(); // Refresh profile after reactivation
