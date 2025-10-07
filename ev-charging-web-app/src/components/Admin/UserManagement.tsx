@@ -172,7 +172,7 @@ function UserManagement() {
 
       console.log(`Fetching operators: page=${page}, pageSize=${pageSize}`);
       const response = await api.get(
-        `/users?role=Operator&page=${page}&pageSize=${pageSize}`
+        `/operators?page=${page}&pageSize=${pageSize}`
       );
       console.log("Operators API Response:", response);
 
