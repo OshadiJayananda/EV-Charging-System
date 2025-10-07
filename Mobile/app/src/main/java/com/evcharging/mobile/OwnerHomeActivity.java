@@ -1,11 +1,14 @@
 package com.evcharging.mobile;
 
+import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -14,6 +17,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
 import com.evcharging.mobile.model.Notification;
@@ -27,12 +31,22 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
+import android.location.Location;
+import com.evcharging.mobile.model.Station;
+import com.evcharging.mobile.service.StationService;
+import java.util.List;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
 
-public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCallback, SignalRService.NotificationListener {
+public class OwnerHomeActivity extends AppCompatActivity
+                implements OnMapReadyCallback, SignalRService.NotificationListener {
 
         private static final String MAP_VIEW_BUNDLE_KEY = "MapViewBundleKey";
         private static final String CHANNEL_ID = "ev_notifications";
+        private FusedLocationProviderClient fusedLocationClient;
 
         private MapView mapView;
         private Button btnReserve, btnBookings, btnHistory;
@@ -45,10 +59,16 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
         private TextView tvNotificationCount;
         private int notificationCount = 0;
 
+        private GoogleMap googleMap;
+        private StationService stationService;
 
         @Override
         protected void onCreate(Bundle savedInstanceState) {
                 super.onCreate(savedInstanceState);
+
+                apiClient = new ApiClient(new SessionManager(this));
+                stationService = new StationService(apiClient);
+
                 setContentView(R.layout.activity_owner_home);
 
                 // Initialize UI components
@@ -70,6 +90,8 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                 tvWelcomeOwner.setText("Welcome, " + ownerName + "!");
                 tvOwnerId.setText("Owner ID: " + ownerId);
 
+                fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
                 // Initialize MapView
                 Bundle mapViewBundle = null;
                 if (savedInstanceState != null) {
@@ -79,7 +101,6 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                 mapView.getMapAsync(this);
 
                 // Initialize services
-                apiClient = new ApiClient(new SessionManager(this));
                 signalRService = new SignalRService(this);
                 signalRService.setNotificationListener(this);
 
@@ -112,7 +133,8 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
 
                 String ownerId = "OW001";
 
-                if (loggedInUser != null && loggedInUser.getUserId() != null && !loggedInUser.getUserId().trim().isEmpty()) {
+                if (loggedInUser != null && loggedInUser.getUserId() != null
+                                && !loggedInUser.getUserId().trim().isEmpty()) {
                         ownerId = "OW" + loggedInUser.getUserId().trim();
                 }
 
@@ -120,35 +142,124 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
         }
 
         private void setupButtonActions() {
-                btnNotifications.setOnClickListener(v ->
-                        startActivity(new Intent(this, NotificationActivity.class))
-                );
+                btnNotifications.setOnClickListener(v -> startActivity(new Intent(this, NotificationActivity.class)));
 
-                btnReserve.setOnClickListener(v ->
-                        Toast.makeText(this, "Reserve Slot Clicked", Toast.LENGTH_SHORT).show()
-                );
+                btnReserve.setOnClickListener(
+                                v -> Toast.makeText(this, "Reserve Slot Clicked", Toast.LENGTH_SHORT).show());
 
-                btnBookings.setOnClickListener(v ->
-                        Toast.makeText(this, "My Bookings Clicked", Toast.LENGTH_SHORT).show()
-                );
+                btnBookings.setOnClickListener(
+                                v -> Toast.makeText(this, "My Bookings Clicked", Toast.LENGTH_SHORT).show());
 
-                btnHistory.setOnClickListener(v ->
-                        Toast.makeText(this, "Charging History Clicked", Toast.LENGTH_SHORT).show()
-                );
+                btnHistory.setOnClickListener(
+                                v -> Toast.makeText(this, "Charging History Clicked", Toast.LENGTH_SHORT).show());
 
-                ivProfile.setOnClickListener(v ->
-                        startActivity(new Intent(this, OwnerProfileActivity.class))
-                );
+                ivProfile.setOnClickListener(v -> startActivity(new Intent(this, OwnerProfileActivity.class)));
 
                 btnLogout.setOnClickListener(v -> attemptLogout());
         }
 
         @Override
-        public void onMapReady(@NonNull GoogleMap googleMap) {
-                // Example marker at Colombo, Sri Lanka
-                LatLng colombo = new LatLng(6.9271, 79.8612);
-                googleMap.addMarker(new MarkerOptions().position(colombo).title("Charging Station"));
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(colombo, 12));
+        public void onMapReady(@NonNull GoogleMap map) {
+                Log.d("OwnerHomeActivity", "onMapReady() called");
+
+                this.googleMap = map;
+
+                // Check permissions first
+                if (ActivityCompat.checkSelfPermission(this,
+                                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+                        ActivityCompat.requestPermissions(this,
+                                        new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
+                                        1001);
+                        return;
+                }
+
+                googleMap.setMyLocationEnabled(true);
+                googleMap.getUiSettings().setZoomControlsEnabled(true);
+                googleMap.getUiSettings().setCompassEnabled(true);
+                googleMap.getUiSettings().setMyLocationButtonEnabled(true);
+
+                // Get current location (not cached)
+                fusedLocationClient.getCurrentLocation(
+                                com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY,
+                                null).addOnSuccessListener(this, location -> {
+                                        Log.d("OwnerHomeActivity", "Received location: " + location);
+
+                                        if (location != null) {
+                                                double userLat = location.getLatitude();
+                                                double userLng = location.getLongitude();
+                                                // Log.d("OwnerHomeActivity", "User location: Lat=" + userLat + " Lng="
+                                                // + userLng);
+
+                                                googleMap.moveCamera(CameraUpdateFactory
+                                                                .newLatLngZoom(new LatLng(userLat, userLng), 15));
+
+                                                LatLng userLocation = new LatLng(userLat, userLng);
+                                                googleMap.addMarker(new MarkerOptions()
+                                                                .position(userLocation)
+                                                                .title("You are here"));
+
+                                                // Fetch nearby stations in background thread
+                                                new Thread(() -> {
+                                                        List<Station> stations = stationService
+                                                                        .getNearbyStations(userLat, userLng, 5);
+
+                                                        runOnUiThread(() -> {
+                                                                if (stations != null && !stations.isEmpty()) {
+                                                                        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+                                                                        builder.include(userLocation); // include user's
+                                                                                                       // location in
+                                                                                                       // map bounds
+
+                                                                        for (Station s : stations) {
+                                                                                LatLng stationLatLng = new LatLng(
+                                                                                                s.getLatitude(),
+                                                                                                s.getLongitude());
+                                                                                googleMap.addMarker(new MarkerOptions()
+                                                                                                .position(stationLatLng)
+                                                                                                .title(s.getName())
+                                                                                                .snippet(s.getLocation()));
+                                                                                builder.include(stationLatLng);
+                                                                        }
+
+                                                                        // Auto-adjust camera to include all markers
+                                                                        LatLngBounds bounds = builder.build();
+                                                                        int padding = 120; // space around edges
+                                                                        googleMap.animateCamera(CameraUpdateFactory
+                                                                                        .newLatLngBounds(bounds,
+                                                                                                        padding));
+
+                                                                } else {
+                                                                        Toast.makeText(this, "No nearby stations found",
+                                                                                        Toast.LENGTH_SHORT).show();
+                                                                }
+                                                        });
+                                                }).start();
+
+                                        } else {
+                                                Log.e("OwnerHomeActivity", "Location is null");
+                                                Toast.makeText(this,
+                                                                "Unable to get location. Try setting GPS in emulator.",
+                                                                Toast.LENGTH_SHORT).show();
+                                        }
+                                }).addOnFailureListener(e -> {
+                                        Log.e("OwnerHomeActivity", "Failed to get location", e);
+                                        Toast.makeText(this, "Error getting location", Toast.LENGTH_SHORT).show();
+                                });
+        }
+
+        @Override
+        public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                        @NonNull int[] grantResults) {
+                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+                if (requestCode == 1001) {
+                        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                                // Try again now that permission is granted
+                                onMapReady(googleMap);
+                        } else {
+                                Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
+                        }
+                }
         }
 
         // Lifecycle methods for MapView and SignalR
@@ -212,21 +323,23 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
 
         private void attemptLogout() {
                 new androidx.appcompat.app.AlertDialog.Builder(this)
-                        .setTitle("Logout Confirmation")
-                        .setMessage("Are you sure you want to logout?")
-                        .setPositiveButton("Yes", (dialog, which) -> {
-                                // Perform logout
-                                ApiResponse response = apiClient.logout();
-                                Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show();
+                                .setTitle("Logout Confirmation")
+                                .setMessage("Are you sure you want to logout?")
+                                .setPositiveButton("Yes", (dialog, which) -> {
+                                        // Perform logout
+                                        ApiResponse response = apiClient.logout();
+                                        Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show();
 
-                                // Redirect to login screen
-                                Intent intent = new Intent(this, LoginActivity.class);
-                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                startActivity(intent);
-                                finish();
-                        })
-                        .setNegativeButton("No", (dialog, which) -> dialog.dismiss()) // Dismiss dialog if user cancels
-                        .show();
+                                        // Redirect to login screen
+                                        Intent intent = new Intent(this, LoginActivity.class);
+                                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                                                        | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                        startActivity(intent);
+                                        finish();
+                                })
+                                .setNegativeButton("No", (dialog, which) -> dialog.dismiss()) // Dismiss dialog if user
+                                                                                              // cancels
+                                .show();
         }
 
         @Override
@@ -260,11 +373,11 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
 
         private void showSystemNotification(Notification notification) {
                 NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                        .setSmallIcon(R.drawable.ic_notifications)
-                        .setContentTitle("EV Charging System")
-                        .setContentText(notification.getMessage())
-                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                        .setAutoCancel(true);
+                                .setSmallIcon(R.drawable.ic_notifications)
+                                .setContentTitle("EV Charging System")
+                                .setContentText(notification.getMessage())
+                                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                                .setAutoCancel(true);
 
                 NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                 if (notificationManager != null) {
