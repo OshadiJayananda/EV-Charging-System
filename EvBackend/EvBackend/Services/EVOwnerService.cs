@@ -62,6 +62,7 @@ namespace EvBackend.Services
 
         public async Task<EVOwnerDto> CreateEVOwner(CreateEVOwnerDto dto)
         {
+            dto.Email = dto.Email.Trim().ToLower();
             if (await _owners.Find(u => u.Email == dto.Email).AnyAsync())
                 throw new ArgumentException("Email already in use");
 
@@ -127,6 +128,7 @@ namespace EvBackend.Services
 
         public async Task<EVOwnerDto> UpdateEVOwner(string nic, UpdateEVOwnerDto dto)
         {
+            dto.Email = dto.Email.Trim().ToLower();
             var update = Builders<EVOwner>.Update
                 .Set(o => o.FullName, dto.FullName)
                 .Set(o => o.Email, dto.Email)
