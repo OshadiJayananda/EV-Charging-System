@@ -20,7 +20,8 @@ namespace EvBackend.Models.DTOs
         [EmailAddress]
         public string Email { get; set; }
 
-        [Required, Phone]
+        [Required]
+        [RegularExpression(@"^(?:0|94|\+94)?(7[0-9]{8})$", ErrorMessage = "Invalid Sri Lankan phone number.")]
         public string Phone { get; set; }
         [Required]
         [StringLength(100, MinimumLength = 6)]

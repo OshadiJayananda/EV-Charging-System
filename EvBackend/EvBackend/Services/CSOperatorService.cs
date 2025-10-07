@@ -31,6 +31,7 @@ namespace EvBackend.Services
 
         public async Task<CSOperatorDto> CreateOperator(CreateCSOperatorDto dto)
         {
+            dto.Email = dto.Email.Trim().ToLower();
             // Check if email already exists
             if (await _operators.Find(o => o.Email == dto.Email).AnyAsync())
                 throw new InvalidOperationException("Email already in use");

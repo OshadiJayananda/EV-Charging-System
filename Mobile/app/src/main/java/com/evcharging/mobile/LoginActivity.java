@@ -18,10 +18,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.evcharging.mobile.model.User;
 import com.evcharging.mobile.network.ApiClient;
 import com.evcharging.mobile.network.ApiResponse;
 import com.evcharging.mobile.session.SessionManager;
 import com.evcharging.mobile.utils.JwtUtils;
+
+import java.lang.ref.WeakReference;
+import java.util.concurrent.Executors;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -182,7 +187,9 @@ public class LoginActivity extends AppCompatActivity {
                     sessionManager.clearToken();
                     return;
                 }
-                
+
+                loadAndSaveUser(token);
+
                 if (role.equalsIgnoreCase("operator") || role.equalsIgnoreCase("owner")) {
                     redirectToRoleHome(token);
                     finish();
@@ -209,4 +216,25 @@ public class LoginActivity extends AppCompatActivity {
             Toast.makeText(this, "Unknown role!", Toast.LENGTH_SHORT).show();
         }
     }
+
+    private void loadAndSaveUser(String token) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            // This runs on a background thread
+            ApiResponse response = apiClient.getUser();
+            if (response.isSuccess() && response.getData() != null) {
+                Log.d("LOGIN", "Profile Loaded");
+                User user = apiClient.parseLoggedOwner(response.getData());
+
+                // Save user on main thread
+                runOnUiThread(() -> sessionManager.saveLoggedInUser(user));
+            } else {
+                runOnUiThread(() ->
+                        Toast.makeText(LoginActivity.this,
+                                "Failed to load user profile after login",
+                                Toast.LENGTH_SHORT).show()
+                );
+            }
+        });
+    }
+
 }

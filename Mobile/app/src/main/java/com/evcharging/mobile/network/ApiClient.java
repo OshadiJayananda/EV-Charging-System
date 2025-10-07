@@ -2,6 +2,7 @@ package com.evcharging.mobile.network;
 
 import android.util.Log;
 import com.evcharging.mobile.model.Notification;
+import com.evcharging.mobile.model.User;
 import com.evcharging.mobile.session.SessionManager;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -10,6 +11,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -85,9 +87,6 @@ public class ApiClient {
     public static String getApiBaseUrl() {
         return BASE_URL;
     }
-
-
-
 
     // Notification API Methods
     public ApiResponse getUserNotifications() {
@@ -213,7 +212,7 @@ public class ApiClient {
             registerData.put("password", password);
             RequestBody body = RequestBody.create(registerData.toString(), JSON);
             Request request = new Request.Builder()
-                    .url(BASE_URL + "/auth/register")
+                    .url(BASE_URL + "/owners/register")
                     .post(body)
                     .addHeader("X-Client-Type", "Mobile")
                     .build();
@@ -283,13 +282,43 @@ public class ApiClient {
             }
 
             Response response = client.newCall(requestBuilder.build()).execute();
-            String responseBody = response.body().string();
+            String responseBody = response.body() != null ? response.body().string() : "";
 
             if (response.isSuccessful()) {
-                return new ApiResponse(true, "Success", responseBody);
+                // Try to get message from response JSON
+                String message = "Operation successful";
+                try {
+                    JSONObject json = new JSONObject(responseBody);
+                    message = json.optString("message", message);
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse success response JSON", e);
+                }
+                return new ApiResponse(true, message, responseBody);
             } else {
-                JSONObject errorResponse = new JSONObject(responseBody);
-                return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
+                int code = response.code();
+                String message = "Request failed";
+
+                try {
+                    JSONObject errorResponse = new JSONObject(responseBody);
+                    message = errorResponse.optString("message", message);
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse error response JSON", e);
+                }
+
+                switch (code) {
+                    case 401:
+                        message = "Unauthorized. Please login again.";
+                        break;
+                    case 403:
+                        message = "You don't have permission.";
+                        break;
+                    case 404:
+                        message = "Not found.";
+                        break;
+                }
+
+                Log.e(TAG, "POST response status code " + code + " response body: " + responseBody);
+                return new ApiResponse(false, message, null);
             }
         } catch (Exception e) {
             Log.e(TAG, "POST request error", e);
@@ -421,12 +450,41 @@ public class ApiClient {
             String responseBody = response.body().string();
 
             if (response.isSuccessful()) {
-                return new ApiResponse(true, "Operation successful", responseBody);
+                String message = "Operation successful";
+                try {
+                    JSONObject json = new JSONObject(responseBody);
+                    message = json.optString("message", message);
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse success response JSON", e);
+                }
+                return new ApiResponse(true, message, responseBody);
             } else {
-                JSONObject errorResponse = new JSONObject(responseBody);
-                Log.e(TAG, "PATCH response status code " + response.code() + " response body" + responseBody);
-                return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
+                int code = response.code();
+                String message = "Request failed";
+
+                try {
+                    JSONObject errorResponse = new JSONObject(responseBody);
+                    message = errorResponse.optString("message", message);
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse error response JSON", e);
+                }
+
+                switch (code) {
+                    case 401:
+                        message = "Unauthorized. Please login again.";
+                        break;
+                    case 403:
+                        message = "You don't have permission.";
+                        break;
+                    case 404:
+                        message = "Not found.";
+                        break;
+                }
+
+                Log.e(TAG, "PATCH response status code " + code + " response body: " + responseBody);
+                return new ApiResponse(false, message, null);
             }
+
         } catch (Exception e) {
             Log.e(TAG, "PATCH request error", e);
             return new ApiResponse(false, "Network error occurred", null);
@@ -484,6 +542,51 @@ public class ApiClient {
         } catch (Exception e) {
             Log.e(TAG, "Error fetching bookings by station", e);
             return new ApiResponse(false, "Error fetching bookings", null);
+        }
+    }
+
+    public ApiResponse getUser() {
+        return get("/auth/me");
+    }
+
+    /**
+     * Parse user JSON string to User object
+     *
+     * @param json JSON string from API (e.g., /auth/me)
+     * @return User object or null if parsing fails
+     */
+    public User parseLoggedOwner(String json) {
+        if (json == null || json.isEmpty()) {
+            Log.e(TAG, "Cannot parse user: empty JSON");
+            return null;
+        }
+
+        try {
+            JSONObject obj = new JSONObject(json);
+
+            String nic = obj.optString("nic", null);
+            String fullName = obj.optString("fullName", null);
+            String email = obj.optString("email", null);
+            String phone = obj.optString("phone", null);
+            boolean isActive = obj.optBoolean("isActive", false);
+            boolean reactivationRequested = obj.optBoolean("reactivationRequested", false);
+            String createdAt = obj.optString("createdAt", null);
+
+            User user = new User();
+            user.setUserId(nic);
+            user.setFullName(fullName);
+            user.setEmail(email);
+            user.setPhone(phone);
+            user.setActive(isActive);
+            user.setReactivationRequested(reactivationRequested);
+            user.setCreatedAt(createdAt);
+            user.setRole("Owner");
+
+            return user;
+
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing user JSON", e);
+            return null;
         }
     }
 
