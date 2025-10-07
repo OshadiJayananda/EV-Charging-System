@@ -92,10 +92,13 @@ namespace EvBackend.Services
 
         public async Task<IEnumerable<CSOperatorDto>> GetAllOperators(int page, int pageSize)
         {
-            var ops = await _operators.Find(_ => true)
+            var filter = Builders<CSOperator>.Filter.Eq(op => op.Role, "Operator");
+
+            var ops = await _operators.Find(filter)
                 .Skip((page - 1) * pageSize)
                 .Limit(pageSize)
                 .ToListAsync();
+
             return ops.Select(op => new CSOperatorDto
             {
                 Id = op.Id,
