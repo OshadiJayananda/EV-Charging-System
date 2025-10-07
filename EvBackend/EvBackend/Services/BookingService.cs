@@ -24,6 +24,13 @@ namespace EvBackend.Services
             _db = db;
         }
 
+        private static string FormatSriLankaTime(DateTime utcTime)
+        {
+            var zone = TimeZoneInfo.FindSystemTimeZoneById("Sri Lanka Standard Time");
+            var localTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, zone);
+            return localTime.ToString("yyyy MMM dd, hh:mm tt");
+        }
+
         // ---------------------------
         // 📌 Create Booking
         // ---------------------------
@@ -84,9 +91,11 @@ namespace EvBackend.Services
 
             // ✅ Generate QR Code only if slot found
             var token = Guid.NewGuid().ToString();
-            var expiresAt = dto.StartTime > DateTime.UtcNow.AddMinutes(15)
-                ? DateTime.UtcNow.AddMinutes(15)
-                : dto.StartTime;
+            // var expiresAt = dto.StartTime > DateTime.UtcNow.AddMinutes(15)
+            //     ? DateTime.UtcNow.AddMinutes(15)
+            //     : dto.StartTime;
+            var expiresAt = dto.EndTime;
+
 
             using var qrGen = new QRCoder.QRCodeGenerator();
             var qrData = qrGen.CreateQrCode(token, QRCoder.QRCodeGenerator.ECCLevel.Q);
@@ -121,8 +130,11 @@ namespace EvBackend.Services
                 UpdatedAt = newBooking.UpdatedAt,
                 QrCode = newBooking.QrCode,
                 QrExpiresAt = newBooking.QrExpiresAt,
-                QrImageBase64 = newBooking.QrImageBase64
+                QrImageBase64 = newBooking.QrImageBase64,
+                FormattedStartTime = FormatSriLankaTime(newBooking.StartTime),
+                FormattedEndTime = FormatSriLankaTime(newBooking.EndTime)
             };
+
         }
 
         // ---------------------------
@@ -160,7 +172,9 @@ namespace EvBackend.Services
                 StartTime = updated.StartTime,
                 EndTime = updated.EndTime,
                 CreatedAt = updated.CreatedAt,
-                UpdatedAt = updated.UpdatedAt
+                UpdatedAt = updated.UpdatedAt,
+                FormattedStartTime = FormatSriLankaTime(updated.StartTime),
+                FormattedEndTime = FormatSriLankaTime(updated.EndTime)
             };
         }
 
@@ -216,7 +230,9 @@ namespace EvBackend.Services
                 UpdatedAt = b.UpdatedAt,
                 QrCode = b.QrCode,
                 QrExpiresAt = b.QrExpiresAt,
-                QrImageBase64 = b.QrImageBase64
+                QrImageBase64 = b.QrImageBase64,
+                FormattedStartTime = FormatSriLankaTime(b.StartTime),
+                FormattedEndTime = FormatSriLankaTime(b.EndTime)
             };
         }
 
@@ -238,7 +254,9 @@ namespace EvBackend.Services
                 UpdatedAt = b.UpdatedAt,
                 QrCode = b.QrCode,
                 QrExpiresAt = b.QrExpiresAt,
-                QrImageBase64 = b.QrImageBase64
+                QrImageBase64 = b.QrImageBase64,
+                FormattedStartTime = FormatSriLankaTime(b.StartTime),
+                FormattedEndTime = FormatSriLankaTime(b.EndTime)
             });
         }
 
@@ -260,9 +278,99 @@ namespace EvBackend.Services
                 UpdatedAt = b.UpdatedAt,
                 QrCode = b.QrCode,
                 QrExpiresAt = b.QrExpiresAt,
-                QrImageBase64 = b.QrImageBase64
+                QrImageBase64 = b.QrImageBase64,
+                FormattedStartTime = FormatSriLankaTime(b.StartTime),
+                FormattedEndTime = FormatSriLankaTime(b.EndTime)
             });
         }
+
+        // ---------------------------
+        // 📅 Filtered Station Bookings
+        // ---------------------------
+
+        public async Task<IEnumerable<BookingDto>> GetTodayApprovedBookingsAsync(string stationId)
+        {
+            var bookings = _db.GetCollection<Booking>("Bookings");
+
+            // Convert to Sri Lanka local day
+            var zone = TimeZoneInfo.FindSystemTimeZoneById("Sri Lanka Standard Time");
+            var nowSL = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zone);
+
+            var startOfDaySL = new DateTime(nowSL.Year, nowSL.Month, nowSL.Day, 0, 0, 0);
+            var endOfDaySL = startOfDaySL.AddDays(1).AddTicks(-1);
+
+            // Convert back to UTC for filtering
+            var startOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(startOfDaySL, zone);
+            var endOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(endOfDaySL, zone);
+
+            var filter = Builders<Booking>.Filter.And(
+                Builders<Booking>.Filter.Eq(b => b.StationId, stationId),
+                Builders<Booking>.Filter.Eq(b => b.Status, "Approved"),
+                Builders<Booking>.Filter.Gte(b => b.StartTime, startOfDayUtc),
+                Builders<Booking>.Filter.Lte(b => b.StartTime, endOfDayUtc)
+            );
+
+            var list = await bookings.Find(filter).SortBy(b => b.StartTime).ToListAsync();
+
+            return list.Select(b => new BookingDto
+            {
+                BookingId = b.BookingId,
+                StationId = b.StationId,
+                SlotId = b.SlotId,
+                OwnerId = b.OwnerId,
+                Status = b.Status,
+                StartTime = b.StartTime,
+                EndTime = b.EndTime,
+                CreatedAt = b.CreatedAt,
+                UpdatedAt = b.UpdatedAt,
+                QrCode = b.QrCode,
+                QrExpiresAt = b.QrExpiresAt,
+                QrImageBase64 = b.QrImageBase64,
+                FormattedStartTime = FormatSriLankaTime(b.StartTime),
+                FormattedEndTime = FormatSriLankaTime(b.EndTime)
+            });
+        }
+
+
+        public async Task<IEnumerable<BookingDto>> GetUpcomingApprovedBookingsAsync(string stationId)
+        {
+            var bookings = _db.GetCollection<Booking>("Bookings");
+
+            var zone = TimeZoneInfo.FindSystemTimeZoneById("Sri Lanka Standard Time");
+            var nowSL = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zone);
+
+            // Next 3 days window
+            var startUtc = TimeZoneInfo.ConvertTimeToUtc(nowSL.AddDays(1).Date, zone);
+            var endUtc = TimeZoneInfo.ConvertTimeToUtc(nowSL.AddDays(4).Date.AddTicks(-1), zone);
+
+            var filter = Builders<Booking>.Filter.And(
+                Builders<Booking>.Filter.Eq(b => b.StationId, stationId),
+                Builders<Booking>.Filter.Eq(b => b.Status, "Approved"),
+                Builders<Booking>.Filter.Gte(b => b.StartTime, startUtc),
+                Builders<Booking>.Filter.Lte(b => b.StartTime, endUtc)
+            );
+
+            var list = await bookings.Find(filter).SortBy(b => b.StartTime).ToListAsync();
+
+            return list.Select(b => new BookingDto
+            {
+                BookingId = b.BookingId,
+                StationId = b.StationId,
+                SlotId = b.SlotId,
+                OwnerId = b.OwnerId,
+                Status = b.Status,
+                StartTime = b.StartTime,
+                EndTime = b.EndTime,
+                CreatedAt = b.CreatedAt,
+                UpdatedAt = b.UpdatedAt,
+                QrCode = b.QrCode,
+                QrExpiresAt = b.QrExpiresAt,
+                QrImageBase64 = b.QrImageBase64,
+                FormattedStartTime = FormatSriLankaTime(b.StartTime),
+                FormattedEndTime = FormatSriLankaTime(b.EndTime)
+            });
+        }
+
 
         // ---------------------------
         // 📌 Operator Actions
@@ -280,6 +388,26 @@ namespace EvBackend.Services
             await bookings.UpdateOneAsync(b => b.BookingId == bookingId, update);
             return true;
         }
+
+        public async Task<bool> StartChargingAsync(string bookingId, string operatorId)
+        {
+            var collection = _db.GetCollection<Booking>("Bookings");
+            var booking = await collection.Find(b => b.BookingId == bookingId).FirstOrDefaultAsync();
+
+            if (booking == null) return false;
+
+            booking.Status = "Charging";
+            booking.UpdatedAt = DateTime.UtcNow;
+
+            var filter = Builders<Booking>.Filter.Eq(b => b.BookingId, bookingId);
+            var update = Builders<Booking>.Update
+                .Set(b => b.Status, "Charging")
+                .Set(b => b.UpdatedAt, DateTime.UtcNow);
+
+            await collection.UpdateOneAsync(filter, update);
+            return true;
+        }
+
 
         public async Task<bool> FinalizeBookingAsync(string bookingId, string operatorId)
         {

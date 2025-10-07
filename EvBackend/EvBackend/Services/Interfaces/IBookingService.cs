@@ -45,9 +45,26 @@ namespace EvBackend.Services.Interfaces
         Task<IEnumerable<BookingDto>> GetBookingsByStationAsync(string stationId);
 
         /// <summary>
+        /// Get all approved bookings for a station occurring today.
+        /// </summary>
+        Task<IEnumerable<BookingDto>> GetTodayApprovedBookingsAsync(string stationId);
+
+        /// <summary>
+        /// Get all approved upcoming bookings for a station (after today).
+        /// </summary>
+        Task<IEnumerable<BookingDto>> GetUpcomingApprovedBookingsAsync(string stationId);
+
+
+        /// <summary>
         /// Approve a booking (Operator/Admin/Backoffice).
         /// </summary>
         Task<bool> ApproveBookingAsync(string bookingId, string operatorId);
+
+        /// <summary>
+        /// Marks a booking as "Charging" (Operator/Admin/Backoffice).
+        /// </summary>
+        Task<bool> StartChargingAsync(string bookingId, string operatorId);
+
 
         /// <summary>
         /// Finalize a booking (Operator/Admin/Backoffice).
