@@ -26,7 +26,7 @@ import okhttp3.Response;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE = "https://87ce258e3dbe.ngrok-free.app";
+    private static final String BASE = "https://39ba0e9e02bb.ngrok-free.app";
     private static final String BASE_URL = BASE + "/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
@@ -210,7 +210,7 @@ public class ApiClient {
             Request request = new Request.Builder()
                     .url(BASE_URL + "/auth/register")
                     .post(body)
-                    .addHeader("X-Client-Type", "Mobile");
+                    .addHeader("X-Client-Type", "Mobile")
                     .build();
             Response response = client.newCall(request).execute();
             String responseBody = response.body() != null ? response.body().string() : "";
@@ -232,7 +232,7 @@ public class ApiClient {
         try {
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
-                    .get();
+                    .get()
                     .addHeader("X-Client-Type", "Mobile");
 
 
@@ -270,7 +270,7 @@ public class ApiClient {
             RequestBody body = RequestBody.create(data.toString(), JSON);
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
-                    .post(body);
+                    .post(body)
                     .addHeader("X-Client-Type", "Mobile");
 
 
@@ -303,7 +303,7 @@ public class ApiClient {
 
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
-                    .patch(body);
+                    .patch(body)
                     .addHeader("X-Client-Type", "Mobile");
 
 
@@ -331,7 +331,7 @@ public class ApiClient {
         try {
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
-                    .delete();
+                    .delete()
                     .addHeader("X-Client-Type", "Mobile");
 
 
@@ -409,7 +409,7 @@ public class ApiClient {
         try {
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
-                    .patch(RequestBody.create("", JSON));
+                    .patch(RequestBody.create("", JSON))
                     .addHeader("X-Client-Type", "Mobile");
 
 
@@ -439,7 +439,7 @@ public class ApiClient {
             RequestBody body = RequestBody.create(data.toString(), JSON);
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
-                    .put(body);
+                    .put(body)
                     .addHeader("X-Client-Type", "Mobile");
 
 

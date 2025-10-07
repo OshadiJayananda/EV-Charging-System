@@ -23,9 +23,13 @@ namespace EvBackend.Models.DTOs
         public string? QrCode { get; set; }
         public DateTime? QrExpiresAt { get; set; }
         public string? QrImageBase64 { get; set; }
+
+        // ✅ Added for Sri Lanka formatted date/time (for UI display)
+        public string? FormattedStartTime { get; set; }
+        public string? FormattedEndTime { get; set; }
     }
 
-    // ✅ Owners don’t pass SlotId or OwnerId
+    // ✅ Owners only send basic details; backend auto-selects slot + owner
     public class CreateBookingDto
     {
         public string StationId { get; set; }
@@ -34,7 +38,7 @@ namespace EvBackend.Models.DTOs
         public DateTime EndTime { get; set; }
     }
 
-    // ✅ Used for rescheduling only
+    // ✅ Used for rescheduling
     public class UpdateBookingDto
     {
         public DateTime StartTime { get; set; }
