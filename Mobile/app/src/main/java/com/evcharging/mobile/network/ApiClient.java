@@ -26,7 +26,7 @@ import okhttp3.Response;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE = "https://d5d3f12b08d7.ngrok-free.app";
+    private static final String BASE = "https://00dab50b5612.ngrok-free.app";
     private static final String BASE_URL = BASE + "/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
@@ -85,6 +85,9 @@ public class ApiClient {
     public static String getApiBaseUrl() {
         return BASE_URL;
     }
+
+
+
 
     // Notification API Methods
     public ApiResponse getUserNotifications() {
