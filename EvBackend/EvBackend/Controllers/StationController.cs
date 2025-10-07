@@ -146,16 +146,5 @@ namespace EvBackend.Controllers
                 return StatusCode(500, new { message = "Unexpected error" });
             }
         }
-
-
-
-        // ---------------------------
-        // 🔌 Slot Endpoints
-        // ---------------------------
-
-        
     }
-
-    //need to assign operator to station
-
 }

@@ -419,12 +419,41 @@ public class ApiClient {
             String responseBody = response.body().string();
 
             if (response.isSuccessful()) {
-                return new ApiResponse(true, "Operation successful", responseBody);
+                String message = "Operation successful";
+                try {
+                    JSONObject json = new JSONObject(responseBody);
+                    message = json.optString("message", message);
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse success response JSON", e);
+                }
+                return new ApiResponse(true, message, responseBody);
             } else {
-                JSONObject errorResponse = new JSONObject(responseBody);
-                Log.e(TAG, "PATCH response status code " + response.code() + " response body" + responseBody);
-                return new ApiResponse(false, errorResponse.optString("message", "Request failed"), null);
+                int code = response.code();
+                String message = "Request failed";
+
+                try {
+                    JSONObject errorResponse = new JSONObject(responseBody);
+                    message = errorResponse.optString("message", message);
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse error response JSON", e);
+                }
+
+                switch (code) {
+                    case 401:
+                        message = "Unauthorized. Please login again.";
+                        break;
+                    case 403:
+                        message = "You don't have permission.";
+                        break;
+                    case 404:
+                        message = "Not found.";
+                        break;
+                }
+
+                Log.e(TAG, "PATCH response status code " + code + " response body: " + responseBody);
+                return new ApiResponse(false, message, null);
             }
+
         } catch (Exception e) {
             Log.e(TAG, "PATCH request error", e);
             return new ApiResponse(false, "Network error occurred", null);

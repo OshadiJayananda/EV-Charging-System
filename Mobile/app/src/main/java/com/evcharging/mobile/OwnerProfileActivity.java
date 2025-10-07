@@ -11,6 +11,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.evcharging.mobile.model.User;
 import com.evcharging.mobile.network.ApiClient;
 import com.evcharging.mobile.network.ApiResponse;
 import com.evcharging.mobile.session.SessionManager;
@@ -23,7 +24,6 @@ public class OwnerProfileActivity extends AppCompatActivity {
     private ImageButton btnBack;
     private SessionManager sessionManager;
     private ApiClient apiClient;
-    private String nic = "2000123456";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +52,12 @@ public class OwnerProfileActivity extends AppCompatActivity {
     }
 
     private class DeactivateTask extends AsyncTask<Void, Void, ApiResponse> {
+        private final String nic;
+
+        public DeactivateTask() {
+            this.nic = getOwnerNic();
+        }
+
         @Override
         protected ApiResponse doInBackground(Void... voids) {
             return apiClient.deactivateEvOwner(nic);
@@ -64,6 +70,11 @@ public class OwnerProfileActivity extends AppCompatActivity {
     }
 
     private class ReactivationTask extends AsyncTask<Void, Void, ApiResponse> {
+        private final String nic;
+
+        public ReactivationTask() {
+            this.nic = getOwnerNic();
+        }
         @Override
         protected ApiResponse doInBackground(Void... voids) {
             return apiClient.requestReactivation(nic);
@@ -74,4 +85,27 @@ public class OwnerProfileActivity extends AppCompatActivity {
             Toast.makeText(OwnerProfileActivity.this, response.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
+
+    private String getOwnerNic() {
+        SessionManager sessionManager = new SessionManager(this);
+        User loggedInUser = sessionManager.getLoggedInUser();
+
+        if (loggedInUser != null && loggedInUser.getUserId() != null && !loggedInUser.getUserId().trim().isEmpty()) {
+            return loggedInUser.getUserId().trim();
+        }
+
+        return "";
+    }
+
+    private boolean isActive() {
+        SessionManager sessionManager = new SessionManager(this);
+        User loggedInUser = sessionManager.getLoggedInUser();
+
+        if (loggedInUser != null) {
+            return loggedInUser.isActive();
+        }
+
+        return false;
+    }
+
 }

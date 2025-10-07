@@ -114,7 +114,6 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                 return ownerId;
         }
 
-
         private void setupButtonActions() {
                 btnNotifications.setOnClickListener(v ->
                         startActivity(new Intent(this, NotificationActivity.class))
@@ -207,15 +206,22 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
         }
 
         private void attemptLogout() {
-                ApiResponse response = apiClient.logout();
+                new androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setTitle("Logout Confirmation")
+                        .setMessage("Are you sure you want to logout?")
+                        .setPositiveButton("Yes", (dialog, which) -> {
+                                // Perform logout
+                                ApiResponse response = apiClient.logout();
+                                Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show();
 
-                Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show();
-
-                // Redirect to login screen after logout
-                Intent intent = new Intent(this, LoginActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // Clear backstack
-                startActivity(intent);
-                finish();
+                                // Redirect to login screen
+                                Intent intent = new Intent(this, LoginActivity.class);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                startActivity(intent);
+                                finish();
+                        })
+                        .setNegativeButton("No", (dialog, which) -> dialog.dismiss()) // Dismiss dialog if user cancels
+                        .show();
         }
 
         @Override
