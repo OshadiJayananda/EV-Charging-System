@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { api } from "../common";
 import toast from "react-hot-toast";
 
@@ -84,7 +83,6 @@ interface PaginationInfo {
 }
 
 function UserManagement() {
-  const navigate = useNavigate();
   const [reactivationRequests, setReactivationRequests] = useState<EVOwner[]>(
     []
   );
