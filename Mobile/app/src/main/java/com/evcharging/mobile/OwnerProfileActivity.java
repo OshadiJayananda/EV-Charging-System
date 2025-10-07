@@ -19,7 +19,7 @@ import com.evcharging.mobile.session.SessionManager;
 
 public class OwnerProfileActivity extends AppCompatActivity {
 
-    private TextView tvName, tvEmail, tvNic;
+    private TextView tvName, tvEmail, tvNic, tvAccountStatus;
     private ImageView ivProfilePic;
     private Button btnEditProfile, btnDeactivate, btnRequestReactivation;
     private ImageButton btnBack;
@@ -37,6 +37,7 @@ public class OwnerProfileActivity extends AppCompatActivity {
         tvName = findViewById(R.id.tvOwnerName);
         tvEmail = findViewById(R.id.tvOwnerEmail);
         tvNic = findViewById(R.id.tvOwnerNic);
+        tvAccountStatus = findViewById(R.id.tvAccountStatus);
         ivProfilePic = findViewById(R.id.ivProfilePic);
         btnEditProfile = findViewById(R.id.btnEditProfile);
         btnDeactivate = findViewById(R.id.btnDeactivate);
@@ -46,12 +47,25 @@ public class OwnerProfileActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
         btnEditProfile.setOnClickListener(v -> startActivity(new Intent(this, OwnerEditProfileActivity.class)));
 
-        // Load user info and update UI
         loadUserProfile();
 
-        // Button actions
-        btnDeactivate.setOnClickListener(v -> new DeactivateTask().execute());
-        btnRequestReactivation.setOnClickListener(v -> new ReactivationTask().execute());
+        btnDeactivate.setOnClickListener(v ->
+                new androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setTitle("Deactivate Account")
+                        .setMessage("Are you sure you want to deactivate your account?")
+                        .setPositiveButton("Yes", (dialog, which) -> new DeactivateTask().execute())
+                        .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
+                        .show()
+        );
+
+        btnRequestReactivation.setOnClickListener(v ->
+                new androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setTitle("Request Reactivation")
+                        .setMessage("Do you want to request reactivation of your account?")
+                        .setPositiveButton("Yes", (dialog, which) -> new ReactivationTask().execute())
+                        .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
+                        .show()
+        );
     }
 
     private void loadUserProfile() {
@@ -59,13 +73,17 @@ public class OwnerProfileActivity extends AppCompatActivity {
         if (user != null) {
             tvName.setText(user.getFullName() != null ? user.getFullName() : "N/A");
             tvEmail.setText(user.getEmail() != null ? user.getEmail() : "N/A");
-            tvNic.setText(user.getUserId() != null ? user.getUserId() : "N/A");
+            tvNic.setText(user.getUserId() != null ? "NIC: " + user.getUserId() : "NIC: N/A");
 
-            // Show deactivate or reactivate button based on account status
+            // Show status
             if (user.isActive()) {
+                tvAccountStatus.setText("Active");
+                tvAccountStatus.setTextColor(getResources().getColor(R.color.green));
                 btnDeactivate.setVisibility(View.VISIBLE);
                 btnRequestReactivation.setVisibility(View.GONE);
             } else {
+                tvAccountStatus.setText("Deactivated");
+                tvAccountStatus.setTextColor(getResources().getColor(R.color.red));
                 btnDeactivate.setVisibility(View.GONE);
                 btnRequestReactivation.setVisibility(View.VISIBLE);
             }
