@@ -44,7 +44,6 @@ namespace EvBackend.Entities
         [BsonIgnoreIfNull]
         public DateTime? PasswordResetTokenExpiration { get; set; }
 
-        // ✅ Optional fields for operators (added to fix stationId mismatch error)
         [BsonElement("stationId")]
         [BsonIgnoreIfNull]
         public string? StationId { get; set; }
