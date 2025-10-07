@@ -27,6 +27,14 @@ namespace EvBackend.Controllers
             _notificationService = notificationService;
         }
 
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllOwners([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var owners = await _evOwnerService.GetAllEVOwners(page, pageSize);
+            return Ok(owners);
+        }
+
         [HttpPost("register")]
         public async Task<IActionResult> RegisterOwner([FromBody] CreateEVOwnerDto createEVOwnerDto)
         {
