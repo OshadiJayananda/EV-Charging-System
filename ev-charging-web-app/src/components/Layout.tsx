@@ -24,14 +24,13 @@ const Layout: React.FC = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const { isAuthenticated, userRole, logout } = useAuth();
+  const { isAuthenticated, userRole, userId, logout } = useAuth();
   const navigate = useNavigate();
   const notificationsRef = useRef<HTMLDivElement>(null);
 
   // Fetch notifications and setup SignalR
   useEffect(() => {
     let connection: any;
-    const userId = localStorage.getItem("userId");
     if (isAuthenticated && userId) {
       getRequest<Notification[]>(`/notifications/user/${userId}`).then(
         (res) => {

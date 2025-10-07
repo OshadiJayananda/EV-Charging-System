@@ -26,7 +26,7 @@ import okhttp3.Response;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE = "https://f5ddd6cc2035.ngrok-free.app";
+    private static final String BASE = "https://d5d3f12b08d7.ngrok-free.app";
     private static final String BASE_URL = BASE + "/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
@@ -128,7 +128,7 @@ public class ApiClient {
             RequestBody body = RequestBody.create(loginData.toString(), JSON);
             Request request = new Request.Builder()
                     .url(BASE_URL + "/auth/login")
-                    .addHeader("X-Client-Type", "Mobile")   
+                    .addHeader("X-Client-Type", "Mobile")
                     .post(body)
                     .build();
 
@@ -160,15 +160,17 @@ public class ApiClient {
                     return new ApiResponse(true, "Login successful (no content returned)", null);
 
                 case 401: // Unauthorized
-                
+
                 case 403: // Forbidden (Access denied from this platform)
                     String errMsg = "Access denied: You are not allowed to log in from this app.";
                     if (!responseBody.isEmpty()) {
                         try {
                             JSONObject errorJson = new JSONObject(responseBody);
                             String msg = errorJson.optString("message", null);
-                            if (msg != null && !msg.isEmpty()) errMsg = msg;
-                        } catch (Exception ignored) {}
+                            if (msg != null && !msg.isEmpty())
+                                errMsg = msg;
+                        } catch (Exception ignored) {
+                        }
                     }
                     return new ApiResponse(false, errMsg, null);
 
@@ -235,7 +237,6 @@ public class ApiClient {
                     .get()
                     .addHeader("X-Client-Type", "Mobile");
 
-
             String token = sessionManager.getToken();
             if (token != null) {
                 requestBuilder.addHeader("Authorization", "Bearer " + token);
@@ -273,7 +274,6 @@ public class ApiClient {
                     .post(body)
                     .addHeader("X-Client-Type", "Mobile");
 
-
             String token = sessionManager.getToken();
             if (token != null) {
                 requestBuilder.addHeader("Authorization", "Bearer " + token);
@@ -306,7 +306,6 @@ public class ApiClient {
                     .patch(body)
                     .addHeader("X-Client-Type", "Mobile");
 
-
             String token = sessionManager.getToken();
             if (token != null) {
                 requestBuilder.addHeader("Authorization", "Bearer " + token);
@@ -333,7 +332,6 @@ public class ApiClient {
                     .url(BASE_URL + endpoint)
                     .delete()
                     .addHeader("X-Client-Type", "Mobile");
-
 
             String token = sessionManager.getToken();
             if (token != null) {
@@ -412,7 +410,6 @@ public class ApiClient {
                     .patch(RequestBody.create("", JSON))
                     .addHeader("X-Client-Type", "Mobile");
 
-
             String token = sessionManager.getToken();
             if (token != null)
                 requestBuilder.addHeader("Authorization", "Bearer " + token);
@@ -442,7 +439,6 @@ public class ApiClient {
                     .put(body)
                     .addHeader("X-Client-Type", "Mobile");
 
-
             String token = sessionManager.getToken();
             if (token != null)
                 requestBuilder.addHeader("Authorization", "Bearer " + token);
@@ -461,7 +457,6 @@ public class ApiClient {
             return new ApiResponse(false, "Network error occurred", null);
         }
     }
-
 
     // Deactivate EV Owner
     public ApiResponse deactivateEvOwner(String nic) {
