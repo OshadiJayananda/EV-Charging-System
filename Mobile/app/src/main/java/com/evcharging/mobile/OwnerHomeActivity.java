@@ -7,16 +7,23 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.util.Log;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
@@ -36,6 +43,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import android.location.Location;
 import com.evcharging.mobile.model.Station;
 import com.evcharging.mobile.service.StationService;
+
+import java.util.ArrayList;
 import java.util.List;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -61,17 +70,21 @@ public class OwnerHomeActivity extends AppCompatActivity
 
         private GoogleMap googleMap;
         private StationService stationService;
-
+        private Location cachedLocation;
+        private AutoCompleteTextView searchStations;
+        private Spinner spinnerStationType;
+        private String selectedStationType = "DC";
         @Override
         protected void onCreate(Bundle savedInstanceState) {
                 super.onCreate(savedInstanceState);
 
+                // Initialize services
                 apiClient = new ApiClient(new SessionManager(this));
                 stationService = new StationService(apiClient);
 
                 setContentView(R.layout.activity_owner_home);
 
-                // Initialize UI components
+                // --- Initialize UI components ---
                 mapView = findViewById(R.id.mapView);
                 btnReserve = findViewById(R.id.btnReserveSlot);
                 btnBookings = findViewById(R.id.btnMyBookings);
@@ -80,19 +93,19 @@ public class OwnerHomeActivity extends AppCompatActivity
                 btnLogout = findViewById(R.id.btnLogoutOwner);
                 btnNotifications = findViewById(R.id.btnNotifications);
                 tvNotificationCount = findViewById(R.id.tvNotificationCount);
+                searchStations = findViewById(R.id.searchStations);
+                spinnerStationType = findViewById(R.id.spinnerStationType);
 
+                // --- Welcome text ---
                 tvWelcomeOwner = findViewById(R.id.tvWelcomeOwner);
                 tvOwnerId = findViewById(R.id.tvOwnerId);
+                tvWelcomeOwner.setText("Welcome, " + getOwnerName() + "!");
+                tvOwnerId.setText("Owner ID: " + getOwnerId());
 
-                String ownerName = getOwnerName();
-                String ownerId = getOwnerId();
-
-                tvWelcomeOwner.setText("Welcome, " + ownerName + "!");
-                tvOwnerId.setText("Owner ID: " + ownerId);
-
+                // --- Location ---
                 fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
-                // Initialize MapView
+                // --- MapView ---
                 Bundle mapViewBundle = null;
                 if (savedInstanceState != null) {
                         mapViewBundle = savedInstanceState.getBundle(MAP_VIEW_BUNDLE_KEY);
@@ -100,16 +113,142 @@ public class OwnerHomeActivity extends AppCompatActivity
                 mapView.onCreate(mapViewBundle);
                 mapView.getMapAsync(this);
 
-                // Initialize services
+                // --- SignalR ---
                 signalRService = new SignalRService(this);
                 signalRService.setNotificationListener(this);
 
-                // Create notification channel
+                // --- Notification channel ---
                 createNotificationChannel();
 
-                // Button actions
+                // --- Button actions ---
                 setupButtonActions();
+                setupStationSearch();
+                setupTypeSelection();
+
         }
+
+        private void setupTypeSelection() {
+                // Define the types of stations
+                String[] stationTypes = new String[]{"DC", "AC"};
+
+                // Create ArrayAdapter for the spinner
+                ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        stationTypes
+                );
+                typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+                // Attach adapter to spinner
+                spinnerStationType.setAdapter(typeAdapter);
+
+                // Optional: handle selection events
+                spinnerStationType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                                String selectedType = stationTypes[position];
+                                // You can trigger a search update here if needed
+                                // fetchStationSuggestions(searchStations.getText().toString().trim());
+                        }
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> parent) {
+                                // Do nothing
+                        }
+                });
+        }
+
+
+        private void setupStationSearch() {
+                searchStations.addTextChangedListener(new TextWatcher() {
+                        @Override
+                        public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+                        @Override
+                        public void onTextChanged(CharSequence s, int start, int before, int count) { }
+
+                        @Override
+                        public void afterTextChanged(Editable s) {
+                                String query = s.toString().trim();
+                                if (!query.isEmpty()) {
+                                        fetchStationSuggestions(query);
+                                }
+                        }
+                });
+
+                searchStations.setOnItemClickListener((parent, view, position, id) -> {
+                        Station selectedStation = (Station) parent.getItemAtPosition(position);
+                        showStationOnMap(selectedStation);
+                });
+        }
+
+
+        private void fetchStationSuggestions(String query) {
+                new Thread(() -> {
+                        String type = spinnerStationType.getSelectedItem() != null
+                                ? spinnerStationType.getSelectedItem().toString() : "";
+                        List<Station> stations = stationService.searchStations(type, query);
+
+                        if (stations != null && !stations.isEmpty()) {
+                                runOnUiThread(() -> {
+                                        ArrayAdapter<Station> adapter = new ArrayAdapter<>(
+                                                this,
+                                                android.R.layout.simple_dropdown_item_1line,
+                                                stations
+                                        );
+
+                                        searchStations.setAdapter(adapter);
+                                        adapter.notifyDataSetChanged();
+
+                                        searchStations.setAdapter(adapter);
+                                        adapter.notifyDataSetChanged();
+                                });
+                        }
+                }).start();
+        }
+
+
+        private void showStationOnMap(Station station) {
+                if (googleMap != null) {
+                        googleMap.clear(); // Clear previous markers
+                        LatLng stationLatLng = new LatLng(station.getLatitude(), station.getLongitude());
+
+                        // Add marker for the selected station
+                        googleMap.addMarker(new MarkerOptions()
+                                .position(stationLatLng)
+                                .title(station.getName())
+                                .snippet(station.getLocation()));
+
+                        // Move camera to the station
+                        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(stationLatLng, 15));
+
+                        // Add marker click listener for navigation
+                        googleMap.setOnMarkerClickListener(marker -> {
+                                LatLng dest = marker.getPosition();
+
+                                if (cachedLocation != null) {
+                                        // Build Google Maps navigation URL
+                                        String uri = "http://maps.google.com/maps?saddr=" +
+                                                cachedLocation.getLatitude() + "," + cachedLocation.getLongitude() +
+                                                "&daddr=" + dest.latitude + "," + dest.longitude;
+
+                                        // Launch Google Maps
+                                        Intent intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri));
+                                        intent.setPackage("com.google.android.apps.maps");
+                                        if (intent.resolveActivity(getPackageManager()) != null) {
+                                                startActivity(intent);
+                                        } else {
+                                                Toast.makeText(this, "Google Maps app not found", Toast.LENGTH_SHORT).show();
+                                        }
+                                } else {
+                                        Toast.makeText(this, "Current location not available", Toast.LENGTH_SHORT).show();
+                                }
+
+                                return true; // Consume the click
+                        });
+                }
+        }
+
 
         private String getOwnerName() {
                 SessionManager sessionManager = new SessionManager(this);
@@ -160,17 +299,12 @@ public class OwnerHomeActivity extends AppCompatActivity
 
         @Override
         public void onMapReady(@NonNull GoogleMap map) {
-                Log.d("OwnerHomeActivity", "onMapReady() called");
-
                 this.googleMap = map;
 
-                // Check permissions first
                 if (ActivityCompat.checkSelfPermission(this,
                                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
                         ActivityCompat.requestPermissions(this,
-                                        new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
-                                        1001);
+                                        new String[] { Manifest.permission.ACCESS_FINE_LOCATION }, 1001);
                         return;
                 }
 
@@ -179,73 +313,26 @@ public class OwnerHomeActivity extends AppCompatActivity
                 googleMap.getUiSettings().setCompassEnabled(true);
                 googleMap.getUiSettings().setMyLocationButtonEnabled(true);
 
-                // Get current location (not cached)
-                fusedLocationClient.getCurrentLocation(
-                                com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY,
-                                null).addOnSuccessListener(this, location -> {
-                                        Log.d("OwnerHomeActivity", "Received location: " + location);
-
-                                        if (location != null) {
-                                                double userLat = location.getLatitude();
-                                                double userLng = location.getLongitude();
-                                                // Log.d("OwnerHomeActivity", "User location: Lat=" + userLat + " Lng="
-                                                // + userLng);
-
-                                                googleMap.moveCamera(CameraUpdateFactory
-                                                                .newLatLngZoom(new LatLng(userLat, userLng), 15));
-
-                                                LatLng userLocation = new LatLng(userLat, userLng);
-                                                googleMap.addMarker(new MarkerOptions()
-                                                                .position(userLocation)
-                                                                .title("You are here"));
-
-                                                // Fetch nearby stations in background thread
-                                                new Thread(() -> {
-                                                        List<Station> stations = stationService
-                                                                        .getNearbyStations(userLat, userLng, 5);
-
-                                                        runOnUiThread(() -> {
-                                                                if (stations != null && !stations.isEmpty()) {
-                                                                        LatLngBounds.Builder builder = new LatLngBounds.Builder();
-                                                                        builder.include(userLocation); // include user's
-                                                                                                       // location in
-                                                                                                       // map bounds
-
-                                                                        for (Station s : stations) {
-                                                                                LatLng stationLatLng = new LatLng(
-                                                                                                s.getLatitude(),
-                                                                                                s.getLongitude());
-                                                                                googleMap.addMarker(new MarkerOptions()
-                                                                                                .position(stationLatLng)
-                                                                                                .title(s.getName())
-                                                                                                .snippet(s.getLocation()));
-                                                                                builder.include(stationLatLng);
-                                                                        }
-
-                                                                        // Auto-adjust camera to include all markers
-                                                                        LatLngBounds bounds = builder.build();
-                                                                        int padding = 120; // space around edges
-                                                                        googleMap.animateCamera(CameraUpdateFactory
-                                                                                        .newLatLngBounds(bounds,
-                                                                                                        padding));
-
-                                                                } else {
-                                                                        Toast.makeText(this, "No nearby stations found",
-                                                                                        Toast.LENGTH_SHORT).show();
-                                                                }
-                                                        });
-                                                }).start();
-
-                                        } else {
-                                                Log.e("OwnerHomeActivity", "Location is null");
-                                                Toast.makeText(this,
-                                                                "Unable to get location. Try setting GPS in emulator.",
-                                                                Toast.LENGTH_SHORT).show();
-                                        }
-                                }).addOnFailureListener(e -> {
-                                        Log.e("OwnerHomeActivity", "Failed to get location", e);
-                                        Toast.makeText(this, "Error getting location", Toast.LENGTH_SHORT).show();
-                                });
+                if (cachedLocation != null) {
+                        // Use cached location
+                        moveCameraToLocation(cachedLocation);
+                } else {
+                        // Fetch location
+                        fusedLocationClient.getCurrentLocation(
+                                        com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY, null)
+                                        .addOnSuccessListener(this, location -> {
+                                                if (location != null) {
+                                                        cachedLocation = location; // Cache the location
+                                                        moveCameraToLocation(location);
+                                                } else {
+                                                        Toast.makeText(this, "Unable to get location.",
+                                                                        Toast.LENGTH_SHORT).show();
+                                                }
+                                        }).addOnFailureListener(e -> {
+                                                Toast.makeText(this, "Error getting location", Toast.LENGTH_SHORT)
+                                                                .show();
+                                        });
+                }
         }
 
         @Override
@@ -394,4 +481,36 @@ public class OwnerHomeActivity extends AppCompatActivity
                 }
         }
 
+        private void moveCameraToLocation(Location location) {
+                LatLng userLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 15));
+                googleMap.addMarker(new MarkerOptions().position(userLatLng).title("You are here"));
+
+                // Fetch nearby stations in background
+                new Thread(() -> {
+                        List<Station> stations = stationService.getNearbyStations(location.getLatitude(),
+                                        location.getLongitude(), 5);
+                        runOnUiThread(() -> {
+                                if (stations != null && !stations.isEmpty()) {
+                                        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+                                        builder.include(userLatLng);
+
+                                        for (Station s : stations) {
+                                                LatLng stationLatLng = new LatLng(s.getLatitude(), s.getLongitude());
+                                                googleMap.addMarker(new MarkerOptions()
+                                                                .position(stationLatLng)
+                                                                .title(s.getName())
+                                                                .snippet(s.getLocation()));
+                                                builder.include(stationLatLng);
+                                        }
+
+                                        LatLngBounds bounds = builder.build();
+                                        int padding = 120;
+                                        googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding));
+                                } else {
+                                        Toast.makeText(this, "No nearby stations found", Toast.LENGTH_SHORT).show();
+                                }
+                        });
+                }).start();
+        }
 }

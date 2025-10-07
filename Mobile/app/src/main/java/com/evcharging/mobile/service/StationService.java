@@ -1,5 +1,6 @@
 package com.evcharging.mobile.service;
 
+import android.os.Build;
 import android.util.Log;
 
 import com.evcharging.mobile.model.Station;
@@ -12,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class StationService {
@@ -58,4 +61,42 @@ public class StationService {
             return null;
         }
     }
+
+    public List<Station> searchStations(String type, String location) {
+        try {
+            Log.d(TAG, "Calling searchStations...");
+
+            String endpoint = null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                endpoint = String.format("/station/names?type=%s&location=%s",
+                        type, URLEncoder.encode(location, StandardCharsets.UTF_8));
+            }
+
+
+            Log.d(TAG, "Search stations endpoint: " + endpoint);
+
+            ApiResponse response = apiClient.get(endpoint);
+
+            Log.d(TAG, "Search stations response: " + response.getData());
+
+            if (response == null || !response.isSuccess()) {
+                Log.e(TAG, "Failed to search stations: " + (response != null ? response.getMessage() : "null response"));
+                return null;
+            }
+
+            String jsonData = response.getData(); // Raw JSON string from ApiResponse
+            if (jsonData == null || jsonData.isEmpty()) {
+                Log.e(TAG, "Empty station search data");
+                return null;
+            }
+
+            Type listType = new TypeToken<List<Station>>() {}.getType();
+            return gson.fromJson(jsonData, listType);
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error searching stations", e);
+            return null;
+        }
+    }
+
 }

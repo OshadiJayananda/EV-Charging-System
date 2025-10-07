@@ -376,5 +376,31 @@ namespace EvBackend.Services
             };
         }
 
+        public async Task<IEnumerable<StationNameDto>> GetStationNameSuggestionsAsync(string? type = null, string? location = null)
+        {
+            var filter = Builders<Station>.Filter.Empty;
+
+            if (!string.IsNullOrEmpty(type))
+                filter &= Builders<Station>.Filter.Eq(s => s.Type, type);
+
+            if (!string.IsNullOrEmpty(location))
+                filter &= Builders<Station>.Filter.Regex(
+                    s => s.Location, new MongoDB.Bson.BsonRegularExpression(location, "i")
+                );
+
+            var stations = await _stations.Find(filter)
+                                          .Project(s => new StationNameDto
+                                          {
+                                              StationId = s.StationId,
+                                              Name = s.Name,
+                                              Location = s.Location,
+                                              Latitude = s.Latitude,
+                                              Longitude = s.Longitude
+                                          })
+                                          .ToListAsync();
+
+            return stations;
+        }
+
     }
 }
