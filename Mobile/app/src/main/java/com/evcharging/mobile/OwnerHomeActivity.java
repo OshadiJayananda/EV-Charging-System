@@ -37,7 +37,7 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
         private Button btnReserve, btnBookings, btnHistory;
         private ImageButton btnLogout, btnNotifications;
         private ImageView ivProfile;
-        private TextView tvWelcomeOwner;
+        private TextView tvWelcomeOwner, tvOwnerId;
 
         private SignalRService signalRService;
         private ApiClient apiClient;
@@ -57,11 +57,13 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                 btnNotifications = findViewById(R.id.btnNotifications);
 
                 tvWelcomeOwner = findViewById(R.id.tvWelcomeOwner);
+                tvOwnerId = findViewById(R.id.tvOwnerId);
 
                 String ownerName = getOwnerName();
+                String ownerId = getOwnerId();
 
                 tvWelcomeOwner.setText("Welcome, " + ownerName + "!");
-
+                tvOwnerId.setText("Owner ID: " + ownerId);
 
                 // Initialize MapView
                 Bundle mapViewBundle = null;
@@ -98,6 +100,20 @@ public class OwnerHomeActivity extends AppCompatActivity implements OnMapReadyCa
                 }
                 return ownerName;
         }
+
+        private String getOwnerId() {
+                SessionManager sessionManager = new SessionManager(this);
+                User loggedInUser = sessionManager.getLoggedInUser();
+
+                String ownerId = "OW001";
+
+                if (loggedInUser != null && loggedInUser.getUserId() != null && !loggedInUser.getUserId().trim().isEmpty()) {
+                        ownerId = "OW" + loggedInUser.getUserId().trim();
+                }
+
+                return ownerId;
+        }
+
 
         private void setupButtonActions() {
                 btnNotifications.setOnClickListener(v ->
