@@ -3,6 +3,7 @@
 // Author: Hasindu Koshitha
 // Description: Database entity representing a user
 // Created On: 13/09/2025
+// Updated On: 06/10/2025 - Added station assignment fields for operators
 // --------------------------------------------------------------
 
 using MongoDB.Bson.Serialization.Attributes;
@@ -35,9 +36,24 @@ namespace EvBackend.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         [BsonElement("passwordResetToken")]
-        public string PasswordResetToken { get; set; }
+        [BsonIgnoreIfNull]
+        public string? PasswordResetToken { get; set; }
 
         [BsonElement("passwordResetTokenExpiration")]
+        [BsonIgnoreIfNull]
         public DateTime? PasswordResetTokenExpiration { get; set; }
+
+        // ✅ Optional fields for operators (added to fix stationId mismatch error)
+        [BsonElement("stationId")]
+        [BsonIgnoreIfNull]
+        public string? StationId { get; set; }
+
+        [BsonElement("stationName")]
+        [BsonIgnoreIfNull]
+        public string? StationName { get; set; }
+
+        [BsonElement("stationLocation")]
+        [BsonIgnoreIfNull]
+        public string? StationLocation { get; set; }
     }
 }

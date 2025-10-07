@@ -129,6 +129,7 @@ public class ApiClient {
             RequestBody body = RequestBody.create(loginData.toString(), JSON);
             Request request = new Request.Builder()
                     .url(BASE_URL + "/auth/login")
+                    .addHeader("X-Client-Type", "Mobile")   
                     .post(body)
                     .build();
 
@@ -136,7 +137,9 @@ public class ApiClient {
             int statusCode = response.code();
             Log.d(TAG, "Login response code: " + statusCode);
             String responseBody = response.body() != null ? response.body().string() : "";
-            Log.d(TAG, "Login response " + responseBody);
+
+            Log.d(TAG, "Login response code: " + statusCode);
+            Log.d(TAG, "Login response body: '" + responseBody + "'");
 
             // Handle based on status code
             switch (statusCode) {
@@ -158,7 +161,17 @@ public class ApiClient {
                     return new ApiResponse(true, "Login successful (no content returned)", null);
 
                 case 401: // Unauthorized
-                    return new ApiResponse(false, "Unauthorized: Invalid email or password", null);
+                
+                case 403: // Forbidden (Access denied from this platform)
+                    String errMsg = "Access denied: You are not allowed to log in from this app.";
+                    if (!responseBody.isEmpty()) {
+                        try {
+                            JSONObject errorJson = new JSONObject(responseBody);
+                            String msg = errorJson.optString("message", null);
+                            if (msg != null && !msg.isEmpty()) errMsg = msg;
+                        } catch (Exception ignored) {}
+                    }
+                    return new ApiResponse(false, errMsg, null);
 
                 case 404: // Not Found
                     return new ApiResponse(false, "Login endpoint not found", null);
@@ -198,6 +211,7 @@ public class ApiClient {
             Request request = new Request.Builder()
                     .url(BASE_URL + "/owners/register")
                     .post(body)
+                    .addHeader("X-Client-Type", "Mobile")
                     .build();
             Response response = client.newCall(request).execute();
             String responseBody = response.body() != null ? response.body().string() : "";
@@ -219,7 +233,9 @@ public class ApiClient {
         try {
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
-                    .get();
+                    .get()
+                    .addHeader("X-Client-Type", "Mobile");
+
 
             String token = sessionManager.getToken();
             if (token != null) {
@@ -255,7 +271,9 @@ public class ApiClient {
             RequestBody body = RequestBody.create(data.toString(), JSON);
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
-                    .post(body);
+                    .post(body)
+                    .addHeader("X-Client-Type", "Mobile");
+
 
             String token = sessionManager.getToken();
             if (token != null) {
@@ -286,7 +304,9 @@ public class ApiClient {
 
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
-                    .patch(body);
+                    .patch(body)
+                    .addHeader("X-Client-Type", "Mobile");
+
 
             String token = sessionManager.getToken();
             if (token != null) {
@@ -312,7 +332,9 @@ public class ApiClient {
         try {
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
-                    .delete();
+                    .delete()
+                    .addHeader("X-Client-Type", "Mobile");
+
 
             String token = sessionManager.getToken();
             if (token != null) {
@@ -388,7 +410,9 @@ public class ApiClient {
         try {
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
-                    .patch(RequestBody.create("", JSON));
+                    .patch(RequestBody.create("", JSON))
+                    .addHeader("X-Client-Type", "Mobile");
+
 
             String token = sessionManager.getToken();
             if (token != null)
@@ -416,7 +440,9 @@ public class ApiClient {
             RequestBody body = RequestBody.create(data.toString(), JSON);
             Request.Builder requestBuilder = new Request.Builder()
                     .url(BASE_URL + endpoint)
-                    .put(body);
+                    .put(body)
+                    .addHeader("X-Client-Type", "Mobile");
+
 
             String token = sessionManager.getToken();
             if (token != null)
@@ -446,4 +472,21 @@ public class ApiClient {
     public ApiResponse requestReactivation(String nic) {
         return patch("/owners/" + nic + "/request-reactivation");
     }
+
+    // Fetch bookings by station
+    public ApiResponse getBookingsByStation(String stationId) {
+        try {
+            if (stationId == null || stationId.isEmpty() || stationId.equals("string")) {
+                return new ApiResponse(false, "No station assigned", null);
+            }
+
+            String endpoint = "/bookings/station/" + stationId;
+            Log.d(TAG, "Fetching bookings for station: " + stationId);
+            return get(endpoint);
+        } catch (Exception e) {
+            Log.e(TAG, "Error fetching bookings by station", e);
+            return new ApiResponse(false, "Error fetching bookings", null);
+        }
+    }
+
 }
