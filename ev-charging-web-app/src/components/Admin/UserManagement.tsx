@@ -22,6 +22,8 @@ interface Operator {
   Email?: string;
   IsActive: boolean;
   isActive?: boolean;
+  reactivationRequested?: boolean;
+  ReactivationRequested?: boolean;
   CreatedAt?: string;
   stationId?: string;
   stationName?: string;
@@ -84,6 +86,8 @@ function UserManagement() {
   const [reactivationRequests, setReactivationRequests] = useState<EVOwner[]>(
     []
   );
+  const [operatorReactivationRequests, setOperatorReactivationRequests] =
+    useState<Operator[]>([]);
   const [operators, setOperators] = useState<Operator[]>([]);
   const [owners, setOwners] = useState<EVOwner[]>([]);
   const [stations, setStations] = useState<Station[]>([]);
@@ -142,13 +146,28 @@ function UserManagement() {
       setLoading(true);
       setError("");
 
-      // Fetch reactivation requests
-      const reactivationResponse = await api.get(
+      // Fetch owner reactivation requests
+      const ownerReactivationResponse = await api.get(
         "/owners/reactivation-requests"
       );
-      console.log("Reactivation requests:", reactivationResponse?.data);
-      if (reactivationResponse?.data) {
-        setReactivationRequests(reactivationResponse.data);
+      console.log(
+        "Owner reactivation requests:",
+        ownerReactivationResponse?.data
+      );
+      if (ownerReactivationResponse?.data) {
+        setReactivationRequests(ownerReactivationResponse.data);
+      }
+
+      // Fetch operator reactivation requests
+      const operatorReactivationResponse = await api.get(
+        "/operators/reactivation-requests"
+      );
+      console.log(
+        "Operator reactivation requests:",
+        operatorReactivationResponse?.data
+      );
+      if (operatorReactivationResponse?.data) {
+        setOperatorReactivationRequests(operatorReactivationResponse.data);
       }
 
       // Fetch initial operators and owners
@@ -178,14 +197,10 @@ function UserManagement() {
         let operatorsData = [];
         let totalCount = 0;
 
-        // The response is an array of operators for the current page
         if (Array.isArray(response.data)) {
           operatorsData = response.data;
-          // For now, we don't have the total count, so we'll use a fallback
           totalCount = response.data.length;
-        }
-        // If the backend returns a paginated response object
-        else if (response.data.items && Array.isArray(response.data.items)) {
+        } else if (response.data.items && Array.isArray(response.data.items)) {
           operatorsData = response.data.items;
           totalCount = response.data.totalCount || response.data.total || 0;
         } else if (response.data.users && Array.isArray(response.data.users)) {
@@ -230,7 +245,6 @@ function UserManagement() {
 
         setOperators(operatorsWithStations);
 
-        // If we don't have a proper total count from backend, we need to estimate
         if (totalCount === 0 || totalCount === operatorsWithStations.length) {
           if (operatorsWithStations.length === pageSize) {
             totalCount = page * pageSize + 1;
@@ -266,14 +280,10 @@ function UserManagement() {
         let ownersData = [];
         let totalCount = 0;
 
-        // The response is an array of owners for the current page
         if (Array.isArray(response.data)) {
           ownersData = response.data;
-          // For now, we don't have the total count, so we'll use a fallback
-          totalCount = ownersData.length; // This is only the current page count
-        }
-        // If the backend returns a paginated response object
-        else if (response.data.items && Array.isArray(response.data.items)) {
+          totalCount = ownersData.length;
+        } else if (response.data.items && Array.isArray(response.data.items)) {
           ownersData = response.data.items;
           totalCount = response.data.totalCount || response.data.total || 0;
         } else if (
@@ -293,14 +303,10 @@ function UserManagement() {
 
         setOwners(ownersData);
 
-        // If we don't have a proper total count from backend, we need to estimate
         if (totalCount === 0 || totalCount === ownersData.length) {
-          // Estimate total count based on current page and data length
           if (ownersData.length === pageSize) {
-            // If we got a full page, assume there are more items
-            totalCount = page * pageSize + 1; // At least one more item
+            totalCount = page * pageSize + 1;
           } else {
-            // This is the last page or only page
             totalCount = (page - 1) * pageSize + ownersData.length;
           }
         }
@@ -380,11 +386,9 @@ function UserManagement() {
           stationLocation: "",
         });
 
-        // Refresh operators list and reset to first page
         setOperatorsPagination((prev) => ({ ...prev, page: 1 }));
         await fetchOperators();
 
-        // Also switch to operators tab to show the new operator
         setActiveTab("operators");
       } else {
         toast.error(result?.data?.message || "Failed to create operator");
@@ -406,12 +410,11 @@ function UserManagement() {
     try {
       const endpoint = isOwner
         ? `/owners/${id}/activate`
-        : `/users/${id}/activate`;
+        : `/operators/${id}/status?isActive=true`;
       const result = await api.patch(endpoint);
 
       if (result?.status === 200) {
         toast.success("User activated successfully");
-        // Refresh current tab data
         if (isOwner) {
           await fetchOwners();
           setActiveTab("owners");
@@ -419,6 +422,7 @@ function UserManagement() {
           await fetchOperators();
           setActiveTab("operators");
         }
+        await fetchUserData(); // Refresh reactivation requests
       } else {
         toast.error(result?.data?.message || "Failed to activate user");
       }
@@ -435,12 +439,11 @@ function UserManagement() {
     try {
       const endpoint = isOwner
         ? `/owners/${id}/deactivate`
-        : `/users/${id}/deactivate`;
+        : `/operators/${id}/status?isActive=false`;
       const result = await api.patch(endpoint);
 
       if (result?.status === 200) {
         toast.success("User deactivated successfully");
-        // Refresh current tab data
         if (isOwner) {
           await fetchOwners();
         } else {
@@ -455,14 +458,24 @@ function UserManagement() {
     }
   };
 
-  const handleClearReactivationRequest = async (nic: string): Promise<void> => {
+  const handleClearReactivationRequest = async (
+    id: string,
+    isOwner: boolean = false
+  ): Promise<void> => {
     try {
-      const result = await api.patch(`/owners/${nic}/clear-reactivation`);
+      const endpoint = isOwner
+        ? `/owners/${id}/clear-reactivation`
+        : `/operators/${id}/clear-reactivation`;
+      const result = await api.patch(endpoint);
 
       if (result?.status === 200) {
         toast.success("Reactivation request cleared successfully");
         await fetchUserData();
-        setActiveTab("owners"); // Refresh data
+        if (isOwner) {
+          setActiveTab("owners");
+        } else {
+          setActiveTab("operators");
+        }
       } else {
         toast.error(
           result?.data?.message || "Failed to clear reactivation request"
@@ -493,7 +506,6 @@ function UserManagement() {
         const operator = user as Operator;
         const userId = operator._id || operator.id;
         if (userId) {
-          // Use the operator-specific endpoint instead of users endpoint
           const result = await api.get(`/operators/${userId}`);
 
           if (result?.data) {
@@ -514,6 +526,7 @@ function UserManagement() {
           email: getUserEmail(operator),
           role: "Operator",
           isActive: getUserStatus(operator),
+          reactivationRequested: getReactivationRequested(operator),
           stationId: operator.stationId,
           stationName: operator.stationName,
           stationLocation: operator.stationLocation,
@@ -528,12 +541,11 @@ function UserManagement() {
     }
   };
 
-  // Helper functions that handle both uppercase and lowercase properties
+  // Helper functions
   const getUserDisplayName = (
     user: EVOwner | Operator | UserDetails
   ): string => {
     if ("role" in user) {
-      // UserDetails - handle both cases
       return (
         user.FullName ||
         user.fullName ||
@@ -543,10 +555,8 @@ function UserManagement() {
         "Unknown User"
       );
     } else if ("nic" in user) {
-      // EVOwner - use lowercase properties
       return user.fullName || "Unknown User";
     } else {
-      // Operator
       return user.Name || user.name || user.email || "Unknown User";
     }
   };
@@ -599,13 +609,12 @@ function UserManagement() {
     } else if ("nic" in user) {
       return user.reactivationRequested || false;
     } else {
-      return false;
+      return user.reactivationRequested || user.ReactivationRequested || false;
     }
   };
 
   const getStationInfo = (user: EVOwner | Operator | UserDetails): string => {
     if ("role" in user && user.role === "Operator") {
-      // For UserDetails with role Operator
       const operator = user as UserDetails;
       if (operator.stationName && operator.stationLocation) {
         return `${operator.stationName} - ${operator.stationLocation}`;
@@ -618,7 +627,6 @@ function UserManagement() {
       }
       return "No station assigned";
     } else if ("stationName" in user || "stationLocation" in user) {
-      // For Operator type
       const operator = user as Operator;
       if (operator.stationName && operator.stationLocation) {
         return `${operator.stationName} - ${operator.stationLocation}`;
@@ -634,6 +642,10 @@ function UserManagement() {
     return "N/A";
   };
 
+  // Calculate total reactivation requests
+  const totalReactivationRequests =
+    reactivationRequests.length + operatorReactivationRequests.length;
+
   // Pagination component
   const Pagination = ({
     pagination,
@@ -648,7 +660,6 @@ function UserManagement() {
 
     if (totalPages <= 1) return null;
 
-    // Generate page numbers to show
     const getPageNumbers = () => {
       const pages = [];
       const maxVisiblePages = 5;
@@ -656,7 +667,6 @@ function UserManagement() {
       let startPage = Math.max(1, page - Math.floor(maxVisiblePages / 2));
       let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
-      // Adjust if we're near the end
       if (endPage - startPage + 1 < maxVisiblePages) {
         startPage = Math.max(1, endPage - maxVisiblePages + 1);
       }
@@ -736,11 +746,11 @@ function UserManagement() {
       </div>
 
       {/* Reactivation Requests Section */}
-      {reactivationRequests.length > 0 && (
+      {totalReactivationRequests > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold text-yellow-800">
-              Reactivation Requests ({reactivationRequests.length})
+              Reactivation Requests ({totalReactivationRequests})
             </h3>
             <button
               onClick={() => setActiveTab("reactivations")}
@@ -752,54 +762,142 @@ function UserManagement() {
 
           {activeTab === "reactivations" ? (
             <div className="space-y-4">
-              {reactivationRequests.map((request) => (
-                <div
-                  key={request.nic}
-                  className="bg-white p-4 rounded border shadow-sm"
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-semibold">{request.fullName}</h4>
-                      <p className="text-sm text-gray-600">
-                        NIC: {request.nic}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Email: {request.email}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Phone: {request.phone || "N/A"}
-                      </p>
+              {/* Owner Reactivation Requests */}
+              {reactivationRequests.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-yellow-700 mb-2">
+                    EV Owners ({reactivationRequests.length})
+                  </h4>
+                  {reactivationRequests.map((request) => (
+                    <div
+                      key={request.nic}
+                      className="bg-white p-4 rounded border shadow-sm mb-2"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="font-semibold">{request.fullName}</h4>
+                          <p className="text-sm text-gray-600">
+                            NIC: {request.nic}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Email: {request.email}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Phone: {request.phone || "N/A"}
+                          </p>
+                          <span className="inline-block mt-1 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
+                            EV Owner
+                          </span>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <button
+                            onClick={() =>
+                              handleActivateUser(request.nic, true)
+                            }
+                            className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm transition-colors"
+                          >
+                            Activate
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleClearReactivationRequest(request.nic, true)
+                            }
+                            className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 text-sm transition-colors"
+                          >
+                            Clear Request
+                          </button>
+                          <button
+                            onClick={() => handleViewUserDetails(request, true)}
+                            className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-sm transition-colors"
+                          >
+                            View Details
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <button
-                        onClick={() => handleActivateUser(request.nic, true)}
-                        className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm transition-colors"
-                      >
-                        Activate
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleClearReactivationRequest(request.nic)
-                        }
-                        className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 text-sm transition-colors"
-                      >
-                        Clear Request
-                      </button>
-                      <button
-                        onClick={() => handleViewUserDetails(request, true)}
-                        className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-sm transition-colors"
-                      >
-                        View Details
-                      </button>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
+
+              {/* Operator Reactivation Requests */}
+              {operatorReactivationRequests.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-yellow-700 mb-2">
+                    Operators ({operatorReactivationRequests.length})
+                  </h4>
+                  {operatorReactivationRequests.map((request) => (
+                    <div
+                      key={request._id || request.id}
+                      className="bg-white p-4 rounded border shadow-sm mb-2"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="font-semibold">
+                            {getUserDisplayName(request)}
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            Email: {getUserEmail(request)}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Station: {getStationInfo(request)}
+                          </p>
+                          <span className="inline-block mt-1 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                            Operator
+                          </span>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <button
+                            onClick={() =>
+                              handleActivateUser(
+                                request._id || request.id || "",
+                                false
+                              )
+                            }
+                            className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm transition-colors"
+                          >
+                            Activate
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleClearReactivationRequest(
+                                request._id || request.id || "",
+                                false
+                              )
+                            }
+                            className="bg-gray-600 text-white px-3 py-2 rounded hover:bg-gray-700 text-sm transition-colors"
+                          >
+                            Clear Request
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleViewUserDetails(request, false)
+                            }
+                            className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-sm transition-colors"
+                          >
+                            View Details
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <p className="text-yellow-700">
-              {reactivationRequests.length} user(s) have requested account
+              {totalReactivationRequests} user(s) have requested account
               reactivation.
+              {reactivationRequests.length > 0 &&
+                ` (${reactivationRequests.length} owners`}
+              {reactivationRequests.length > 0 &&
+                operatorReactivationRequests.length > 0 &&
+                ", "}
+              {operatorReactivationRequests.length > 0 &&
+                `${operatorReactivationRequests.length} operators`}
+              {reactivationRequests.length > 0 ||
+              operatorReactivationRequests.length > 0
+                ? ")"
+                : ""}
             </p>
           )}
         </div>
@@ -862,20 +960,21 @@ function UserManagement() {
                   >
                     <div className="flex justify-between items-center">
                       <div className="flex-1">
-                        {/* Operator Name - Main heading */}
                         <h4 className="font-semibold text-lg text-gray-800 mb-2">
                           {getUserDisplayName(operator)}
                         </h4>
 
-                        {/* Details in 3 rows */}
                         <div className="space-y-1">
-                          {/* Email row */}
                           <p className="text-sm text-gray-600">
                             <span className="font-medium">Email:</span>{" "}
                             {getUserEmail(operator)}
                           </p>
 
-                          {/* Status row */}
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Station:</span>{" "}
+                            {getStationInfo(operator)}
+                          </p>
+
                           <p className="text-sm text-gray-600">
                             <span className="font-medium">Status:</span>{" "}
                             <span
@@ -889,9 +988,17 @@ function UserManagement() {
                             </span>
                           </p>
                         </div>
+
+                        {/* Reactivation Request Badge for Operators */}
+                        {getReactivationRequested(operator) && (
+                          <div className="mt-2">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              Reactivation Requested
+                            </span>
+                          </div>
+                        )}
                       </div>
 
-                      {/* Action buttons */}
                       <div className="flex flex-col sm:flex-row gap-2 ml-4">
                         <button
                           onClick={() => handleViewUserDetails(operator, false)}
@@ -964,26 +1071,21 @@ function UserManagement() {
                   >
                     <div className="flex justify-between items-center">
                       <div className="flex-1">
-                        {/* Owner Name - Main heading */}
                         <h4 className="font-semibold text-lg text-gray-800 mb-2">
                           {owner.fullName}
                         </h4>
 
-                        {/* Details in 3 rows */}
                         <div className="space-y-1">
-                          {/* Email row */}
                           <p className="text-sm text-gray-600">
                             <span className="font-medium">Email:</span>{" "}
                             {owner.email}
                           </p>
 
-                          {/* NIC row */}
                           <p className="text-sm text-gray-600">
                             <span className="font-medium">NIC:</span>{" "}
                             {owner.nic}
                           </p>
 
-                          {/* Status row */}
                           <p className="text-sm text-gray-600">
                             <span className="font-medium">Status:</span>{" "}
                             <span
@@ -998,7 +1100,6 @@ function UserManagement() {
                           </p>
                         </div>
 
-                        {/* Reactivation Request Badge */}
                         {owner.reactivationRequested && (
                           <div className="mt-2">
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -1008,7 +1109,6 @@ function UserManagement() {
                         )}
                       </div>
 
-                      {/* Action buttons */}
                       <div className="flex flex-col sm:flex-row gap-2 ml-4">
                         <button
                           onClick={() => handleViewUserDetails(owner, true)}
@@ -1039,6 +1139,7 @@ function UserManagement() {
           )}
         </div>
       )}
+
       {/* Create Operator Modal */}
       {showCreateOperator && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -1231,15 +1332,14 @@ function UserManagement() {
                 </p>
               </div>
 
-              {selectedUser.role === "Owner" &&
-                getReactivationRequested(selectedUser) && (
-                  <div>
-                    <label className="font-semibold text-yellow-600">
-                      Reactivation Requested:
-                    </label>
-                    <p className="mt-1">Yes</p>
-                  </div>
-                )}
+              {getReactivationRequested(selectedUser) && (
+                <div>
+                  <label className="font-semibold text-yellow-600">
+                    Reactivation Requested:
+                  </label>
+                  <p className="mt-1">Yes</p>
+                </div>
+              )}
 
               <div>
                 <label className="font-semibold">Created At:</label>
