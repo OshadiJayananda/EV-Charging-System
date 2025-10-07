@@ -48,7 +48,7 @@ namespace EvBackend.Services
                 FullName = dto.FullName,
                 Email = dto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                Role = "CSOperator",
+                Role = "Operator",
                 IsActive = dto.IsActive,
                 StationId = dto.StationId,
                 StationName = dto.StationName,
@@ -90,26 +90,21 @@ namespace EvBackend.Services
             };
         }
 
-        public async Task<IEnumerable<CSOperatorDto>> GetAllOperators(int page, int pageSize)
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllOperators([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var ops = await _operators.Find(_ => true)
-                .Skip((page - 1) * pageSize)
-                .Limit(pageSize)
-                .ToListAsync();
-            return ops.Select(op => new CSOperatorDto
+            try
             {
-                Id = op.Id,
-                FullName = op.FullName,
-                Email = op.Email,
-                Role = op.Role,
-                IsActive = op.IsActive,
-                CreatedAt = op.CreatedAt,
-                StationId = op.StationId,
-                StationName = op.StationName,
-                StationLocation = op.StationLocation
-            });
+                var response = await _csOperatorService.GetAllOperators(page, pageSize);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return StatusCode(500, new { message = "An unexpected error occurred." });
+            }
         }
-
         public async Task<CSOperatorDto> UpdateOperator(string id, UpdateCSOperatorDto dto)
         {
             // Validate station if being updated

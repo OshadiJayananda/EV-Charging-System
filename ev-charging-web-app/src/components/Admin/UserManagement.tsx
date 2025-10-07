@@ -73,6 +73,14 @@ interface CreateOperatorForm {
   stationLocation: string;
 }
 
+// Pagination interface
+interface PaginationInfo {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
 function UserManagement() {
   const navigate = useNavigate();
   const [reactivationRequests, setReactivationRequests] = useState<EVOwner[]>(
@@ -91,6 +99,22 @@ function UserManagement() {
   const [showCreateOperator, setShowCreateOperator] = useState<boolean>(false);
   const [creatingOperator, setCreatingOperator] = useState<boolean>(false);
 
+  // Pagination states
+  const [operatorsPagination, setOperatorsPagination] =
+    useState<PaginationInfo>({
+      page: 1,
+      pageSize: 10,
+      totalCount: 0,
+      totalPages: 0,
+    });
+
+  const [ownersPagination, setOwnersPagination] = useState<PaginationInfo>({
+    page: 1,
+    pageSize: 10,
+    totalCount: 0,
+    totalPages: 0,
+  });
+
   const [operatorForm, setOperatorForm] = useState<CreateOperatorForm>({
     fullName: "",
     email: "",
@@ -106,6 +130,15 @@ function UserManagement() {
     fetchStations();
   }, []);
 
+  // Fetch data when pagination changes
+  useEffect(() => {
+    if (activeTab === "operators") {
+      fetchOperators();
+    } else if (activeTab === "owners") {
+      fetchOwners();
+    }
+  }, [activeTab, operatorsPagination.page, ownersPagination.page]);
+
   const fetchUserData = async (): Promise<void> => {
     try {
       setLoading(true);
@@ -120,33 +153,9 @@ function UserManagement() {
         setReactivationRequests(reactivationResponse.data);
       }
 
-      // Fetch operators - Try both endpoints
-      let operatorsData = [];
-      try {
-        // First try the operators endpoint
-        const operatorsResponse = await api.get("/operators");
-        console.log("Operators from /operators:", operatorsResponse?.data);
-        if (operatorsResponse?.data) {
-          operatorsData = operatorsResponse.data;
-        }
-      } catch (operatorsError) {
-        console.log("Failed to fetch from /operators, trying /users endpoint");
-        // Fallback to users endpoint
-        const usersResponse = await api.get("/users?role=Operator");
-        console.log("Operators from /users:", usersResponse?.data);
-        if (usersResponse?.data) {
-          operatorsData = usersResponse.data;
-        }
-      }
-
-      setOperators(operatorsData);
-
-      // Fetch owners
-      const ownersResponse = await api.get("/users?role=Owner");
-      console.log("Owners:", ownersResponse?.data);
-      if (ownersResponse?.data) {
-        setOwners(ownersResponse.data);
-      }
+      // Fetch initial operators and owners
+      await fetchOperators();
+      await fetchOwners();
     } catch (err) {
       const errorMessage = "Failed to fetch user data";
       setError(errorMessage);
@@ -154,6 +163,160 @@ function UserManagement() {
       toast.error(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOperators = async (): Promise<void> => {
+    try {
+      const { page, pageSize } = operatorsPagination;
+
+      console.log(`Fetching operators: page=${page}, pageSize=${pageSize}`);
+      const response = await api.get(
+        `/users?role=Operator&page=${page}&pageSize=${pageSize}`
+      );
+      console.log("Operators API Response:", response);
+
+      if (response?.data) {
+        let operatorsData = [];
+        let totalCount = 0;
+
+        // The response is an array of operators for the current page
+        if (Array.isArray(response.data)) {
+          operatorsData = response.data;
+          // For now, we don't have the total count, so we'll use a fallback
+          totalCount = response.data.length;
+        }
+        // If the backend returns a paginated response object
+        else if (response.data.items && Array.isArray(response.data.items)) {
+          operatorsData = response.data.items;
+          totalCount = response.data.totalCount || response.data.total || 0;
+        } else if (response.data.users && Array.isArray(response.data.users)) {
+          operatorsData = response.data.users;
+          totalCount = response.data.totalCount || response.data.total || 0;
+        } else {
+          operatorsData = response.data;
+          totalCount = operatorsData.length;
+        }
+
+        // Fetch station information for each operator
+        const operatorsWithStations = await Promise.all(
+          operatorsData.map(async (operator: Operator) => {
+            if (operator.stationId) {
+              try {
+                const stationResponse = await api.get(
+                  `/station/${operator.stationId}`
+                );
+                if (stationResponse?.data) {
+                  return {
+                    ...operator,
+                    stationName: stationResponse.data.name,
+                    stationLocation: stationResponse.data.location,
+                  };
+                }
+              } catch (error) {
+                console.error(
+                  `Error fetching station for operator ${
+                    operator._id || operator.id
+                  }:`,
+                  error
+                );
+              }
+            }
+            return operator;
+          })
+        );
+
+        console.log(
+          `Processed ${operatorsWithStations.length} operators, total count: ${totalCount}`
+        );
+
+        setOperators(operatorsWithStations);
+
+        // If we don't have a proper total count from backend, we need to estimate
+        if (totalCount === 0 || totalCount === operatorsWithStations.length) {
+          if (operatorsWithStations.length === pageSize) {
+            totalCount = page * pageSize + 1;
+          } else {
+            totalCount = (page - 1) * pageSize + operatorsWithStations.length;
+          }
+        }
+
+        setOperatorsPagination((prev) => ({
+          ...prev,
+          totalCount: totalCount,
+          totalPages: Math.ceil(totalCount / pageSize),
+        }));
+      }
+    } catch (err: any) {
+      console.error("Error fetching operators:", err);
+      console.error("Error response:", err.response?.data);
+      toast.error(err?.response?.data?.message || "Failed to fetch operators");
+    }
+  };
+
+  const fetchOwners = async (): Promise<void> => {
+    try {
+      const { page, pageSize } = ownersPagination;
+
+      console.log(`Fetching owners: page=${page}, pageSize=${pageSize}`);
+      const response = await api.get(
+        `/users?role=Owner&page=${page}&pageSize=${pageSize}`
+      );
+      console.log("Owners API Response:", response);
+
+      if (response?.data) {
+        let ownersData = [];
+        let totalCount = 0;
+
+        // The response is an array of owners for the current page
+        if (Array.isArray(response.data)) {
+          ownersData = response.data;
+          // For now, we don't have the total count, so we'll use a fallback
+          totalCount = ownersData.length; // This is only the current page count
+        }
+        // If the backend returns a paginated response object
+        else if (response.data.items && Array.isArray(response.data.items)) {
+          ownersData = response.data.items;
+          totalCount = response.data.totalCount || response.data.total || 0;
+        } else if (
+          response.data.Owners &&
+          Array.isArray(response.data.Owners)
+        ) {
+          ownersData = response.data.Owners;
+          totalCount = response.data.totalCount || response.data.total || 0;
+        } else {
+          ownersData = response.data;
+          totalCount = ownersData.length;
+        }
+
+        console.log(
+          `Processed ${ownersData.length} owners, total count: ${totalCount}`
+        );
+
+        setOwners(ownersData);
+
+        // If we don't have a proper total count from backend, we need to estimate
+        if (totalCount === 0 || totalCount === ownersData.length) {
+          // Estimate total count based on current page and data length
+          if (ownersData.length === pageSize) {
+            // If we got a full page, assume there are more items
+            totalCount = page * pageSize + 1; // At least one more item
+          } else {
+            // This is the last page or only page
+            totalCount = (page - 1) * pageSize + ownersData.length;
+          }
+        }
+
+        setOwnersPagination((prev) => ({
+          ...prev,
+          totalCount: totalCount,
+          totalPages: Math.ceil(totalCount / pageSize),
+        }));
+      }
+    } catch (err: any) {
+      console.error("Error fetching owners:", err);
+      console.error("Error response:", err.response?.data);
+      toast.error(err?.response?.data?.message || "Failed to fetch owners");
     }
   };
 
@@ -167,6 +330,15 @@ function UserManagement() {
       console.error("Error fetching stations:", err);
       toast.error("Failed to fetch stations");
     }
+  };
+
+  // Pagination handlers
+  const handleOperatorsPageChange = (newPage: number): void => {
+    setOperatorsPagination((prev) => ({ ...prev, page: newPage }));
+  };
+
+  const handleOwnersPageChange = (newPage: number): void => {
+    setOwnersPagination((prev) => ({ ...prev, page: newPage }));
   };
 
   const handleStationChange = (stationId: string) => {
@@ -210,8 +382,9 @@ function UserManagement() {
           stationLocation: "",
         });
 
-        // Force refresh of operators list
-        await fetchUserData();
+        // Refresh operators list and reset to first page
+        setOperatorsPagination((prev) => ({ ...prev, page: 1 }));
+        await fetchOperators();
 
         // Also switch to operators tab to show the new operator
         setActiveTab("operators");
@@ -227,6 +400,7 @@ function UserManagement() {
       setCreatingOperator(false);
     }
   };
+
   const handleActivateUser = async (
     id: string,
     isOwner: boolean = false
@@ -239,7 +413,12 @@ function UserManagement() {
 
       if (result?.status === 200) {
         toast.success("User activated successfully");
-        await fetchUserData(); // Refresh data
+        // Refresh current tab data
+        if (isOwner) {
+          await fetchOwners();
+        } else {
+          await fetchOperators();
+        }
       } else {
         toast.error(result?.data?.message || "Failed to activate user");
       }
@@ -261,7 +440,12 @@ function UserManagement() {
 
       if (result?.status === 200) {
         toast.success("User deactivated successfully");
-        await fetchUserData(); // Refresh data
+        // Refresh current tab data
+        if (isOwner) {
+          await fetchOwners();
+        } else {
+          await fetchOperators();
+        }
       } else {
         toast.error(result?.data?.message || "Failed to deactivate user");
       }
@@ -342,6 +526,7 @@ function UserManagement() {
       }
     }
   };
+
   // Helper functions that handle both uppercase and lowercase properties
   const getUserDisplayName = (
     user: EVOwner | Operator | UserDetails
@@ -419,12 +604,114 @@ function UserManagement() {
 
   const getStationInfo = (user: EVOwner | Operator | UserDetails): string => {
     if ("role" in user && user.role === "Operator") {
-      return user.stationName || user.stationLocation || "N/A";
-    } else if ("stationName" in user) {
+      // For UserDetails with role Operator
+      const operator = user as UserDetails;
+      if (operator.stationName && operator.stationLocation) {
+        return `${operator.stationName} - ${operator.stationLocation}`;
+      }
+      if (operator.stationName) {
+        return operator.stationName;
+      }
+      if (operator.stationLocation) {
+        return operator.stationLocation;
+      }
+      return "No station assigned";
+    } else if ("stationName" in user || "stationLocation" in user) {
+      // For Operator type
       const operator = user as Operator;
-      return operator.stationName || operator.stationLocation || "N/A";
+      if (operator.stationName && operator.stationLocation) {
+        return `${operator.stationName} - ${operator.stationLocation}`;
+      }
+      if (operator.stationName) {
+        return operator.stationName;
+      }
+      if (operator.stationLocation) {
+        return operator.stationLocation;
+      }
+      return "No station assigned";
     }
     return "N/A";
+  };
+
+  // Pagination component
+  const Pagination = ({
+    pagination,
+    onPageChange,
+    type,
+  }: {
+    pagination: PaginationInfo;
+    onPageChange: (page: number) => void;
+    type: "operators" | "owners";
+  }) => {
+    const { page, totalPages, totalCount } = pagination;
+
+    if (totalPages <= 1) return null;
+
+    // Generate page numbers to show
+    const getPageNumbers = () => {
+      const pages = [];
+      const maxVisiblePages = 5;
+
+      let startPage = Math.max(1, page - Math.floor(maxVisiblePages / 2));
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+      // Adjust if we're near the end
+      if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      return pages;
+    };
+
+    return (
+      <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 mt-6 p-4 bg-gray-50 rounded-lg">
+        <div className="text-sm text-gray-600">
+          Showing {(pagination.page - 1) * pagination.pageSize + 1} to{" "}
+          {Math.min(pagination.page * pagination.pageSize, totalCount)} of{" "}
+          {totalCount} {type}
+        </div>
+
+        <div className="flex items-center space-x-1">
+          <button
+            onClick={() => onPageChange(page - 1)}
+            disabled={page <= 1}
+            className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+          >
+            Previous
+          </button>
+
+          {getPageNumbers().map((pageNum) => (
+            <button
+              key={pageNum}
+              onClick={() => onPageChange(pageNum)}
+              className={`px-3 py-2 border text-sm font-medium transition-colors ${
+                pageNum === page
+                  ? "bg-green-600 text-white border-green-600"
+                  : "border-gray-300 text-gray-500 hover:bg-gray-50"
+              }`}
+            >
+              {pageNum}
+            </button>
+          ))}
+
+          <button
+            onClick={() => onPageChange(page + 1)}
+            disabled={page >= totalPages}
+            className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+          >
+            Next
+          </button>
+        </div>
+
+        <div className="text-sm text-gray-500">
+          Page {page} of {totalPages}
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -521,24 +808,30 @@ function UserManagement() {
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
           <button
-            onClick={() => setActiveTab("operators")}
+            onClick={() => {
+              setActiveTab("operators");
+              setOperatorsPagination((prev) => ({ ...prev, page: 1 }));
+            }}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === "operators"
                 ? "border-green-500 text-green-600"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             } transition-colors`}
           >
-            Operators ({operators.length})
+            Operators ({operatorsPagination.totalCount})
           </button>
           <button
-            onClick={() => setActiveTab("owners")}
+            onClick={() => {
+              setActiveTab("owners");
+              setOwnersPagination((prev) => ({ ...prev, page: 1 }));
+            }}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === "owners"
                 ? "border-green-500 text-green-600"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             } transition-colors`}
           >
-            Owners ({owners.length})
+            Owners ({ownersPagination.totalCount})
           </button>
         </nav>
       </div>
@@ -546,77 +839,102 @@ function UserManagement() {
       {/* Operators Tab */}
       {activeTab === "operators" && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Operators</h3>
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold">Operators</h3>
+            <span className="text-sm text-gray-600">
+              Page {operatorsPagination.page} • Showing {operators.length}{" "}
+              operators
+            </span>
+          </div>
+
           {operators.length === 0 ? (
-            <p className="text-gray-600">No operators found.</p>
+            <div className="text-center py-8">
+              <p className="text-gray-600 text-lg">No operators found.</p>
+            </div>
           ) : (
-            <div className="grid gap-4">
-              {operators.map((operator) => (
-                <div
-                  key={operator._id || operator.id}
-                  className="bg-white p-4 rounded-lg shadow border"
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-semibold">
-                        {getUserDisplayName(operator)}
-                      </h4>
-                      <p className="text-sm text-gray-600">
-                        Email: {getUserEmail(operator)}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Station: {getStationInfo(operator)}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Status:{" "}
-                        <span
-                          className={`ml-1 ${
-                            getUserStatus(operator)
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {getUserStatus(operator) ? "Active" : "Inactive"}
-                        </span>
-                      </p>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <button
-                        onClick={() => handleViewUserDetails(operator, false)}
-                        className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-sm transition-colors"
-                      >
-                        View Details
-                      </button>
-                      {getUserStatus(operator) ? (
+            <>
+              <div className="grid gap-4">
+                {operators.map((operator) => (
+                  <div
+                    key={operator._id || operator.id}
+                    className="bg-white p-4 rounded-lg shadow border hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1">
+                        {/* Operator Name - Main heading */}
+                        <h4 className="font-semibold text-lg text-gray-800 mb-2">
+                          {getUserDisplayName(operator)}
+                        </h4>
+
+                        {/* Details in 3 rows */}
+                        <div className="space-y-1">
+                          {/* Email row */}
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Email:</span>{" "}
+                            {getUserEmail(operator)}
+                          </p>
+
+                          {/* Status row */}
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Status:</span>{" "}
+                            <span
+                              className={`ml-1 font-medium ${
+                                getUserStatus(operator)
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {getUserStatus(operator) ? "Active" : "Inactive"}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex flex-col sm:flex-row gap-2 ml-4">
                         <button
-                          onClick={() =>
-                            handleDeactivateUser(
-                              operator._id || operator.id || "",
-                              false
-                            )
-                          }
-                          className="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 text-sm transition-colors"
+                          onClick={() => handleViewUserDetails(operator, false)}
+                          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm transition-colors flex items-center gap-1"
                         >
-                          Deactivate
+                          <span>Details</span>
                         </button>
-                      ) : (
-                        <button
-                          onClick={() =>
-                            handleActivateUser(
-                              operator._id || operator.id || "",
-                              false
-                            )
-                          }
-                          className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm transition-colors"
-                        >
-                          Activate
-                        </button>
-                      )}
+                        {getUserStatus(operator) ? (
+                          <button
+                            onClick={() =>
+                              handleDeactivateUser(
+                                operator._id || operator.id || "",
+                                false
+                              )
+                            }
+                            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm transition-colors flex items-center gap-1"
+                          >
+                            <span>Deactivate</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() =>
+                              handleActivateUser(
+                                operator._id || operator.id || "",
+                                false
+                              )
+                            }
+                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm transition-colors flex items-center gap-1"
+                          >
+                            <span>Activate</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+
+              <Pagination
+                pagination={operatorsPagination}
+                onPageChange={handleOperatorsPageChange}
+                type="operators"
+              />
+            </>
           )}
         </div>
       )}
@@ -624,60 +942,102 @@ function UserManagement() {
       {/* Owners Tab */}
       {activeTab === "owners" && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">EV Owners</h3>
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold">EV Owners</h3>
+            <span className="text-sm text-gray-600">
+              Page {ownersPagination.page} • Showing {owners.length} owners
+            </span>
+          </div>
+
           {owners.length === 0 ? (
-            <p className="text-gray-600">No owners found.</p>
+            <div className="text-center py-8">
+              <p className="text-gray-600 text-lg">No owners found.</p>
+            </div>
           ) : (
-            <div className="grid gap-4">
-              {owners.map((owner) => (
-                <div
-                  key={owner.nic}
-                  className="bg-white p-4 rounded-lg shadow border"
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-semibold">{owner.fullName}</h4>
-                      <p className="text-sm text-gray-600">NIC: {owner.nic}</p>
-                      <p className="text-sm text-gray-600">
-                        Status:{" "}
-                        <span
-                          className={`ml-1 ${
-                            owner.isActive ? "text-green-600" : "text-red-600"
-                          }`}
-                        >
-                          {owner.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </p>
-                      {owner.reactivationRequested && (
-                        <p className="text-sm text-yellow-600 font-semibold">
-                          Reactivation Requested
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <button
-                        onClick={() => handleViewUserDetails(owner, true)}
-                        className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-sm transition-colors"
-                      >
-                        View Details
-                      </button>
-                      {!owner.isActive && (
+            <>
+              <div className="grid gap-4">
+                {owners.map((owner) => (
+                  <div
+                    key={owner.nic}
+                    className="bg-white p-4 rounded-lg shadow border hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1">
+                        {/* Owner Name - Main heading */}
+                        <h4 className="font-semibold text-lg text-gray-800 mb-2">
+                          {owner.fullName}
+                        </h4>
+
+                        {/* Details in 3 rows */}
+                        <div className="space-y-1">
+                          {/* Email row */}
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Email:</span>{" "}
+                            {owner.email}
+                          </p>
+
+                          {/* NIC row */}
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">NIC:</span>{" "}
+                            {owner.nic}
+                          </p>
+
+                          {/* Status row */}
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Status:</span>{" "}
+                            <span
+                              className={`ml-1 font-medium ${
+                                owner.isActive
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {owner.isActive ? "Active" : "Inactive"}
+                            </span>
+                          </p>
+                        </div>
+
+                        {/* Reactivation Request Badge */}
+                        {owner.reactivationRequested && (
+                          <div className="mt-2">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              Reactivation Requested
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex flex-col sm:flex-row gap-2 ml-4">
                         <button
-                          onClick={() => handleActivateUser(owner.nic, true)}
-                          className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm transition-colors"
+                          onClick={() => handleViewUserDetails(owner, true)}
+                          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm transition-colors flex items-center gap-1"
                         >
-                          Activate
+                          <span>Details</span>
                         </button>
-                      )}
+                        {!owner.isActive && (
+                          <button
+                            onClick={() => handleActivateUser(owner.nic, true)}
+                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm transition-colors flex items-center gap-1"
+                          >
+                            <span>Activate</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+
+              <Pagination
+                pagination={ownersPagination}
+                onPageChange={handleOwnersPageChange}
+                type="owners"
+              />
+            </>
           )}
         </div>
       )}
-
       {/* Create Operator Modal */}
       {showCreateOperator && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

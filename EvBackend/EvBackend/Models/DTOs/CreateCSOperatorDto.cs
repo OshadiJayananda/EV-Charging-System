@@ -22,7 +22,7 @@ namespace EvBackend.Models.DTOs
         [Required]
         [StringLength(100, MinimumLength = 6)]
         public required string Password { get; set; }
-        public bool IsActive { get; set; } = false;
+        public bool IsActive { get; set; } = true;
         [Required]
         public required string StationId { get; set; }
 
