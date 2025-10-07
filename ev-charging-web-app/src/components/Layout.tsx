@@ -40,7 +40,7 @@ const Layout: React.FC = () => {
       );
 
       connection = new HubConnectionBuilder()
-        .withUrl("/notificationHub", {
+        .withUrl("/EV-Charging-System/notificationHub", {
           accessTokenFactory: () => localStorage.getItem("token") || "",
         })
         .withAutomaticReconnect()

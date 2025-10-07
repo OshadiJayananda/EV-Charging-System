@@ -269,4 +269,7 @@ namespace EvBackend.Controllers
             catch (Exception ex) { Console.WriteLine(ex); return StatusCode(500, new { message = "Unexpected error" }); }
         }
     }
+
+    //need to assign operator to station
+
 }
