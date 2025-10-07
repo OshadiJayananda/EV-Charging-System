@@ -9,6 +9,7 @@ using MongoDB.Bson;
 
 namespace EvBackend.Entities
 {
+    [BsonIgnoreExtraElements]
     public class CSOperator : User
     {
         [BsonElement("ReactivationRequested")]
