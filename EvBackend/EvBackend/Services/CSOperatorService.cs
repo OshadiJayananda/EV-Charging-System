@@ -17,18 +17,30 @@ namespace EvBackend.Services
     public class CSOperatorService : ICSOperatorService
     {
         private readonly IMongoCollection<CSOperator> _operators;
+        private readonly IMongoCollection<Station> _stations;
         private readonly IConfiguration _config;
 
         public CSOperatorService(IMongoDatabase database, IConfiguration config, IOptions<MongoDbSettings> settings)
         {
             _operators = database.GetCollection<CSOperator>(settings.Value.UsersCollectionName);
+            _stations = database.GetCollection<Station>("Stations");
             _config = config;
         }
 
         public async Task<CSOperatorDto> CreateOperator(CreateCSOperatorDto dto)
         {
+            // Check if email already exists
             if (await _operators.Find(o => o.Email == dto.Email).AnyAsync())
                 throw new InvalidOperationException("Email already in use");
+
+            // Validate that the station exists and is active
+            var station = await _stations.Find(s => s.StationId == dto.StationId && s.IsActive).FirstOrDefaultAsync();
+            if (station == null)
+                throw new ArgumentException("Station not found or inactive");
+
+            // Verify station details match
+            if (station.Name != dto.StationName || station.Location != dto.StationLocation)
+                throw new ArgumentException("Station details do not match");
 
             var operatorEntity = new CSOperator
             {
@@ -40,9 +52,12 @@ namespace EvBackend.Services
                 IsActive = dto.IsActive,
                 StationId = dto.StationId,
                 StationName = dto.StationName,
-                StationLocation = dto.StationLocation
+                StationLocation = dto.StationLocation,
+                CreatedAt = DateTime.UtcNow
             };
+
             await _operators.InsertOneAsync(operatorEntity);
+
             return new CSOperatorDto
             {
                 Id = operatorEntity.Id,
@@ -75,12 +90,46 @@ namespace EvBackend.Services
             };
         }
 
-        public async Task<IEnumerable<CSOperatorDto>> GetAllOperators(int page, int pageSize)
+        public async Task<PagedResultDto<CSOperatorDto>> GetAllPaginatedOperators(int page, int pageSize)
         {
-            var ops = await _operators.Find(_ => true)
+            var filter = Builders<CSOperator>.Filter.Eq(op => op.Role, "Operator");
+
+            var totalCount = await _operators.CountDocumentsAsync(filter);
+
+            var ops = await _operators.Find(filter)
                 .Skip((page - 1) * pageSize)
                 .Limit(pageSize)
                 .ToListAsync();
+
+            var operatorDtos = ops.Select(op => new CSOperatorDto
+            {
+                Id = op.Id,
+                FullName = op.FullName,
+                Email = op.Email,
+                Role = op.Role,
+                IsActive = op.IsActive,
+                CreatedAt = op.CreatedAt,
+                StationId = op.StationId,
+                StationName = op.StationName,
+                StationLocation = op.StationLocation
+            });
+
+            return new PagedResultDto<CSOperatorDto>
+            {
+                Items = operatorDtos,
+                TotalCount = totalCount
+            };
+        }
+
+        public async Task<IEnumerable<CSOperatorDto>> GetAllOperators(int page, int pageSize)
+        {
+            var filter = Builders<CSOperator>.Filter.Eq(op => op.Role, "Operator");
+
+            var ops = await _operators.Find(filter)
+                .Skip((page - 1) * pageSize)
+                .Limit(pageSize)
+                .ToListAsync();
+
             return ops.Select(op => new CSOperatorDto
             {
                 Id = op.Id,
@@ -95,18 +144,30 @@ namespace EvBackend.Services
             });
         }
 
-        public async Task<CSOperatorDto> UpdateOperator(string id, CSOperatorDto dto)
+        public async Task<CSOperatorDto> UpdateOperator(string id, UpdateCSOperatorDto dto)
         {
+            // Validate station if being updated
+            if (!string.IsNullOrEmpty(dto.StationId))
+            {
+                var station = await _stations.Find(s => s.StationId == dto.StationId && s.IsActive).FirstOrDefaultAsync();
+                if (station == null)
+                    throw new ArgumentException("Station not found or inactive");
+
+                if (station.Name != dto.StationName || station.Location != dto.StationLocation)
+                    throw new ArgumentException("Station details do not match");
+            }
+
             var update = Builders<CSOperator>.Update
                 .Set(o => o.FullName, dto.FullName)
                 .Set(o => o.Email, dto.Email)
-                .Set(o => o.Role, dto.Role)
                 .Set(o => o.IsActive, dto.IsActive)
                 .Set(o => o.StationId, dto.StationId)
                 .Set(o => o.StationName, dto.StationName)
                 .Set(o => o.StationLocation, dto.StationLocation);
+
             var result = await _operators.UpdateOneAsync(o => o.Id == id, update);
             if (result.MatchedCount == 0) throw new KeyNotFoundException("Operator not found");
+
             var updatedOp = await _operators.Find(o => o.Id == id).FirstOrDefaultAsync();
             return new CSOperatorDto
             {

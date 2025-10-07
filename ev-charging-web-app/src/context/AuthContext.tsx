@@ -6,12 +6,16 @@ import React, {
   useEffect,
   type ReactNode,
 } from "react";
-import { getUserRoleFromToken } from "../components/common/RoleBasedAccess";
+import {
+  getUserRoleFromToken,
+  getUserIdFromToken,
+} from "../components/common/RoleBasedAccess";
 
 interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   userRole: string | null;
+  userId: string | null;
   login: (token: string) => void;
   logout: () => void;
 }
@@ -25,14 +29,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userRole, setUserRole] = useState<string | null>(
     token ? getUserRoleFromToken(token) : null
   );
+  const [userId, setUserId] = useState<string | null>(
+    token ? getUserIdFromToken(token) : null
+  );
 
   useEffect(() => {
     if (token) {
       localStorage.setItem("token", token);
       setUserRole(getUserRoleFromToken(token));
+      setUserId(getUserIdFromToken(token));
     } else {
       localStorage.removeItem("token");
       setUserRole(null);
+      setUserId(null);
     }
   }, [token]);
 
@@ -49,10 +58,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       token,
       isAuthenticated: !!token,
       userRole,
+      userId,
       login,
       logout,
     }),
-    [token, userRole, login, logout]
+    [token, userRole, userId, login, logout]
   );
 
   return (
