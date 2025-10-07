@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using EvBackend.Services.Interfaces;
 using EvBackend.Entities;
 using Microsoft.AspNetCore.Authorization;
+using EvBackend.DTOs;
 
 namespace EvBackend.Controllers
 {
@@ -21,7 +22,7 @@ namespace EvBackend.Controllers
         // POST /api/notifications
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> SendNotification([FromBody] Notification notification)
+        public async Task<IActionResult> SendNotification([FromBody] NotificationDto notification)
         {
             try
             {
