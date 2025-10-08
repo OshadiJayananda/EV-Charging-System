@@ -14,5 +14,6 @@ namespace EvBackend.Services.Interfaces
         Task<LoginResponseDto> AuthenticateUser(LoginDto loginDto, HttpRequest request);
         Task SendPasswordResetEmail(ForgotPasswordDto forgotPasswordDto);
         Task ResetPassword(ResetPasswordDto resetPasswordDto);
+        Task ChangePassword(string userId, ChangePasswordDto changePasswordDto);
     }
 }
