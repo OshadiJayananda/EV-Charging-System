@@ -1,9 +1,11 @@
 package com.evcharging.mobile;
 
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,6 +32,9 @@ public class AllBookingsActivity extends AppCompatActivity {
         session = new SessionManager(this);
         lvAllBookings = findViewById(R.id.lvAllBookings);
 
+        ImageButton btnBack = findViewById(R.id.btnBack);
+        btnBack.setOnClickListener(v -> finish());
+
         loadUpcomingBookings();
     }
 
@@ -46,6 +51,7 @@ private void loadUpcomingBookings() {
             return apiClient.get("/bookings/station/" + user.getStationId() + "/upcoming");
         }
 
+
         @Override
         protected void onPostExecute(ApiResponse response) {
             if (response == null || !response.isSuccess() || response.getData() == null) {
@@ -55,32 +61,39 @@ private void loadUpcomingBookings() {
 
             try {
                 JSONArray jsonArray = new JSONArray(response.getData());
-                ArrayList<String> list = new ArrayList<>();
+                ArrayList<JSONObject> bookings = new ArrayList<>();
 
                 for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject obj = jsonArray.getJSONObject(i);
-
-                    String id = obj.optString("bookingId", "N/A");
-                    String status = obj.optString("status", "N/A");
-                    String start = obj.optString("formattedStartTime", obj.optString("startTime", "N/A"));
-                    String end = obj.optString("formattedEndTime", obj.optString("endTime", "N/A"));
-
-                    list.add("ID: " + id + "\nStart: " + start + "\nEnd: " + end + "\nStatus: " + status);
+                    bookings.add(jsonArray.getJSONObject(i));
                 }
 
-                if (list.isEmpty()) {
-                    list.add("No upcoming bookings found for this station");
+                if (bookings.isEmpty()) {
+                    Toast.makeText(AllBookingsActivity.this, "No upcoming bookings found for this station", Toast.LENGTH_SHORT).show();
+                    return;
                 }
 
-                lvAllBookings.setAdapter(
-                        new ArrayAdapter<>(AllBookingsActivity.this, android.R.layout.simple_list_item_1, list)
-                );
+                // Use custom adapter for modern card design
+                BookingAdapter adapter = new BookingAdapter(AllBookingsActivity.this, bookings);
+                lvAllBookings.setAdapter(adapter);
+
+                // (Optional) Click event → Open BookingDetailsActivity
+                lvAllBookings.setOnItemClickListener((parent, view, position, id) -> {
+                    JSONObject obj = bookings.get(position);
+                    Intent intent = new Intent(AllBookingsActivity.this, BookingDetailsActivity.class);
+                    intent.putExtra("bookingId", obj.optString("bookingId"));
+                    intent.putExtra("status", obj.optString("status"));
+                    intent.putExtra("formattedStartTime", obj.optString("formattedStartTime"));
+                    intent.putExtra("formattedEndTime", obj.optString("formattedEndTime"));
+                    intent.putExtra("qrImageBase64", obj.optString("qrImageBase64"));
+                    startActivity(intent);
+                });
 
             } catch (Exception e) {
                 Log.e("ALL_BOOKINGS", "Parse error: " + e.getMessage());
                 Toast.makeText(AllBookingsActivity.this, "Error loading bookings", Toast.LENGTH_SHORT).show();
             }
         }
+
     }.execute();
 }
 

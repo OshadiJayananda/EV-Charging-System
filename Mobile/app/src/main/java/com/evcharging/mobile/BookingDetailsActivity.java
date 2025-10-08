@@ -41,6 +41,10 @@ public class BookingDetailsActivity extends AppCompatActivity {
         apiClient = new ApiClient(session);
 
         bindViews();
+        
+        ImageButton btnBack = findViewById(R.id.btnBack);
+        btnBack.setOnClickListener(v -> finish());
+
 
         // Retrieve data from intent
         bookingId = getIntent().getStringExtra("bookingId");

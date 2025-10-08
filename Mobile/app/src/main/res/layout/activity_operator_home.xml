@@ -70,7 +70,7 @@
                 android:layout_height="48dp"
                 android:src="@drawable/ic_logout"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:tint="#FFFFFF"
+                app:tint="#FFFFFF"
                 android:contentDescription="Logout" />
         </LinearLayout>
 
@@ -175,25 +175,7 @@
                     android:textStyle="bold" />
             </androidx.cardview.widget.CardView>
 
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="3dp"
-                app:cardBackgroundColor="#FFFFFF">
 
-                <Button
-                    android:id="@+id/btnCancelBookings"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Cancel Bookings"
-                    android:textColor="#FFFFFF"
-                    android:background="#E53935"
-                    android:padding="16dp"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-            </androidx.cardview.widget.CardView>
 
         </LinearLayout>
     </LinearLayout>
