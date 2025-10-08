@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------
 // File Name: EVOwnerController.cs
-// Author: Hasindu Koshitha
+// Author: Oshadi Jayananda
 // Description: Handles EV Owner registration logic for the system
 // Created On: 25/09/2025
 // --------------------------------------------------------------
