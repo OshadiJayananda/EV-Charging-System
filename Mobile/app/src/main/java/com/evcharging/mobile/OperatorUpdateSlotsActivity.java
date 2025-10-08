@@ -32,19 +32,23 @@ public class OperatorUpdateSlotsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_update_slots);
-        setTitle("Update Slot Availability");
+        setTitle("Update Slot Status");
 
         session = new SessionManager(this);
-        apiClient = new ApiClient(session); // ✅ correct constructor
+        apiClient = new ApiClient(session);
 
         lvSlots = findViewById(R.id.lvSlots);
         swipeRefresh = findViewById(R.id.swipeRefresh);
+
+        ImageButton btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
 
         swipeRefresh.setOnRefreshListener(this::loadSlots);
         loadSlots();
     }
 
-    // ✅ Load all slots for the operator’s station
     private void loadSlots() {
         swipeRefresh.setRefreshing(true);
         String stationId = session.getStationId();
@@ -52,7 +56,7 @@ public class OperatorUpdateSlotsActivity extends AppCompatActivity {
 
         new Thread(() -> {
             try {
-                ApiResponse response = apiClient.get(url); // ✅ proper ApiResponse
+                ApiResponse response = apiClient.get(url);
                 Log.d(TAG, "GET /slots response: " + response.getMessage());
 
                 if (response.isSuccess() && response.getData() != null) {
@@ -103,7 +107,6 @@ public class OperatorUpdateSlotsActivity extends AppCompatActivity {
         }
     }
 
-    // ✅ Inner Adapter Class
     private class SlotAdapter extends BaseAdapter {
         @Override
         public int getCount() {
@@ -120,12 +123,12 @@ public class OperatorUpdateSlotsActivity extends AppCompatActivity {
             return position;
         }
 
-        // ✅ FIXED: Correct method signature
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             if (convertView == null)
                 convertView = getLayoutInflater().inflate(R.layout.slot_list_item, parent, false);
 
+            View vStatusIndicator = convertView.findViewById(R.id.vStatusIndicator);
             ImageView ivStatus = convertView.findViewById(R.id.ivStatus);
             TextView tvTitle = convertView.findViewById(R.id.tvSlotTitle);
             TextView tvSubtitle = convertView.findViewById(R.id.tvSlotSubtitle);
@@ -138,62 +141,100 @@ public class OperatorUpdateSlotsActivity extends AppCompatActivity {
             tvTitle.setText("Slot " + number + " (" + type + ")");
             tvSubtitle.setText("Status: " + status);
 
-            if (status.equalsIgnoreCase("Available"))
-                ivStatus.setColorFilter(0xFF00FF00);
-            else if (status.equalsIgnoreCase("Booked"))
-                ivStatus.setColorFilter(0xFFFF4444);
-            else if (status.equalsIgnoreCase("Charging"))
-                ivStatus.setColorFilter(0xFFFFBB33);
-            else
-                ivStatus.setColorFilter(0xFFAAAAAA);
+            if (status.equalsIgnoreCase("Available")) {
+                vStatusIndicator.setBackgroundColor(0xFF4CAF50);
+                ivStatus.setColorFilter(0xFF4CAF50);
+            } else if (status.equalsIgnoreCase("Booked")) {
+                vStatusIndicator.setBackgroundColor(0xFFFF9800);
+                ivStatus.setColorFilter(0xFFFF9800);
+            } else if (status.equalsIgnoreCase("Charging")) {
+                vStatusIndicator.setBackgroundColor(0xFF2196F3);
+                ivStatus.setColorFilter(0xFF2196F3);
+            } else if (status.equalsIgnoreCase("Under Maintenance")) {
+                vStatusIndicator.setBackgroundColor(0xFFFFC107);
+                ivStatus.setColorFilter(0xFFFFC107);
+            } else if (status.equalsIgnoreCase("Out Of Order")) {
+                vStatusIndicator.setBackgroundColor(0xFFF44336);
+                ivStatus.setColorFilter(0xFFF44336);
+            } else {
+                vStatusIndicator.setBackgroundColor(0xFF9E9E9E);
+                ivStatus.setColorFilter(0xFF9E9E9E);
+            }
 
-            convertView.setOnClickListener(v -> confirmToggle(slot));
+            convertView.setOnClickListener(v -> showStatusChangeDialog(slot));
 
             return convertView;
         }
     }
 
-    private void confirmToggle(HashMap<String, String> slot) {
-        String status = slot.get("Status");
-        if (status.equalsIgnoreCase("Charging")) {
-            Toast.makeText(this, "Can't change an active slot!", Toast.LENGTH_SHORT).show();
+    private void showStatusChangeDialog(HashMap<String, String> slot) {
+        String currentStatus = slot.get("Status");
+
+        if (currentStatus.equalsIgnoreCase("Charging")) {
+            Toast.makeText(this, "Cannot change status of an active charging slot!", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String newStatus = status.equals("Available") ? "Booked" : "Available";
+        if (currentStatus.equalsIgnoreCase("Booked")) {
+            Toast.makeText(this, "Cannot change status of a booked slot!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        final String[] statusOptions = {"Available", "Under Maintenance", "Out Of Order"};
+
+        int currentIndex = 0;
+        for (int i = 0; i < statusOptions.length; i++) {
+            if (statusOptions[i].equalsIgnoreCase(currentStatus)) {
+                currentIndex = i;
+                break;
+            }
+        }
+
         new AlertDialog.Builder(this)
                 .setTitle("Change Slot Status")
-                .setMessage("Change Slot " + slot.get("Number") + " to " + newStatus + "?")
-                .setPositiveButton("Yes", (d, w) -> toggleSlot(slot))
-                .setNegativeButton("No", null)
+                .setSingleChoiceItems(statusOptions, currentIndex, null)
+                .setPositiveButton("Update", (dialog, which) -> {
+                    ListView lv = ((AlertDialog) dialog).getListView();
+                    int selectedPosition = lv.getCheckedItemPosition();
+                    if (selectedPosition >= 0) {
+                        String newStatus = statusOptions[selectedPosition];
+                        if (!newStatus.equalsIgnoreCase(currentStatus)) {
+                            updateSlotStatus(slot, newStatus);
+                        } else {
+                            Toast.makeText(this, "Status unchanged", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                })
+                .setNegativeButton("Cancel", null)
                 .show();
     }
 
-    // ✅ PATCH with log response
-    private void toggleSlot(HashMap<String, String> slot) {
+    private void updateSlotStatus(HashMap<String, String> slot, String newStatus) {
         String slotId = slot.get("SlotId");
-        String url = "/slots/" + slotId + "/toggle";
+        String url = "/slots/" + slotId + "/status";
 
         new Thread(() -> {
             try {
-                JSONObject emptyBody = new JSONObject();
-                ApiResponse response = apiClient.patch(url, emptyBody);
+                JSONObject body = new JSONObject();
+                body.put("status", newStatus);
+
+                ApiResponse response = apiClient.patch(url, body);
 
                 Log.d(TAG, "PATCH response message: " + response.getMessage());
                 Log.d(TAG, "PATCH response data: " + response.getData());
 
                 runOnUiThread(() -> {
                     if (response.isSuccess()) {
-                        Toast.makeText(this, "Slot updated successfully", Toast.LENGTH_SHORT).show();
-                        loadSlots(); // refresh view
+                        Toast.makeText(this, "Slot status updated to: " + newStatus, Toast.LENGTH_SHORT).show();
+                        loadSlots();
                     } else {
                         Toast.makeText(this, "Failed: " + response.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
             } catch (Exception e) {
-                Log.e(TAG, "Error toggling slot", e);
+                Log.e(TAG, "Error updating slot status", e);
                 runOnUiThread(() ->
-                        Toast.makeText(this, "Error updating slot", Toast.LENGTH_SHORT).show());
+                        Toast.makeText(this, "Error updating slot status", Toast.LENGTH_SHORT).show());
             }
         }).start();
     }
