@@ -45,7 +45,6 @@ public class OperatorHomeActivity extends AppCompatActivity {
         btnViewProfile = findViewById(R.id.btnViewProfile);
         btnUpdateSlots = findViewById(R.id.btnUpdateSlots);
         btnViewBookings = findViewById(R.id.btnViewBookings);
-        btnCancelBookings = findViewById(R.id.btnCancelBookings);
         btnLogout = findViewById(R.id.btnLogout);
         lvTodayReservations = findViewById(R.id.lvTodayReservations);
     }
@@ -91,7 +90,7 @@ public class OperatorHomeActivity extends AppCompatActivity {
         });
 
         btnViewBookings.setOnClickListener(v -> startActivity(new Intent(this, AllBookingsActivity.class)));
-        btnCancelBookings.setOnClickListener(v -> Toast.makeText(this, "Cancel Bookings (coming soon)", Toast.LENGTH_SHORT).show());
+
     }
 
     private void loadTodayBookings() {
@@ -112,65 +111,54 @@ public class OperatorHomeActivity extends AppCompatActivity {
 
             @Override
             protected void onPostExecute(ApiResponse response) {
-                if (!response.isSuccess() || response.getData() == null) {
+                if (response == null || !response.isSuccess() || response.getData() == null) {
                     String[] msg = {"No bookings found for today"};
-                    lvTodayReservations.setAdapter(new ArrayAdapter<>(OperatorHomeActivity.this,
-                            android.R.layout.simple_list_item_1, msg));
+                    lvTodayReservations.setAdapter(
+                            new ArrayAdapter<>(OperatorHomeActivity.this,
+                                    android.R.layout.simple_list_item_1, msg));
                     return;
                 }
 
                 try {
                     JSONArray jsonArray = new JSONArray(response.getData());
-                    ArrayList<String> bookingsList = new ArrayList<>();
+                    ArrayList<JSONObject> reservations = new ArrayList<>();
 
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject obj = jsonArray.getJSONObject(i);
-
-                        String id = obj.optString("bookingId", "N/A");
-                        String status = obj.optString("status", "N/A");
-                        String startTime = obj.optString("formattedStartTime", obj.optString("startTime", "N/A"));
-                        String endTime = obj.optString("formattedEndTime", obj.optString("endTime", "N/A"));
-
-                        if (!status.equalsIgnoreCase("Approved")) continue;
-
-                        bookingsList.add("ID: " + id + "\n" +
-                                "Start: " + startTime + "\n" +
-                                "End: " + endTime + "\n" +
-                                "Status: " + status);
+                        if (obj.optString("status").equalsIgnoreCase("Approved")) {
+                            reservations.add(obj);
+                        }
                     }
 
-                    if (bookingsList.isEmpty()) {
-                        bookingsList.add("No bookings found for this station");
+                    if (reservations.isEmpty()) {
+                        String[] msg = {"No approved reservations today"};
+                        lvTodayReservations.setAdapter(
+                                new ArrayAdapter<>(OperatorHomeActivity.this,
+                                        android.R.layout.simple_list_item_1, msg));
+                        return;
                     }
 
-                    ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                            OperatorHomeActivity.this,
-                            android.R.layout.simple_list_item_1,
-                            bookingsList
-                    );
+                    TodayReservationAdapter adapter =
+                            new TodayReservationAdapter(OperatorHomeActivity.this, reservations);
                     lvTodayReservations.setAdapter(adapter);
 
                     lvTodayReservations.setOnItemClickListener((parent, view, position, id) -> {
-                        try {
-                            JSONObject obj = jsonArray.getJSONObject(position);
-                            Intent intent = new Intent(OperatorHomeActivity.this, BookingDetailsActivity.class);
-                            intent.putExtra("bookingId", obj.optString("bookingId"));
-                            intent.putExtra("status", obj.optString("status"));
-                            intent.putExtra("startTime", obj.optString("formattedStartTime", obj.optString("startTime")));
-                            intent.putExtra("endTime", obj.optString("formattedEndTime", obj.optString("endTime")));
-                            intent.putExtra("qrImageBase64", obj.optString("qrImageBase64"));
-                            intent.putExtra("qrCode", obj.optString("qrCode"));
-                            startActivity(intent);
-                        } catch (Exception e) {
-                            Toast.makeText(OperatorHomeActivity.this, "Error opening booking", Toast.LENGTH_SHORT).show();
-                            Log.e("BOOKINGS", "Error opening booking details: " + e.getMessage());
-                        }
+                        JSONObject obj = reservations.get(position);
+                        Intent intent = new Intent(OperatorHomeActivity.this, BookingDetailsActivity.class);
+                        intent.putExtra("bookingId", obj.optString("bookingId"));
+                        intent.putExtra("status", obj.optString("status"));
+                        intent.putExtra("startTime", obj.optString("formattedStartTime", obj.optString("startTime")));
+                        intent.putExtra("endTime", obj.optString("formattedEndTime", obj.optString("endTime")));
+                        intent.putExtra("qrImageBase64", obj.optString("qrImageBase64"));
+                        intent.putExtra("qrCode", obj.optString("qrCode"));
+                        startActivity(intent);
                     });
 
                 } catch (Exception e) {
                     Log.e("BOOKINGS", "Error parsing bookings: " + e.getMessage());
                 }
             }
+
         }.execute();
     }
 }

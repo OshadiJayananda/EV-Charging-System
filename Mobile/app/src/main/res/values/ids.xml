@@ -7,4 +7,5 @@
     <item name="tvStation" type="id"></item>
     <item name="tvStationLoc" type="id"></item>
     <item name="tvActive" type="id"></item>
+    <item name="vStatusIndicator" type="id"></item>
 </resources>
