@@ -385,8 +385,7 @@ function UserManagement() {
 
       const operatorId =
         selectedOperatorForStationUpdate._id ||
-        selectedOperatorForStationUpdate.id ||
-        selectedOperatorForStationUpdate.Id;
+        selectedOperatorForStationUpdate.id;
 
       if (!operatorId) {
         toast.error("Operator ID not found");
