@@ -11,6 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
+        <!-- header unchanged -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -97,15 +98,23 @@
                 app:cardElevation="4dp"
                 app:cardBackgroundColor="#FFFFFF">
 
-                <ListView
-                    android:id="@+id/lvTodayReservations"
+                <!-- NEW: pull-to-refresh wrapper -->
+                <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                    android:id="@+id/srTodayReservations"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:divider="#E0E0E0"
-                    android:dividerHeight="1dp"
-                    android:padding="8dp" />
+                    android:layout_height="match_parent">
+
+                    <ListView
+                        android:id="@+id/lvTodayReservations"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:divider="#E0E0E0"
+                        android:dividerHeight="1dp"
+                        android:padding="8dp" />
+                </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- buttons section unchanged -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -174,8 +183,6 @@
                     android:textSize="16sp"
                     android:textStyle="bold" />
             </androidx.cardview.widget.CardView>
-
-
 
         </LinearLayout>
     </LinearLayout>

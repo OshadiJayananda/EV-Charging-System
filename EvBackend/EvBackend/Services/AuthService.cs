@@ -114,6 +114,7 @@ namespace EvBackend.Services
 
                 if (!allowed)
                     throw new AuthenticationException("Access denied from this platform");
+
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var secretKey = _config["Jwt:Key"] ?? _config["Jwt__Key"];
                 var issuer = _config["Jwt:Issuer"] ?? _config["Jwt__Issuer"];

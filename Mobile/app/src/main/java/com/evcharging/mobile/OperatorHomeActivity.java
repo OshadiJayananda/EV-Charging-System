@@ -4,16 +4,19 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
-import com.evcharging.mobile.LoginActivity;
-import com.evcharging.mobile.R;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import com.evcharging.mobile.model.User;
 import com.evcharging.mobile.network.ApiClient;
 import com.evcharging.mobile.network.ApiResponse;
 import com.evcharging.mobile.session.SessionManager;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
+
 import java.util.ArrayList;
 
 public class OperatorHomeActivity extends AppCompatActivity {
@@ -21,9 +24,10 @@ public class OperatorHomeActivity extends AppCompatActivity {
     private SessionManager session;
     private ImageView ivProfile;
     private TextView tvWelcomeOperator, tvStationInfo, tvOperatorId;
-    private Button btnViewProfile, btnUpdateSlots, btnViewBookings, btnCancelBookings;
+    private Button btnViewProfile, btnUpdateSlots, btnViewBookings;
     private ImageButton btnLogout;
     private ListView lvTodayReservations;
+    private SwipeRefreshLayout srTodayReservations;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,8 +37,18 @@ public class OperatorHomeActivity extends AppCompatActivity {
 
         session = new SessionManager(this);
         bindViews();
-        loadOperatorData();
-        setupClicks();
+        loadOperatorBasics();
+        wireClicks();
+
+        // pull-to-refresh
+        srTodayReservations.setOnRefreshListener(this::loadTodayBookings);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // auto-refresh when returning to this screen
+        loadTodayBookings();
     }
 
     private void bindViews() {
@@ -47,9 +61,10 @@ public class OperatorHomeActivity extends AppCompatActivity {
         btnViewBookings = findViewById(R.id.btnViewBookings);
         btnLogout = findViewById(R.id.btnLogout);
         lvTodayReservations = findViewById(R.id.lvTodayReservations);
+        srTodayReservations = findViewById(R.id.srTodayReservations);
     }
 
-    private void loadOperatorData() {
+    private void loadOperatorBasics() {
         User user = session.getLoggedInUser();
         if (user == null) {
             Toast.makeText(this, "Session expired, please log in again.", Toast.LENGTH_SHORT).show();
@@ -63,14 +78,11 @@ public class OperatorHomeActivity extends AppCompatActivity {
         tvOperatorId.setText("Operator ID: " + user.getUserId());
 
         String stationName = (user.getStationName() != null && !user.getStationName().equals("string"))
-                ? user.getStationName()
-                : "Pending";
+                ? user.getStationName() : "Pending";
         tvStationInfo.setText("Station: " + stationName);
-
-        loadTodayBookings();
     }
 
-    private void setupClicks() {
+    private void wireClicks() {
         ivProfile.setOnClickListener(v -> startActivity(new Intent(this, OperatorProfileActivity.class)));
         btnViewProfile.setOnClickListener(v -> startActivity(new Intent(this, OperatorProfileActivity.class)));
 
@@ -83,14 +95,12 @@ public class OperatorHomeActivity extends AppCompatActivity {
             finish();
         });
 
-        btnUpdateSlots = findViewById(R.id.btnUpdateSlots);
         btnUpdateSlots.setOnClickListener(v -> {
             Intent intent = new Intent(this, OperatorUpdateSlotsActivity.class);
             startActivity(intent);
         });
 
         btnViewBookings.setOnClickListener(v -> startActivity(new Intent(this, AllBookingsActivity.class)));
-
     }
 
     private void loadTodayBookings() {
@@ -99,8 +109,11 @@ public class OperatorHomeActivity extends AppCompatActivity {
         if (user == null || user.getStationId() == null || user.getStationId().equals("string")) {
             String[] msg = {"No station assigned yet"};
             lvTodayReservations.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, msg));
+            srTodayReservations.setRefreshing(false);
             return;
         }
+
+        srTodayReservations.setRefreshing(true);
 
         new AsyncTask<Void, Void, ApiResponse>() {
             @Override
@@ -111,6 +124,8 @@ public class OperatorHomeActivity extends AppCompatActivity {
 
             @Override
             protected void onPostExecute(ApiResponse response) {
+                srTodayReservations.setRefreshing(false);
+
                 if (response == null || !response.isSuccess() || response.getData() == null) {
                     String[] msg = {"No bookings found for today"};
                     lvTodayReservations.setAdapter(
@@ -125,16 +140,52 @@ public class OperatorHomeActivity extends AppCompatActivity {
 
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject obj = jsonArray.getJSONObject(i);
-                        if (obj.optString("status").equalsIgnoreCase("Approved")) {
+
+                        // show only "Approved" or "Charging"
+                        String status = obj.optString("status", "");
+                        if ("Approved".equalsIgnoreCase(status) || "Charging".equalsIgnoreCase(status)) {
                             reservations.add(obj);
                         }
                     }
 
                     if (reservations.isEmpty()) {
-                        String[] msg = {"No approved reservations today"};
-                        lvTodayReservations.setAdapter(
-                                new ArrayAdapter<>(OperatorHomeActivity.this,
-                                        android.R.layout.simple_list_item_1, msg));
+                        lvTodayReservations.setAdapter(null);
+
+// 🔹 Remove any existing placeholder
+                        if (lvTodayReservations.getHeaderViewsCount() > 0) {
+                            lvTodayReservations.removeHeaderView(lvTodayReservations.getChildAt(0));
+                        }
+
+// 🔹 Create one centered empty-state layout
+                        LinearLayout emptyLayout = new LinearLayout(OperatorHomeActivity.this);
+                        emptyLayout.setOrientation(LinearLayout.VERTICAL);
+                        emptyLayout.setGravity(android.view.Gravity.CENTER); // center both vertically + horizontally
+                        emptyLayout.setPadding(40, 120, 40, 120); // more padding for breathing room
+
+// 🗓️ Icon
+                        ImageView icon = new ImageView(OperatorHomeActivity.this);
+                        icon.setImageResource(R.drawable.ic_calendar_empty);
+                        icon.setColorFilter(android.graphics.Color.parseColor("#9E9E9E"));
+                        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(200, 200);
+                        iconParams.gravity = android.view.Gravity.CENTER;
+                        iconParams.bottomMargin = 32;
+                        emptyLayout.addView(icon, iconParams);
+
+// 📝 Text
+                        TextView msgView = new TextView(OperatorHomeActivity.this);
+                        msgView.setText("No bookings scheduled for today");
+                        msgView.setTextSize(17);
+                        msgView.setTextColor(android.graphics.Color.parseColor("#616161"));
+                        msgView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                        msgView.setGravity(android.view.Gravity.CENTER);
+                        emptyLayout.addView(msgView);
+
+// 🔹 Add it once
+                        if (lvTodayReservations.getHeaderViewsCount() == 0) {
+                            lvTodayReservations.addHeaderView(emptyLayout, null, false);
+                        }
+
+
                         return;
                     }
 

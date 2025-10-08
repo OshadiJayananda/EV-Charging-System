@@ -35,6 +35,12 @@ public class OperatorProfileActivity extends AppCompatActivity {
         bindViews();
         loadUserData();
         setupButtons();
+        ImageButton btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
+
+
     }
 
     private void bindViews() {
