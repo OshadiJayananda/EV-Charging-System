@@ -266,7 +266,7 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-[calc(100vh-8vh)] flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
         <Loading text="Loading your profile..." />
       </div>
     );
@@ -274,7 +274,7 @@ export default function Profile() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-[calc(100vh-8vh)] flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md text-center">
           <div className="text-red-500 text-lg font-semibold mb-4">
             Failed to load profile
@@ -291,7 +291,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
+    <div className="min-h-[calc(100vh-8vh)] bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header Section */}
         <div className="text-center mb-8">
