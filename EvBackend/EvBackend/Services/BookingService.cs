@@ -65,7 +65,7 @@ namespace EvBackend.Services
             // 🔎 Find an Available slot of requested type
             var freeSlot = await slots.Find(s =>
         s.StationId == dto.StationId &&
-        s.ConnectorType == dto.ConnectorType &&
+        //s.ConnectorType == dto.ConnectorType &&
         s.Status == "Available").FirstOrDefaultAsync();
 
             if (freeSlot == null)
@@ -111,9 +111,9 @@ namespace EvBackend.Services
 
             // Mark slot as booked
             var update = Builders<Slot>.Update
-                .Set(s => s.Status, "Booked")
-                .Set(s => s.StartTime, dto.StartTime)
-                .Set(s => s.EndTime, dto.EndTime);
+                .Set(s => s.Status, "Booked");
+                //.Set(s => s.StartTime, dto.StartTime)
+                //.Set(s => s.EndTime, dto.EndTime);
 
             await slots.UpdateOneAsync(s => s.SlotId == freeSlot.SlotId, update);
 

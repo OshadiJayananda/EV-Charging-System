@@ -28,7 +28,7 @@ import okhttp3.Response;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE = " https://dc196aea69f4.ngrok-free.app";
+    private static final String BASE = "https://3b77e25dec75.ngrok-free.app";
     private static final String BASE_URL = BASE + "/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 

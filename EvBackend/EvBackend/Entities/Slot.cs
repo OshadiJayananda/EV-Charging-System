@@ -39,17 +39,16 @@ namespace EvBackend.Entities
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string SlotId { get; set; }
+        public string SlotId { get; set; } // MongoDB's ObjectId for each slot
 
-        public string StationId { get; set; }
-        public int Number { get; set; }
-        public string ConnectorType { get; set; }
-        public string Status { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public string StationId { get; set; }  // Reference to station
+        public int Number { get; set; }  // Slot number (1, 2, 3, etc.)
+        public string Status { get; set; }  // Slot status (Available, Booked, etc.)
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;  // Timestamp for slot creation
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;  // Timestamp for last update
 
-        public DateTime? StartTime { get; set; }   // nullable because not always in use
-        public DateTime? EndTime { get; set; }
-
+        // Reference to time slots for each slot
+        public List<string> TimeSlotIds { get; set; } = new List<string>();
     }
+
 }

@@ -4,5 +4,4 @@
     <string name="hntEmail">Email</string>
     <string name="hntPassword">Password</string>
     <string name="txtNoAccount">"Don't have an account? Register"</string>
-    <string name="google_maps_key">Google Map Key</string>
 </resources>
