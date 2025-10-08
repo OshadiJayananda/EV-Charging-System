@@ -17,6 +17,7 @@ namespace EvBackend.Services
     {
         private readonly IMongoCollection<Station> _stations;
         private readonly IMongoCollection<Slot> _slots;
+        private readonly IMongoCollection<TimeSlot> _timeSlots;
 
         private readonly GeocodingService _geocoding;
 
@@ -25,6 +26,7 @@ namespace EvBackend.Services
         {
             _stations = database.GetCollection<Station>("Stations");
             _slots = database.GetCollection<Slot>("Slots");
+            _timeSlots = database.GetCollection<TimeSlot>("TimeSlots");
             _geocoding = geocoding;
         }
 
@@ -34,6 +36,7 @@ namespace EvBackend.Services
 
             var station = new Station
             {
+                //StationId = Guid.NewGuid().ToString(),
                 Name = dto.Name,
                 Location = dto.Location,
                 Type = dto.Type,
@@ -47,26 +50,51 @@ namespace EvBackend.Services
             // Insert station first
             await _stations.InsertOneAsync(station);
 
-            // Generate slots
+            // Create slots and time slots
             var slotIds = new List<Slot>();
+            var timeSlots = new List<TimeSlot>();  // List to store created time slots
+
+            var slotStartTime = DateTime.UtcNow.Date.AddHours(6); // Start time for first slot (6:00 AM)
+
             for (int i = 1; i <= dto.Capacity; i++)
             {
                 var slot = new Slot
                 {
                     StationId = station.StationId,
-                    SlotId = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
-                    ConnectorType = dto.Type, // default same as station type
+                    //SlotId = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
                     Number = i,
                     Status = "Available"
                 };
 
-                slotIds.Add(slot);
+                // Create time slots for this slot (2 hours + 15 mins break between each)
+                var slotTimeSlots = new List<string>();
+                for (int j = 0; j < 12; j++)  // 12 time slots per slot (2-hour blocks with 15-minute gaps)
+                {
+                    var timeSlotStart = slotStartTime.AddMinutes(j * 135);  // 2 hours each
+                    var timeSlotEnd = timeSlotStart.AddMinutes(120);  // 2-hour session
+
+                    var timeSlot = new TimeSlot
+                    {
+                        StationId = station.StationId,
+                        SlotId = slot.SlotId,
+                        StartTime = timeSlotStart,
+                        EndTime = timeSlotEnd,
+                        Status = "Available"
+                    };
+
+                    // Insert the time slot into the database
+                    await _timeSlots.InsertOneAsync(timeSlot);
+                    slotTimeSlots.Add(timeSlot.TimeSlotId);  // Store the reference to the time slot
+                }
+
+                slot.TimeSlotIds = slotTimeSlots;  // Associate created time slots with the slot
+                slotIds.Add(slot);  // Add the slot to the list
             }
 
             // Insert slots collection
             await _slots.InsertManyAsync(slotIds);
 
-            // Save slot IDs inside station for quick lookup
+            // Save slot IDs inside the station for quick lookup
             station.SlotIds = slotIds.Select(s => s.SlotId).ToList();
 
             // Update station with slot references
@@ -76,6 +104,7 @@ namespace EvBackend.Services
 
             return ToDto(station);
         }
+
 
 
         // public async Task<StationDto> UpdateStationAsync(string stationId, UpdateStationDto dto)
@@ -211,7 +240,6 @@ namespace EvBackend.Services
                     {
                         var filterSlot = Builders<Slot>.Filter.Eq(s => s.SlotId, slotUpdate.SlotId);
                         var updateSlot = Builders<Slot>.Update
-                            .Set(s => s.ConnectorType, slotUpdate.ConnectorType)
                             .Set(s => s.Status, slotUpdate.Status);
 
                         await _slots.UpdateOneAsync(filterSlot, updateSlot);
@@ -229,7 +257,6 @@ namespace EvBackend.Services
                         {
                             StationId = stationId,
                             Number = nextNumber,  // 👈 now based on max existing Number
-                            ConnectorType = slotUpdate.ConnectorType,
                             Status = slotUpdate.Status
                         };
 
@@ -370,7 +397,6 @@ namespace EvBackend.Services
                     SlotId = s.SlotId,
                     StationId = s.StationId,
                     Number = s.Number,
-                    ConnectorType = s.ConnectorType,
                     Status = s.Status
                 }).ToList()
             };

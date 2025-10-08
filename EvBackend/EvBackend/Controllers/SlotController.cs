@@ -36,7 +36,7 @@ namespace EvBackend.Controllers
                 s.SlotId,
                 s.StationId,
                 s.Number,
-                s.ConnectorType,
+                //s.ConnectorType,
                 s.Status,
                 s.CreatedAt,
                 s.UpdatedAt
