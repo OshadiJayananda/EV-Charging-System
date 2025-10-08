@@ -19,16 +19,19 @@ namespace EvBackend.Services
         private readonly IMongoCollection<CSOperator> _operators;
         private readonly IMongoCollection<Station> _stations;
         private readonly IConfiguration _config;
+        private readonly INotificationService _notificationService;
 
-        public CSOperatorService(IMongoDatabase database, IConfiguration config, IOptions<MongoDbSettings> settings)
+        public CSOperatorService(IMongoDatabase database, IConfiguration config, IOptions<MongoDbSettings> settings, INotificationService notificationService)
         {
             _operators = database.GetCollection<CSOperator>(settings.Value.UsersCollectionName);
             _stations = database.GetCollection<Station>("Stations");
             _config = config;
+            _notificationService = notificationService;
         }
 
         public async Task<CSOperatorDto> CreateOperator(CreateCSOperatorDto dto)
         {
+            dto.Email = dto.Email.Trim().ToLower();
             // Check if email already exists
             if (await _operators.Find(o => o.Email == dto.Email).AnyAsync())
                 throw new InvalidOperationException("Email already in use");
@@ -50,6 +53,7 @@ namespace EvBackend.Services
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Role = "Operator",
                 IsActive = dto.IsActive,
+                ReactivationRequested = false,
                 StationId = dto.StationId,
                 StationName = dto.StationName,
                 StationLocation = dto.StationLocation,
@@ -65,6 +69,7 @@ namespace EvBackend.Services
                 Email = operatorEntity.Email,
                 Role = operatorEntity.Role,
                 IsActive = operatorEntity.IsActive,
+                ReactivationRequested = operatorEntity.ReactivationRequested,
                 CreatedAt = operatorEntity.CreatedAt,
                 StationId = operatorEntity.StationId,
                 StationName = operatorEntity.StationName,
@@ -83,6 +88,7 @@ namespace EvBackend.Services
                 Email = op.Email,
                 Role = op.Role,
                 IsActive = op.IsActive,
+                ReactivationRequested = op.ReactivationRequested,
                 CreatedAt = op.CreatedAt,
                 StationId = op.StationId,
                 StationName = op.StationName,
@@ -108,6 +114,7 @@ namespace EvBackend.Services
                 Email = op.Email,
                 Role = op.Role,
                 IsActive = op.IsActive,
+                ReactivationRequested = op.ReactivationRequested,
                 CreatedAt = op.CreatedAt,
                 StationId = op.StationId,
                 StationName = op.StationName,
@@ -137,6 +144,7 @@ namespace EvBackend.Services
                 Email = op.Email,
                 Role = op.Role,
                 IsActive = op.IsActive,
+                ReactivationRequested = op.ReactivationRequested,
                 CreatedAt = op.CreatedAt,
                 StationId = op.StationId,
                 StationName = op.StationName,
@@ -176,6 +184,7 @@ namespace EvBackend.Services
                 Email = updatedOp.Email,
                 Role = updatedOp.Role,
                 IsActive = updatedOp.IsActive,
+                ReactivationRequested = updatedOp.ReactivationRequested,
                 CreatedAt = updatedOp.CreatedAt,
                 StationId = updatedOp.StationId,
                 StationName = updatedOp.StationName,
@@ -185,7 +194,103 @@ namespace EvBackend.Services
 
         public async Task<bool> ChangeOperatorStatus(string id, bool isActive)
         {
-            var update = Builders<CSOperator>.Update.Set(o => o.IsActive, isActive);
+            var updateBuilder = Builders<CSOperator>.Update;
+            UpdateDefinition<CSOperator> update;
+
+            if (isActive)
+            {
+                // When activating, clear the reactivation request and set active
+                update = updateBuilder
+                    .Set(o => o.IsActive, true)
+                    .Set(o => o.ReactivationRequested, false);
+            }
+            else
+            {
+                // When deactivating, just set active to false (keep reactivation request as is)
+                update = updateBuilder.Set(o => o.IsActive, false);
+            }
+
+            var result = await _operators.UpdateOneAsync(o => o.Id == id, update);
+
+            var operatorEntity = await _operators.Find(o => o.Id == id).FirstOrDefaultAsync();
+            string operatorName = operatorEntity?.FullName ?? "Unknown";
+
+            if (isActive)
+            {
+                await _notificationService.SendNotification(id, "Your operator account has been activated.");
+            }
+            else
+            {
+                await _notificationService.SendNotification(id, "Your operator account has been deactivated.");
+                await _notificationService.SendNotificationToAdmins($"Operator {operatorName} account deactivated.");
+            }
+            return result.ModifiedCount > 0;
+        }
+
+        // Reactivation methods
+        public async Task<bool> RequestReactivation(string id)
+        {
+            var operatorEntity = await _operators.Find(o => o.Id == id).FirstOrDefaultAsync();
+            if (operatorEntity == null) throw new KeyNotFoundException("Operator not found");
+
+            // Check if account is already active
+            if (operatorEntity.IsActive)
+                throw new InvalidOperationException("Account is already active.");
+
+            // Check if reactivation is already requested
+            if (operatorEntity.ReactivationRequested)
+                throw new InvalidOperationException("Reactivation already requested. Please wait for admin approval.");
+
+            // Set reactivation requested to true
+            var update = Builders<CSOperator>.Update.Set(o => o.ReactivationRequested, true);
+            var result = await _operators.UpdateOneAsync(o => o.Id == id, update);
+
+            // Notify admins about the reactivation request
+            await _notificationService.SendNotificationToAdmins($"Operator {operatorEntity.FullName} has requested account reactivation.");
+
+            return result.ModifiedCount > 0;
+        }
+
+        public async Task<int> GetReactivationRequestCount()
+        {
+            var filter = Builders<CSOperator>.Filter.And(
+                Builders<CSOperator>.Filter.Eq(o => o.Role, "Operator"),
+                Builders<CSOperator>.Filter.Eq(o => o.ReactivationRequested, true),
+                Builders<CSOperator>.Filter.Eq(o => o.IsActive, false)
+            );
+
+            var count = await _operators.CountDocumentsAsync(filter);
+            return (int)count;
+        }
+
+        public async Task<IEnumerable<CSOperatorDto>> GetOperatorsWithReactivationRequests()
+        {
+            var filter = Builders<CSOperator>.Filter.And(
+                Builders<CSOperator>.Filter.Eq(o => o.Role, "Operator"),
+                Builders<CSOperator>.Filter.Eq(o => o.ReactivationRequested, true),
+                Builders<CSOperator>.Filter.Eq(o => o.IsActive, false)
+            );
+
+            var operators = await _operators.Find(filter).ToListAsync();
+
+            return operators.Select(op => new CSOperatorDto
+            {
+                Id = op.Id,
+                FullName = op.FullName,
+                Email = op.Email,
+                Role = op.Role,
+                IsActive = op.IsActive,
+                ReactivationRequested = op.ReactivationRequested,
+                CreatedAt = op.CreatedAt,
+                StationId = op.StationId,
+                StationName = op.StationName,
+                StationLocation = op.StationLocation
+            });
+        }
+
+        public async Task<bool> ClearReactivationRequest(string id)
+        {
+            var update = Builders<CSOperator>.Update.Set(o => o.ReactivationRequested, false);
             var result = await _operators.UpdateOneAsync(o => o.Id == id, update);
             return result.ModifiedCount > 0;
         }

@@ -30,6 +30,8 @@ namespace EvBackend.Services
             if (await _admins.Find(a => a.Email == dto.Email).AnyAsync())
                 throw new InvalidOperationException("Email already in use");
 
+            dto.Email = dto.Email.Trim().ToLower();
+
             var admin = new Admin
             {
                 Id = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),

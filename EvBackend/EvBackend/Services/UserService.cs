@@ -26,6 +26,7 @@ namespace EvBackend.Services
 
         public async Task<UserDto> CreateUser(CreateUserDto dto)
         {
+            dto.Email = dto.Email.Trim().ToLower();
             if (await _users.Find(u => u.Email == dto.Email).AnyAsync())
                 throw new ArgumentException("Email already in use");
 
@@ -93,6 +94,7 @@ namespace EvBackend.Services
 
         public async Task<UserDto> UpdateUser(String userId, UpdateUserDto dto)
         {
+            dto.Email = dto.Email.Trim().ToLower();
             var update = Builders<User>.Update
                 .Set(u => u.FullName, dto.FullName)
                 .Set(u => u.Email, dto.Email);

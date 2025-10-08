@@ -33,120 +33,119 @@ namespace EvBackend.Services
             _emailService = emailService;
         }
 
-public async Task<LoginResponseDto> AuthenticateUser(LoginDto loginDto, HttpRequest request)
-{
-    var clientType = request.Headers["X-Client-Type"].ToString()?.Trim();
-    bool isWeb = clientType.Equals("Web", StringComparison.OrdinalIgnoreCase);
-    bool isMobile = clientType.Equals("Mobile", StringComparison.OrdinalIgnoreCase);
-
-    string[] webRoles = { "Admin", "Operator" };
-    string[] mobileRoles = { "Operator", "Owner" };
-
-    // --- Check User Collection ---
-    var user = await _users.Find(u => u.Email == loginDto.Email).FirstOrDefaultAsync();
-    if (user != null && user.IsActive)
-    {
-        if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
-            throw new AuthenticationException("Invalid credentials");
-
-        // ✅ Enforce platform-based access rules
-        // bool allowed =
-        //     (isWeb && webRoles.Contains(user.Role)) ||
-        //     (isMobile && mobileRoles.Contains(user.Role));
-
-        // if (!allowed)
-        //     throw new AuthenticationException("Access denied from this platform");
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var secretKey = _config["Jwt:Key"] ?? _config["Jwt__Key"];
-        var issuer = _config["Jwt:Issuer"] ?? _config["Jwt__Issuer"];
-        var audience = _config["Jwt:Audience"] ?? _config["Jwt__Audience"];
-
-        if (string.IsNullOrEmpty(secretKey))
-            throw new InvalidOperationException("JWT Key not found in configuration");
-
-        var key = Encoding.ASCII.GetBytes(secretKey);
-
-        // ✅ Claims
-        var claims = new List<Claim>
+        public async Task<LoginResponseDto> AuthenticateUser(LoginDto loginDto, HttpRequest request)
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role),
-            new Claim("FullName", user.FullName),
-            new Claim("UserType", "User")
-        };
+            var clientType = request.Headers["X-Client-Type"].ToString()?.Trim();
+            bool isWeb = clientType.Equals("Web", StringComparison.OrdinalIgnoreCase);
+            bool isMobile = clientType.Equals("Mobile", StringComparison.OrdinalIgnoreCase);
 
-        // Include station info for Operator
-        if (user.Role.Equals("Operator", StringComparison.OrdinalIgnoreCase))
-        {
-            claims.Add(new Claim("stationId", user.StationId ?? ""));
-            claims.Add(new Claim("stationName", user.StationName ?? ""));
-            claims.Add(new Claim("stationLocation", user.StationLocation ?? ""));
-        }
+            string[] webRoles = { "Admin", "Operator" };
+            string[] mobileRoles = { "Operator", "Owner" };
 
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddHours(2),
-            Issuer = issuer,
-            Audience = audience,
-            SigningCredentials = new SigningCredentials(
-                new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-        };
+            loginDto.Email = loginDto.Email.Trim().ToLower();
 
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        var tokenString = tokenHandler.WriteToken(token);
-
-        return new LoginResponseDto { Token = tokenString };
-    }
-
-    // --- Check EV Owner Collection ---
-    var evOwner = await _evOwners.Find(o => o.Email == loginDto.Email).FirstOrDefaultAsync();
-    if (evOwner != null)
-    {
-        if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, evOwner.PasswordHash))
-            throw new AuthenticationException("Invalid credentials");
-
-        // bool allowed =
-        //     (isWeb && webRoles.Contains("Owner")) ||
-        //     (isMobile && mobileRoles.Contains("Owner"));
-
-        // if (!allowed)
-        //     throw new AuthenticationException("Access denied from this platform");
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var secretKey = _config["Jwt:Key"] ?? _config["Jwt__Key"];
-        var issuer = _config["Jwt:Issuer"] ?? _config["Jwt__Issuer"];
-        var audience = _config["Jwt:Audience"] ?? _config["Jwt__Audience"];
-
-        var key = Encoding.ASCII.GetBytes(secretKey);
-
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(new[]
+            // --- Check User Collection ---
+            var user = await _users.Find(u => u.Email == loginDto.Email).FirstOrDefaultAsync();
+            if (user != null && user.IsActive)
             {
+                if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
+                    throw new AuthenticationException("Invalid credentials");
+
+                bool allowed =
+                    (isWeb && webRoles.Contains(user.Role)) ||
+                    (isMobile && mobileRoles.Contains(user.Role));
+
+                if (!allowed)
+                    throw new AuthenticationException("Access denied from this platform");
+
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var secretKey = _config["Jwt:Key"] ?? _config["Jwt__Key"];
+                var issuer = _config["Jwt:Issuer"] ?? _config["Jwt__Issuer"];
+                var audience = _config["Jwt:Audience"] ?? _config["Jwt__Audience"];
+
+                if (string.IsNullOrEmpty(secretKey))
+                    throw new InvalidOperationException("JWT Key not found in configuration");
+
+                var key = Encoding.ASCII.GetBytes(secretKey);
+
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.Role, user.Role),
+                    new Claim("FullName", user.FullName),
+                    new Claim("UserType", "User")
+                };
+
+                // Include station info for Operator
+                if (user.Role.Equals("Operator", StringComparison.OrdinalIgnoreCase))
+                {
+                    claims.Add(new Claim("stationId", user.StationId ?? ""));
+                    claims.Add(new Claim("stationName", user.StationName ?? ""));
+                    claims.Add(new Claim("stationLocation", user.StationLocation ?? ""));
+                }
+
+                var tokenDescriptor = new SecurityTokenDescriptor
+                {
+                    Subject = new ClaimsIdentity(claims),
+                    Expires = DateTime.UtcNow.AddHours(2),
+                    Issuer = issuer,
+                    Audience = audience,
+                    SigningCredentials = new SigningCredentials(
+                        new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                };
+
+                var token = tokenHandler.CreateToken(tokenDescriptor);
+                var tokenString = tokenHandler.WriteToken(token);
+
+                return new LoginResponseDto { Token = tokenString };
+            }
+
+            // --- Check EV Owner Collection ---
+            var evOwner = await _evOwners.Find(o => o.Email == loginDto.Email).FirstOrDefaultAsync();
+            if (evOwner != null)
+            {
+                if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, evOwner.PasswordHash))
+                    throw new AuthenticationException("Invalid credentials");
+
+                bool allowed =
+                    (isWeb && webRoles.Contains("Owner")) ||
+                    (isMobile && mobileRoles.Contains("Owner"));
+
+                if (!allowed)
+                    throw new AuthenticationException("Access denied from this platform");
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var secretKey = _config["Jwt:Key"] ?? _config["Jwt__Key"];
+                var issuer = _config["Jwt:Issuer"] ?? _config["Jwt__Issuer"];
+                var audience = _config["Jwt:Audience"] ?? _config["Jwt__Audience"];
+
+                var key = Encoding.ASCII.GetBytes(secretKey);
+
+                var tokenDescriptor = new SecurityTokenDescriptor
+                {
+                    Subject = new ClaimsIdentity(new[]
+                    {
                 new Claim(ClaimTypes.NameIdentifier, evOwner.NIC),
                 new Claim(ClaimTypes.Email, evOwner.Email),
                 new Claim(ClaimTypes.Role, "Owner"),
                 new Claim("FullName", evOwner.FullName),
                 new Claim("UserType", "EVOwner")
             }),
-            Expires = DateTime.UtcNow.AddHours(2),
-            Issuer = issuer,
-            Audience = audience,
-            SigningCredentials = new SigningCredentials(
-                new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-        };
+                    Expires = DateTime.UtcNow.AddHours(2),
+                    Issuer = issuer,
+                    Audience = audience,
+                    SigningCredentials = new SigningCredentials(
+                        new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                };
 
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        var tokenString = tokenHandler.WriteToken(token);
+                var token = tokenHandler.CreateToken(tokenDescriptor);
+                var tokenString = tokenHandler.WriteToken(token);
 
-        return new LoginResponseDto { Token = tokenString };
-    }
+                return new LoginResponseDto { Token = tokenString };
+            }
 
-    throw new AuthenticationException("Invalid credentials or user inactive");
-}
+            throw new AuthenticationException("Invalid credentials or user inactive");
+        }
 
         public async Task SendPasswordResetEmail(ForgotPasswordDto forgotPasswordDto)
         {

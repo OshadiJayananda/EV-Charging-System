@@ -11,6 +11,7 @@ using EvBackend.Services.Interfaces;
 using Microsoft.OpenApi.Models;
 using EvBackend.Hubs;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +56,7 @@ builder.Services.AddScoped<IEVOwnerService, EVOwnerService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 
 // Controllers
 builder.Services.AddControllers();

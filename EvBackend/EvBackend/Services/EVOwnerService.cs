@@ -62,11 +62,12 @@ namespace EvBackend.Services
 
         public async Task<EVOwnerDto> CreateEVOwner(CreateEVOwnerDto dto)
         {
-            if (await _owners.Find(u => u.NIC == dto.NIC).AnyAsync())
-                throw new ArgumentException("NIC already in use");
-
+            dto.Email = dto.Email.Trim().ToLower();
             if (await _owners.Find(u => u.Email == dto.Email).AnyAsync())
                 throw new ArgumentException("Email already in use");
+
+            if (await _owners.Find(u => u.NIC == dto.NIC).AnyAsync())
+                throw new ArgumentException("NIC already in use");
 
             var owner = new EVOwner
             {
@@ -127,6 +128,7 @@ namespace EvBackend.Services
 
         public async Task<EVOwnerDto> UpdateEVOwner(string nic, UpdateEVOwnerDto dto)
         {
+            dto.Email = dto.Email.Trim().ToLower();
             var update = Builders<EVOwner>.Update
                 .Set(o => o.FullName, dto.FullName)
                 .Set(o => o.Email, dto.Email)

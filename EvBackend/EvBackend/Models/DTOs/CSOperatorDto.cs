@@ -22,6 +22,7 @@ namespace EvBackend.Models.DTOs
         [EnumDataType(typeof(UserRole), ErrorMessage = "Role must be either 'Admin' or 'Operator'.")]
         public required string Role { get; set; }
         public bool IsActive { get; set; }
+        public bool ReactivationRequested { get; set; } = false;
         public DateTime CreatedAt { get; set; }
         public required string StationId { get; set; }
         public required string StationName { get; set; }

@@ -44,3 +44,13 @@ public class UpdateStationDto
     // Optional per-slot updates
     public List<SlotUpdateDto> SlotUpdates { get; set; } = new();
 }
+
+public class StationNameDto
+{
+    public string StationId { get; set; }
+    public string Name { get; set; }
+    public string Location { get; set; }
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+}
+

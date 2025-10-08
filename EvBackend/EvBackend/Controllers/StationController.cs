@@ -131,6 +131,23 @@ namespace EvBackend.Controllers
             catch (Exception ex) { Console.WriteLine(ex); return StatusCode(500, new { message = "Unexpected error" }); }
         }
 
+        [HttpGet("names")]
+        [Authorize]
+        public async Task<IActionResult> GetStationNames([FromQuery] string? type = null, [FromQuery] string? location = null)
+        {
+            try
+            {
+                var results = await _stationService.GetStationNameSuggestionsAsync(type, location);
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500, new { message = "Unexpected error occurred." });
+            }
+        }
+
+
         [HttpGet("nearby")]
         [Authorize] // Optional: can restrict to logged-in users
         public async Task<IActionResult> GetNearbyStations([FromQuery] double latitude, [FromQuery] double longitude, [FromQuery] double radiusKm = 5)
@@ -146,16 +163,5 @@ namespace EvBackend.Controllers
                 return StatusCode(500, new { message = "Unexpected error" });
             }
         }
-
-
-
-        // ---------------------------
-        // 🔌 Slot Endpoints
-        // ---------------------------
-
-        
     }
-
-    //need to assign operator to station
-
 }

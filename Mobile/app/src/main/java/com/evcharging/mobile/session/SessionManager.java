@@ -72,7 +72,6 @@
 //    }
 //}
 
-
 package com.evcharging.mobile.session;
 
 import android.content.Context;
@@ -86,7 +85,8 @@ import com.evcharging.mobile.utils.JwtUtils;
 /**
  * SessionManager - Manages user session and authentication state
  *
- * Purpose: Handle token storage, user data caching, and remember-me functionality
+ * Purpose: Handle token storage, user data caching, and remember-me
+ * functionality
  * Now integrated with SQLite database for persistent user data storage
  *
  * Author: System (Enhanced)
@@ -135,17 +135,16 @@ public class SessionManager {
             User user = JwtUtils.getUserFromToken(token);
 
             if (user != null) {
-    Log.d("LOGIN_SUCCESS", "----------------------------------------");
-    Log.d("LOGIN_SUCCESS", "User Full Name : " + user.getFullName());
-    Log.d("LOGIN_SUCCESS", "Email          : " + user.getEmail());
-    Log.d("LOGIN_SUCCESS", "Role           : " + user.getRole());
-    Log.d("LOGIN_SUCCESS", "Is Active      : " + user.isActive());
-    Log.d("LOGIN_SUCCESS", "Station ID     : " + user.getStationId());
-    Log.d("LOGIN_SUCCESS", "Station Name   : " + user.getStationName());
-    Log.d("LOGIN_SUCCESS", "Station Loc.   : " + user.getStationLocation());
-    Log.d("LOGIN_SUCCESS", "----------------------------------------");
-}
-
+                Log.d("LOGIN_SUCCESS", "----------------------------------------");
+                Log.d("LOGIN_SUCCESS", "User Full Name : " + user.getFullName());
+                Log.d("LOGIN_SUCCESS", "Email          : " + user.getEmail());
+                Log.d("LOGIN_SUCCESS", "Role           : " + user.getRole());
+                Log.d("LOGIN_SUCCESS", "Is Active      : " + user.isActive());
+                Log.d("LOGIN_SUCCESS", "Station ID     : " + user.getStationId());
+                Log.d("LOGIN_SUCCESS", "Station Name   : " + user.getStationName());
+                Log.d("LOGIN_SUCCESS", "Station Loc.   : " + user.getStationLocation());
+                Log.d("LOGIN_SUCCESS", "----------------------------------------");
+            }
 
             if (user != null) {
                 // Save user to SQLite database
@@ -260,8 +259,8 @@ public class SessionManager {
      * Update operator's station information
      * Used when admin assigns station to operator
      *
-     * @param stationId Station ID
-     * @param stationName Station name
+     * @param stationId       Station ID
+     * @param stationName     Station name
      * @param stationLocation Station location
      * @return true if successful, false otherwise
      */
@@ -282,8 +281,8 @@ public class SessionManager {
     /**
      * Save login credentials for remember-me functionality
      *
-     * @param email User email
-     * @param password User password
+     * @param email      User email
+     * @param password   User password
      * @param rememberMe Whether to remember credentials
      */
     public void saveCredentials(String email, String password, boolean rememberMe) {
@@ -369,5 +368,26 @@ public class SessionManager {
         } else {
             Log.d(TAG, "Logout complete, credentials preserved");
         }
+    }
+
+    /**
+     * Save or update the logged-in user in the database
+     *
+     * @param user User object to save
+     * @return true if successfully saved/updated, false otherwise
+     */
+    public boolean saveLoggedInUser(User user) {
+        if (user == null) {
+            Log.e(TAG, "Cannot save null user");
+            return false;
+        }
+
+        boolean saved = dbHelper.saveUser(user);
+        if (saved) {
+            Log.d(TAG, "User saved/updated in database: " + user.getEmail());
+        } else {
+            Log.e(TAG, "Failed to save user in database: " + user.getEmail());
+        }
+        return saved;
     }
 }
