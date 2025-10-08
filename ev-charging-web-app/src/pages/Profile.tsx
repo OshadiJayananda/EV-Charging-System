@@ -88,6 +88,12 @@ export default function Profile() {
       toast.error("Please fill in all required fields");
       return;
     }
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -111,9 +117,19 @@ export default function Profile() {
       } else {
         throw new Error("Failed to update profile");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating profile:", error);
-      toast.error("Failed to update profile. Please try again.");
+
+      // More specific error messages
+      if (error.response?.status === 403) {
+        toast.error("You don't have permission to update this profile");
+      } else if (error.response?.status === 400) {
+        toast.error("Invalid data. Please check your inputs");
+      } else if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Failed to update profile. Please try again.");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -454,61 +470,6 @@ export default function Profile() {
                 )}
               </div>
             </div>
-
-            {/* Quick Stats Section */}
-            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-blue-100 text-sm">Member Since</div>
-                    <div className="text-2xl font-bold mt-1">
-                      {getUserValue("createdAt")
-                        ? new Date(getUserValue("createdAt")).getFullYear()
-                        : "N/A"}
-                    </div>
-                  </div>
-                  <svg
-                    className="w-8 h-8 text-blue-200"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-purple-100 text-sm">Account Type</div>
-                    <div className="text-2xl font-bold mt-1 capitalize">
-                      {getUserValue("role")?.toLowerCase() ||
-                        getUserValue("userType")?.toLowerCase() ||
-                        "user"}
-                    </div>
-                  </div>
-                  <svg
-                    className="w-8 h-8 text-purple-200"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div> */}
           </div>
         </div>
       </div>

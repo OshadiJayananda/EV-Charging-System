@@ -57,7 +57,7 @@ namespace EvBackend.Controllers
 
         [HttpGet("{userId}")]
         [Authorize(Roles = "Admin,Operator")]
-                // --------------------------------------------------------------
+        // --------------------------------------------------------------
         public async Task<IActionResult> GetUserById(string userId)
         {
             try
@@ -124,7 +124,7 @@ namespace EvBackend.Controllers
         }
 
         [HttpPut("{userId}")]
-        [Authorize(Roles = "Operator")]
+        [Authorize(Roles = "Admin,Operator")]
         public async Task<IActionResult> UpdateUser(string userId, [FromBody] UpdateUserDto dto)
         {
             if (!MongoDB.Bson.ObjectId.TryParse(userId, out var objectId))
@@ -140,13 +140,14 @@ namespace EvBackend.Controllers
             }
 
             var userRole = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
-            var userEmail = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "userId" || c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            // For operators, they can only update their own profile
             if (userRole == "Operator")
             {
-                var user = await _userService.GetUserById(userId);
-                if (user == null || user.Email != userEmail)
+                if (userId != userIdClaim)
                 {
-                    _logger.LogWarning("UpdateUser: Operator tried to update another user's profile. UserId={UserId}, OperatorEmail={OperatorEmail}", userId, userEmail);
+                    _logger.LogWarning("UpdateUser: Operator tried to update another user's profile. UserId={UserId}, OperatorId={OperatorId}", userId, userIdClaim);
                     return Forbid();
                 }
             }
@@ -169,7 +170,6 @@ namespace EvBackend.Controllers
                 return StatusCode(500, new { message = "Unexpected error occurred" });
             }
         }
-
         [HttpPatch("{userId}/deactivate")]
         [Authorize(Roles = "Operator")]
         public async Task<IActionResult> DeactivateUser(string userId)

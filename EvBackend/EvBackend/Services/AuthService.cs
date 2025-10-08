@@ -74,7 +74,8 @@ namespace EvBackend.Services
                     new Claim(ClaimTypes.Email, user.Email),
                     new Claim(ClaimTypes.Role, user.Role),
                     new Claim("FullName", user.FullName),
-                    new Claim("UserType", "User")
+                    new Claim("UserType", "User"),
+                    new Claim("userId", user.Id)
                 };
 
                 // Include station info for Operator
