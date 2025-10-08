@@ -70,7 +70,7 @@ namespace EvBackend.Services
                 var slotTimeSlots = new List<string>();
                 for (int j = 0; j < 12; j++)  // 12 time slots per slot (2-hour blocks with 15-minute gaps)
                 {
-                    var timeSlotStart = slotStartTime.AddMinutes(j * 120);  // 2 hours each
+                    var timeSlotStart = slotStartTime.AddMinutes(j * 135);  // 2 hours each
                     var timeSlotEnd = timeSlotStart.AddMinutes(120);  // 2-hour session
 
                     var timeSlot = new TimeSlot
