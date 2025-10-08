@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------
 // File Name: CreateEVOwnerDto.cs
-// Author: Hasindu Koshitha
+// Author: Oshadi Jayananda
 // Description: Data Transfer Object used for creating a new electric vehicle owner
 // Created On: 13/09/2025
 // --------------------------------------------------------------

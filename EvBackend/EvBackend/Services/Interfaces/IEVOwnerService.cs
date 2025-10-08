@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------
 // File Name: IEVOwnerService.cs
-// Author: Hasindu Koshitha
+// Author: Oshadi Jayananda
 // Description: Defines electric vehicle owner management service methods for the system
 // Created On: 13/09/2025
 // --------------------------------------------------------------

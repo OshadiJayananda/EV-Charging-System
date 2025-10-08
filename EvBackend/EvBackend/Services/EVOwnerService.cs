@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------
 // File Name: EVOwnerService.cs
-// Author: Hasindu Koshitha
+// Author: Oshadi Jayananda
 // Description: Implements business logic for electric vehicle owner management
 // Created On: 13/09/2025
 // --------------------------------------------------------------

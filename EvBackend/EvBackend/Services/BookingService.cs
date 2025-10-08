@@ -71,7 +71,6 @@ namespace EvBackend.Services
             if (freeSlot == null)
                 throw new InvalidOperationException($"No available {dto.ConnectorType} slots in this station. Try another time or slot type.");
 
-            // TODO: check overlapping bookings for same slot/time
 
             var now = DateTime.UtcNow;
             var bookings = _db.GetCollection<Booking>("Bookings");
