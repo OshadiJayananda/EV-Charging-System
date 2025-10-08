@@ -34,6 +34,7 @@ public class OperatorHomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_operator_home);
         setTitle("Operator Dashboard");
+        FooterHelper.setupFooter(this);
 
         session = new SessionManager(this);
         bindViews();

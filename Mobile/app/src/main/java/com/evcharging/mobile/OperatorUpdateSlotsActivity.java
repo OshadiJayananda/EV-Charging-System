@@ -1,6 +1,7 @@
 package com.evcharging.mobile;
 
 import android.app.AlertDialog;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -132,37 +133,68 @@ public class OperatorUpdateSlotsActivity extends AppCompatActivity {
             ImageView ivStatus = convertView.findViewById(R.id.ivStatus);
             TextView tvTitle = convertView.findViewById(R.id.tvSlotTitle);
             TextView tvSubtitle = convertView.findViewById(R.id.tvSlotSubtitle);
+            TextView tvStatusText = convertView.findViewById(R.id.tvStatusText);
 
             HashMap<String, String> slot = slotList.get(position);
             String number = slot.get("Number");
             String type = slot.get("ConnectorType");
             String status = slot.get("Status");
 
-            tvTitle.setText("Slot " + number + " (" + type + ")");
-            tvSubtitle.setText("Status: " + status);
+            tvTitle.setText("Slot " + number);
+            tvSubtitle.setText(type);
 
-            if (status.equalsIgnoreCase("Available")) {
-                vStatusIndicator.setBackgroundColor(0xFF4CAF50);
-                ivStatus.setColorFilter(0xFF4CAF50);
-            } else if (status.equalsIgnoreCase("Booked")) {
-                vStatusIndicator.setBackgroundColor(0xFFFF9800);
-                ivStatus.setColorFilter(0xFFFF9800);
-            } else if (status.equalsIgnoreCase("Charging")) {
-                vStatusIndicator.setBackgroundColor(0xFF2196F3);
-                ivStatus.setColorFilter(0xFF2196F3);
-            } else if (status.equalsIgnoreCase("Under Maintenance")) {
-                vStatusIndicator.setBackgroundColor(0xFFFFC107);
-                ivStatus.setColorFilter(0xFFFFC107);
-            } else if (status.equalsIgnoreCase("Out Of Order")) {
-                vStatusIndicator.setBackgroundColor(0xFFF44336);
-                ivStatus.setColorFilter(0xFFF44336);
-            } else {
-                vStatusIndicator.setBackgroundColor(0xFF9E9E9E);
-                ivStatus.setColorFilter(0xFF9E9E9E);
+            // Modern status UI handling
+            switch (status.toLowerCase()) {
+                case "available":
+                    vStatusIndicator.setBackgroundColor(Color.parseColor("#4CAF50"));
+                    ivStatus.setImageResource(R.drawable.ic_check_circle);
+                    ivStatus.setColorFilter(Color.parseColor("#4CAF50"));
+                    tvStatusText.setTextColor(Color.parseColor("#4CAF50"));
+                    tvStatusText.setText("Available");
+                    break;
+
+                case "booked":
+                    vStatusIndicator.setBackgroundColor(Color.parseColor("#FFA726"));
+                    ivStatus.setImageResource(R.drawable.ic_hourglass_empty);
+                    ivStatus.setColorFilter(Color.parseColor("#FFA726"));
+                    tvStatusText.setTextColor(Color.parseColor("#FFA726"));
+                    tvStatusText.setText("Booked");
+                    break;
+
+                case "charging":
+                    vStatusIndicator.setBackgroundColor(Color.parseColor("#1E88E5"));
+                    ivStatus.setImageResource(R.drawable.ic_flash_on);
+                    ivStatus.setColorFilter(Color.parseColor("#1E88E5"));
+                    tvStatusText.setTextColor(Color.parseColor("#1E88E5"));
+                    tvStatusText.setText("Charging");
+                    break;
+
+                case "under maintenance":
+                    vStatusIndicator.setBackgroundColor(Color.parseColor("#FFC107"));
+                    ivStatus.setImageResource(R.drawable.ic_build);
+                    ivStatus.setColorFilter(Color.parseColor("#FFC107"));
+                    tvStatusText.setTextColor(Color.parseColor("#FFC107"));
+                    tvStatusText.setText("Maintenance");
+                    break;
+
+                case "out of order":
+                    vStatusIndicator.setBackgroundColor(Color.parseColor("#E53935"));
+                    ivStatus.setImageResource(R.drawable.ic_error);
+                    ivStatus.setColorFilter(Color.parseColor("#E53935"));
+                    tvStatusText.setTextColor(Color.parseColor("#E53935"));
+                    tvStatusText.setText("Out of Order");
+                    break;
+
+                default:
+                    vStatusIndicator.setBackgroundColor(Color.parseColor("#9E9E9E"));
+                    ivStatus.setImageResource(R.drawable.ic_info);
+                    ivStatus.setColorFilter(Color.parseColor("#9E9E9E"));
+                    tvStatusText.setTextColor(Color.parseColor("#9E9E9E"));
+                    tvStatusText.setText("Unknown");
+                    break;
             }
 
             convertView.setOnClickListener(v -> showStatusChangeDialog(slot));
-
             return convertView;
         }
     }

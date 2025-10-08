@@ -44,6 +44,7 @@ public class BookingDetailsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_booking_details);
         setTitle("Booking Details");
+        FooterHelper.setupFooter(this);
 
         session = new SessionManager(this);
         apiClient = new ApiClient(session);
