@@ -139,29 +139,153 @@ namespace EvBackend.Services
 
         public async Task<StationDto> UpdateStationAsync(string stationId, UpdateStationDto dto)
         {
+            // Step 1: Retrieve the station from the database
             var station = await _stations.Find(s => s.StationId == stationId).FirstOrDefaultAsync();
-            if (station == null) return null;
+            if (station == null) return null;  // If station doesn't exist, return null
 
+            // Step 2: Get new coordinates for location change
             var coords = await _geocoding.GetCoordinatesAsync(dto.Location);
 
+            // Step 3: Prepare the update operation for station details
             var filter = Builders<Station>.Filter.Eq(s => s.StationId, stationId);
             var update = Builders<Station>.Update
                 .Set(s => s.Name, dto.Name)
                 .Set(s => s.Location, dto.Location)
-                .Set(s => s.Latitude, coords?.lat ?? station.Latitude)
-                .Set(s => s.Longitude, coords?.lng ?? station.Longitude)
+                .Set(s => s.Latitude, coords?.lat ?? station.Latitude)  // Update latitude if location is changed
+                .Set(s => s.Longitude, coords?.lng ?? station.Longitude)  // Update longitude if location is changed
                 .Set(s => s.Type, dto.Type)
                 .Set(s => s.AvailableSlots, dto.AvailableSlots)
                 .Set(s => s.UpdatedAt, DateTime.UtcNow);
 
+            // Step 4: Apply the update to the station
             await _stations.UpdateOneAsync(filter, update);
 
-            // (slot handling logic same as your previous version)
-            // ...
+            // Step 5: Handle Slot updates
+            if (dto.SlotUpdates != null && dto.SlotUpdates.Any())
+            {
+                foreach (var slotUpdate in dto.SlotUpdates)
+                {
+                    if (slotUpdate.Action == SlotAction.Remove)
+                    {
+                        // Remove the slot
+                        var deleteFilter = Builders<Slot>.Filter.Eq(s => s.SlotId, slotUpdate.SlotId);
+                        await _slots.DeleteOneAsync(deleteFilter);
+                        station.SlotIds.Remove(slotUpdate.SlotId);
+                    }
+                    else if (slotUpdate.Action == SlotAction.Update)
+                    {
+                        // Update slot status
+                        var filterSlot = Builders<Slot>.Filter.Eq(s => s.SlotId, slotUpdate.SlotId);
+                        var updateSlot = Builders<Slot>.Update.Set(s => s.Status, slotUpdate.Status);
+                        await _slots.UpdateOneAsync(filterSlot, updateSlot);
+                    }
+                    else if (slotUpdate.Action == SlotAction.Add)
+                    {
+                        // Add new slot to the station
+                        var lastSlot = await _slots.Find(s => s.StationId == stationId)
+                                                   .SortByDescending(s => s.Number)
+                                                   .FirstOrDefaultAsync();
 
+                        int nextNumber = lastSlot != null ? lastSlot.Number + 1 : 1;
+
+                        var newSlot = new Slot
+                        {
+                            StationId = stationId,
+                            Number = nextNumber,  // Assign next available slot number
+                            Status = slotUpdate.Status
+                        };
+
+                        await _slots.InsertOneAsync(newSlot);
+                        station.SlotIds.Add(newSlot.SlotId);
+
+                        // Update station’s SlotIds and Capacity
+                        await _stations.UpdateOneAsync(
+                            Builders<Station>.Filter.Eq(s => s.StationId, stationId),
+                            Builders<Station>.Update
+                                .Set(s => s.SlotIds, station.SlotIds)
+                                .Set(s => s.Capacity, station.SlotIds.Count)
+                        );
+                    }
+                }
+
+                // Sync SlotIds back to the Station
+                await _stations.UpdateOneAsync(
+                    Builders<Station>.Filter.Eq(s => s.StationId, stationId),
+                    Builders<Station>.Update.Set(s => s.SlotIds, station.SlotIds)
+                );
+            }
+
+            // Step 6: Recalculate capacity and available slots
+            var updatedSlots = await _slots.Find(s => s.StationId == stationId).ToListAsync();
+            var capacity = updatedSlots.Count;
+            var availableSlots = updatedSlots.Count(s => s.Status == "Available");
+
+            await _stations.UpdateOneAsync(filter,
+                Builders<Station>.Update
+                    .Set(s => s.Capacity, capacity)
+                    .Set(s => s.AvailableSlots, availableSlots)
+            );
+
+            // Step 7: Handle Time Slot updates for the slots
+            var sriLankaTz = TimeZoneInfo.FindSystemTimeZoneById("Sri Lanka Standard Time");
+            double sessionMinutes = 120;
+            string[] fixedSlots = { "01:15", "03:30", "05:45", "08:00", "10:15",
+                            "12:30", "14:45", "17:00", "19:15", "21:30" };
+
+            var allTimeSlots = new List<TimeSlot>();
+            var slotTimeMap = new Dictionary<string, List<string>>();
+
+            for (int dayOffset = 0; dayOffset < 7; dayOffset++)
+            {
+                var targetDay = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, sriLankaTz).Date.AddDays(dayOffset);
+
+                foreach (var slot in updatedSlots)
+                {
+                    var timeSlotIds = new List<string>();
+
+                    foreach (var startStr in fixedSlots)
+                    {
+                        var startLocal = DateTime.Parse($"{targetDay:yyyy-MM-dd} {startStr}");
+                        var endLocal = startLocal.AddMinutes(sessionMinutes);
+                        var startUtc = TimeZoneInfo.ConvertTimeToUtc(startLocal, sriLankaTz);
+                        var endUtc = TimeZoneInfo.ConvertTimeToUtc(endLocal, sriLankaTz);
+
+                        var tsId = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
+                        timeSlotIds.Add(tsId);
+
+                        allTimeSlots.Add(new TimeSlot
+                        {
+                            TimeSlotId = tsId,
+                            StationId = station.StationId,
+                            SlotId = slot.SlotId,
+                            StartTime = startUtc,
+                            EndTime = endUtc,
+                            Status = "Available"
+                        });
+                    }
+
+                    slotTimeMap[slot.SlotId] = timeSlotIds;
+                }
+            }
+
+            if (allTimeSlots.Any())
+                await _timeSlots.InsertManyAsync(allTimeSlots);
+
+            // Step 8: Update each Slot with its time slot references
+            foreach (var slot in updatedSlots)
+            {
+                var slotUpdateDef = Builders<Slot>.Update
+                    .Set(s => s.TimeSlotIds, slotTimeMap[slot.SlotId])
+                    .Set(s => s.UpdatedAt, DateTime.UtcNow);
+
+                await _slots.UpdateOneAsync(s => s.SlotId == slot.SlotId, slotUpdateDef);
+            }
+
+            // Step 9: Return DTO with updated information
             var updatedStation = await _stations.Find(s => s.StationId == stationId).FirstOrDefaultAsync();
             return updatedStation != null ? ToDto(updatedStation) : null;
         }
+
 
         public async Task<bool> DeactivateStationAsync(string stationId)
         {
@@ -296,3 +420,4 @@ namespace EvBackend.Services
 
     }
 }
+
