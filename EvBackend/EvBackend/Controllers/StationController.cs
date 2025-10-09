@@ -163,5 +163,23 @@ namespace EvBackend.Controllers
                 return StatusCode(500, new { message = "Unexpected error" });
             }
         }
+
+        [HttpDelete("{stationId}")]
+[Authorize(Roles = "Admin,Backoffice")]
+public async Task<IActionResult> DeleteStation(string stationId)
+{
+    try
+    {
+        var ok = await _stationService.DeleteStationWithRelationsAsync(stationId);
+        if (!ok) return NotFound(new { message = "Station not found" });
+        return Ok(new { message = "Station and related data deleted successfully" });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex);
+        return StatusCode(500, new { message = "Error deleting station" });
+    }
+}
+
     }
 }

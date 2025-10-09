@@ -1,12 +1,15 @@
 // --------------------------------------------------------------
 // File Name: BookingService.cs
 // Author: Miyuri Lokuhewage
-// Description: Implements booking management logic.
-// Owners request station + connectorType, service finds free slot,
-// creates booking, and enforces business rules.
-// Created/Updated On: 27/09/2025
+// Description: Implements booking logic for new station→timeslot→slot flow.
+// Enforces 12h update/cancel rule, UTC storage, SL formatting.
+// Created/Updated On: 09/10/2025
 // --------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using EvBackend.Entities;
 using EvBackend.Models.DTOs;
 using EvBackend.Services.Interfaces;
@@ -24,148 +27,247 @@ namespace EvBackend.Services
             _db = db;
         }
 
-        private static string FormatSriLankaTime(DateTime utcTime)
+        // ------------------------------
+        // Sri Lanka time formatting
+        // ------------------------------
+        private static TimeZoneInfo GetSriLankaTz()
         {
-            var zone = TimeZoneInfo.FindSystemTimeZoneById("Sri Lanka Standard Time");
-            var localTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, zone);
-            return localTime.ToString("yyyy MMM dd, hh:mm tt");
+            try { return TimeZoneInfo.FindSystemTimeZoneById("Sri Lanka Standard Time"); }
+            catch { return TimeZoneInfo.FindSystemTimeZoneById("Asia/Colombo"); }
         }
 
-        // ---------------------------
-        // 📌 Create Booking
-        // ---------------------------
+        private static string FormatSriLankaDate(DateTime utc)
+        {
+            var tz = GetSriLankaTz();
+            var lt = TimeZoneInfo.ConvertTimeFromUtc(utc, tz);
+            return lt.ToString("yyyy MMM dd");
+        }
+
+        private static string FormatSriLankaTime(DateTime utc)
+        {
+            var tz = GetSriLankaTz();
+            var lt = TimeZoneInfo.ConvertTimeFromUtc(utc, tz);
+            return lt.ToString("yyyy MMM dd, HH:mm");
+        }
+
+        // ------------------------------
+        // Availability for UI
+        // ------------------------------
+        public async Task<IEnumerable<object>> GetAvailableTimeSlotsForStationAsync(string stationId, string dateYyyyMmDd)
+        {
+            if (string.IsNullOrWhiteSpace(dateYyyyMmDd))
+                throw new ArgumentException("date (YYYY-MM-DD) is required");
+
+            var stationCol = _db.GetCollection<Station>("Stations");
+            var timeSlotCol = _db.GetCollection<TimeSlot>("TimeSlots");
+
+            var station = await stationCol.Find(s => s.StationId == stationId).FirstOrDefaultAsync();
+            if (station == null || !station.IsActive)
+                throw new ArgumentException("Station not found or inactive");
+
+            var tz = GetSriLankaTz();
+            if (!DateTime.TryParse(dateYyyyMmDd, out var slDate))
+                throw new ArgumentException("Invalid date");
+
+            var dayStartSL = new DateTime(slDate.Year, slDate.Month, slDate.Day, 0, 0, 0);
+            var dayEndSL = dayStartSL.AddDays(1).AddTicks(-1);
+            var startUtc = TimeZoneInfo.ConvertTimeToUtc(dayStartSL, tz);
+            var endUtc = TimeZoneInfo.ConvertTimeToUtc(dayEndSL, tz);
+
+            var filter = Builders<TimeSlot>.Filter.And(
+                Builders<TimeSlot>.Filter.Eq(t => t.StationId, stationId),
+                Builders<TimeSlot>.Filter.Gte(t => t.StartTime, startUtc),
+                Builders<TimeSlot>.Filter.Lte(t => t.StartTime, endUtc)
+            );
+
+            var slots = await timeSlotCol.Find(filter).ToListAsync();
+
+            return slots
+                .GroupBy(t => new { t.StartTime, t.EndTime })
+                .Select(g => new
+                {
+                    StartTime = g.Key.StartTime,
+                    EndTime = g.Key.EndTime,
+                    TotalSlots = g.Count(),
+                    AvailableCount = g.Count(t => t.Status == "Available"),
+                    AnyAvailableTimeSlotId = g.FirstOrDefault(t => t.Status == "Available")?.TimeSlotId,
+                    FormattedStart = FormatSriLankaTime(g.Key.StartTime),
+                    FormattedEnd = FormatSriLankaTime(g.Key.EndTime),
+                    FormattedDate = FormatSriLankaDate(g.Key.StartTime)
+                })
+                .OrderBy(x => x.StartTime)
+                .ToList();
+        }
+
+        public async Task<IEnumerable<object>> GetAvailableSlotsForTimeSlotAsync(string timeSlotId)
+        {
+            var timeSlotCol = _db.GetCollection<TimeSlot>("TimeSlots");
+            var slotCol = _db.GetCollection<Slot>("Slots");
+
+            var ts = await timeSlotCol.Find(x => x.TimeSlotId == timeSlotId).FirstOrDefaultAsync();
+            if (ts == null) throw new ArgumentException("TimeSlot not found");
+
+            if (ts.Status != "Available")
+                return Enumerable.Empty<object>();
+
+            // same block = same Start/End & station; list slots whose corresponding block is Available
+            var sameBlockFilter = Builders<TimeSlot>.Filter.And(
+                Builders<TimeSlot>.Filter.Eq(x => x.StationId, ts.StationId),
+                Builders<TimeSlot>.Filter.Eq(x => x.StartTime, ts.StartTime),
+                Builders<TimeSlot>.Filter.Eq(x => x.EndTime, ts.EndTime),
+                Builders<TimeSlot>.Filter.Eq(x => x.Status, "Available")
+            );
+
+            var availTs = await timeSlotCol.Find(sameBlockFilter).ToListAsync();
+            var slotIds = availTs.Select(x => x.SlotId).Distinct().ToList();
+
+            var slotDocs = await slotCol.Find(s => slotIds.Contains(s.SlotId) && s.Status == "Available").ToListAsync();
+
+            return slotDocs.OrderBy(s => s.Number)
+                           .Select(s => new { s.SlotId, s.Number });
+        }
+
+        // ------------------------------
+        // Create Booking
+        // ------------------------------
         public async Task<BookingDto> CreateBookingAsync(CreateBookingDto dto, string ownerId)
         {
-            if (dto.StartTime >= dto.EndTime)
-                throw new ArgumentException("StartTime must be before EndTime");
+            var stationCol = _db.GetCollection<Station>("Stations");
+            var slotCol = _db.GetCollection<Slot>("Slots");
+            var timeSlotCol = _db.GetCollection<TimeSlot>("TimeSlots");
+            var bookingCol = _db.GetCollection<Booking>("Bookings");
 
-            // ✅ 7-day validation
-            if (dto.StartTime > DateTime.UtcNow.AddDays(7))
-                throw new InvalidOperationException("Bookings can only be made within 7 days from today");
-
-            if (dto.StartTime < DateTime.UtcNow)
-                throw new InvalidOperationException("Booking start time cannot be in the past");
-
-            var stations = _db.GetCollection<Station>("Stations");
-            var station = await stations.Find(s => s.StationId == dto.StationId).FirstOrDefaultAsync();
-
+            var station = await stationCol.Find(s => s.StationId == dto.StationId).FirstOrDefaultAsync();
             if (station == null) throw new ArgumentException("Station not found");
-            if (!station.IsActive) throw new InvalidOperationException("Station is not active");
+            if (!station.IsActive) throw new InvalidOperationException("Station inactive");
 
-            var slots = _db.GetCollection<Slot>("Slots");
+            var slot = await slotCol.Find(s => s.SlotId == dto.SlotId && s.StationId == dto.StationId).FirstOrDefaultAsync();
+            if (slot == null) throw new ArgumentException("Slot not found");
+            if (slot.Status != "Available") throw new InvalidOperationException("Slot is not available");
 
-            // ✅ Capacity vs slot count validation
-            var totalSlots = await slots.CountDocumentsAsync(s => s.StationId == dto.StationId);
-            if (totalSlots < station.Capacity)
-            {
-                throw new InvalidOperationException(
-                    $"Station capacity is {station.Capacity}, but only {totalSlots} slots have been created. Please contact operator.");
-            }
+            var ts = await timeSlotCol.Find(t => t.TimeSlotId == dto.TimeSlotId).FirstOrDefaultAsync();
+            if (ts == null) throw new ArgumentException("TimeSlot not found");
+            if (ts.StationId != dto.StationId || ts.SlotId != dto.SlotId)
+                throw new InvalidOperationException("TimeSlot does not belong to the selected station/slot");
+            if (ts.Status != "Available") throw new InvalidOperationException("TimeSlot is not available");
 
-            // 🔎 Find an Available slot of requested type
-            var freeSlot = await slots.Find(s =>
-        s.StationId == dto.StationId &&
-        //s.ConnectorType == dto.ConnectorType &&
-        s.Status == "Available").FirstOrDefaultAsync();
-
-            if (freeSlot == null)
-                throw new InvalidOperationException($"No available {dto.ConnectorType} slots in this station. Try another time or slot type.");
-
+            if (ts.StartTime < DateTime.UtcNow)
+                throw new InvalidOperationException("Cannot book a past timeslot");
 
             var now = DateTime.UtcNow;
-            var bookings = _db.GetCollection<Booking>("Bookings");
-
-            var newBooking = new Booking
+            var booking = new Booking
             {
                 BookingId = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
                 StationId = dto.StationId,
-                SlotId = freeSlot.SlotId,
+                SlotId = dto.SlotId,
+                SlotNumber = slot.Number,
+                TimeSlotId = dto.TimeSlotId,
                 OwnerId = ownerId,
                 Status = "Pending",
-                StartTime = dto.StartTime,
-                EndTime = dto.EndTime,
+                StartTime = ts.StartTime,
+                EndTime = ts.EndTime,
                 CreatedAt = now,
                 UpdatedAt = now
             };
 
-            // ✅ Generate QR Code only if slot found
+            // QR with expiry at session end
             var token = Guid.NewGuid().ToString();
-            // var expiresAt = dto.StartTime > DateTime.UtcNow.AddMinutes(15)
-            //     ? DateTime.UtcNow.AddMinutes(15)
-            //     : dto.StartTime;
-            var expiresAt = dto.EndTime;
+            booking.QrCode = token;
+            booking.QrExpiresAt = ts.EndTime;
 
+            using var qrGen = new QRCodeGenerator();
+            var qrData = qrGen.CreateQrCode(token, QRCodeGenerator.ECCLevel.Q);
+            var pngQr = new PngByteQRCode(qrData);
+            booking.QrImageBase64 = Convert.ToBase64String(pngQr.GetGraphic(20));
 
-            using var qrGen = new QRCoder.QRCodeGenerator();
-            var qrData = qrGen.CreateQrCode(token, QRCoder.QRCodeGenerator.ECCLevel.Q);
-            var pngQr = new QRCoder.PngByteQRCode(qrData);
-            var bytes = pngQr.GetGraphic(20);
-            string base64 = Convert.ToBase64String(bytes);
+            await bookingCol.InsertOneAsync(booking);
 
-            newBooking.QrCode = token;
-            newBooking.QrExpiresAt = expiresAt;
-            newBooking.QrImageBase64 = base64;
-
-            await bookings.InsertOneAsync(newBooking);
-
-            // Mark slot as booked
-            var update = Builders<Slot>.Update
-                .Set(s => s.Status, "Booked");
-                //.Set(s => s.StartTime, dto.StartTime)
-                //.Set(s => s.EndTime, dto.EndTime);
-
-            await slots.UpdateOneAsync(s => s.SlotId == freeSlot.SlotId, update);
+            // Only this (slot, start/end) timeslot becomes booked
+            await timeSlotCol.UpdateOneAsync(
+                t => t.TimeSlotId == ts.TimeSlotId,
+                Builders<TimeSlot>.Update.Set(t => t.Status, "Booked")
+            );
 
             return new BookingDto
             {
-                BookingId = newBooking.BookingId,
-                StationId = newBooking.StationId,
-                SlotId = newBooking.SlotId,
-                OwnerId = newBooking.OwnerId,
-                Status = newBooking.Status,
-                StartTime = newBooking.StartTime,
-                EndTime = newBooking.EndTime,
-                CreatedAt = newBooking.CreatedAt,
-                UpdatedAt = newBooking.UpdatedAt,
-                QrCode = newBooking.QrCode,
-                QrExpiresAt = newBooking.QrExpiresAt,
-                QrImageBase64 = newBooking.QrImageBase64,
-                FormattedStartTime = FormatSriLankaTime(newBooking.StartTime),
-                FormattedEndTime = FormatSriLankaTime(newBooking.EndTime)
+                BookingId = booking.BookingId,
+                StationId = booking.StationId,
+                SlotId = booking.SlotId,
+                SlotNumber = booking.SlotNumber,
+                TimeSlotId = booking.TimeSlotId,
+                OwnerId = booking.OwnerId,
+                Status = booking.Status,
+                StartTime = booking.StartTime,
+                EndTime = booking.EndTime,
+                CreatedAt = booking.CreatedAt,
+                UpdatedAt = booking.UpdatedAt,
+                QrCode = booking.QrCode,
+                QrExpiresAt = booking.QrExpiresAt,
+                QrImageBase64 = booking.QrImageBase64,
+                FormattedStartTime = FormatSriLankaTime(booking.StartTime),
+                FormattedEndTime = FormatSriLankaTime(booking.EndTime),
+                FormattedDate = FormatSriLankaDate(booking.StartTime)
             };
-
         }
 
-        // ---------------------------
-        // 📌 Update Booking
-        // ---------------------------
+        // ------------------------------
+        // Update (Reschedule) ≥12h before start
+        // ------------------------------
         public async Task<BookingDto> UpdateBookingAsync(string bookingId, UpdateBookingDto dto, string requesterId, string requesterRole)
         {
-            var bookings = _db.GetCollection<Booking>("Bookings");
-            var booking = await bookings.Find(b => b.BookingId == bookingId).FirstOrDefaultAsync();
+            var bookingCol = _db.GetCollection<Booking>("Bookings");
+            var timeSlotCol = _db.GetCollection<TimeSlot>("TimeSlots");
+            var slotCol = _db.GetCollection<Slot>("Slots");
+
+            var booking = await bookingCol.Find(b => b.BookingId == bookingId).FirstOrDefaultAsync();
             if (booking == null) return null;
 
-            // Only owner may update own booking and only >=12 hours before start
             if (requesterRole == "Owner" && booking.OwnerId != requesterId)
                 throw new UnauthorizedAccessException();
 
-            var cutoff = booking.StartTime.AddHours(-12);
-            if (DateTime.UtcNow > cutoff)
+            if (DateTime.UtcNow > booking.StartTime.AddHours(-12))
                 throw new InvalidOperationException("Cannot update booking within 12 hours of start");
 
+            var newTs = await timeSlotCol.Find(t => t.TimeSlotId == dto.NewTimeSlotId).FirstOrDefaultAsync();
+            if (newTs == null) throw new ArgumentException("New TimeSlot not found");
+            if (newTs.Status != "Available") throw new InvalidOperationException("New TimeSlot is not available");
+
+            var newSlot = await slotCol.Find(s => s.SlotId == dto.NewSlotId).FirstOrDefaultAsync();
+            if (newSlot == null) throw new ArgumentException("New Slot not found");
+            if (newSlot.Status != "Available") throw new InvalidOperationException("New Slot is not available");
+
+            if (newTs.SlotId != newSlot.SlotId)
+                throw new InvalidOperationException("New TimeSlot must belong to the selected new Slot");
+
+            // Free old timeslot
+            await timeSlotCol.UpdateOneAsync(
+                t => t.TimeSlotId == booking.TimeSlotId,
+                Builders<TimeSlot>.Update.Set(t => t.Status, "Available")
+            );
+            // Occupy new timeslot
+            await timeSlotCol.UpdateOneAsync(
+                t => t.TimeSlotId == newTs.TimeSlotId,
+                Builders<TimeSlot>.Update.Set(t => t.Status, "Booked")
+            );
+
             var update = Builders<Booking>.Update
-                .Set(b => b.StartTime, dto.StartTime)
-                .Set(b => b.EndTime, dto.EndTime)
+                .Set(b => b.TimeSlotId, newTs.TimeSlotId)
+                .Set(b => b.SlotId, newSlot.SlotId)
+                .Set(b => b.SlotNumber, newSlot.Number)
+                .Set(b => b.StartTime, newTs.StartTime)
+                .Set(b => b.EndTime, newTs.EndTime)
                 .Set(b => b.UpdatedAt, DateTime.UtcNow);
 
             var options = new FindOneAndUpdateOptions<Booking> { ReturnDocument = ReturnDocument.After };
-            var updated = await bookings.FindOneAndUpdateAsync(b => b.BookingId == bookingId, update, options);
+            var updated = await bookingCol.FindOneAndUpdateAsync(b => b.BookingId == bookingId, update, options);
 
             return new BookingDto
             {
                 BookingId = updated.BookingId,
                 StationId = updated.StationId,
                 SlotId = updated.SlotId,
+                SlotNumber = updated.SlotNumber,
+                TimeSlotId = updated.TimeSlotId,
                 OwnerId = updated.OwnerId,
                 Status = updated.Status,
                 StartTime = updated.StartTime,
@@ -173,47 +275,50 @@ namespace EvBackend.Services
                 CreatedAt = updated.CreatedAt,
                 UpdatedAt = updated.UpdatedAt,
                 FormattedStartTime = FormatSriLankaTime(updated.StartTime),
-                FormattedEndTime = FormatSriLankaTime(updated.EndTime)
+                FormattedEndTime = FormatSriLankaTime(updated.EndTime),
+                FormattedDate = FormatSriLankaDate(updated.StartTime)
             };
         }
 
-        // ---------------------------
-        // 📌 Cancel Booking
-        // ---------------------------
+        // ------------------------------
+        // Cancel ≥12h before start
+        // ------------------------------
         public async Task<bool> CancelBookingAsync(string bookingId, string requesterId, string requesterRole)
         {
-            var bookings = _db.GetCollection<Booking>("Bookings");
-            var booking = await bookings.Find(b => b.BookingId == bookingId).FirstOrDefaultAsync();
+            var bookingCol = _db.GetCollection<Booking>("Bookings");
+            var timeSlotCol = _db.GetCollection<TimeSlot>("TimeSlots");
+
+            var booking = await bookingCol.Find(b => b.BookingId == bookingId).FirstOrDefaultAsync();
             if (booking == null) throw new ArgumentException("Booking not found");
 
             if (requesterRole == "Owner" && booking.OwnerId != requesterId)
                 throw new UnauthorizedAccessException();
 
-            var cutoff = booking.StartTime.AddHours(-12);
-            if (DateTime.UtcNow > cutoff)
+            if (DateTime.UtcNow > booking.StartTime.AddHours(-12))
                 throw new InvalidOperationException("Cannot cancel booking within 12 hours of start");
 
-            var update = Builders<Booking>.Update
-                .Set(b => b.Status, "Cancelled")
-                .Set(b => b.UpdatedAt, DateTime.UtcNow);
+            await bookingCol.UpdateOneAsync(
+                b => b.BookingId == bookingId,
+                Builders<Booking>.Update
+                    .Set(b => b.Status, "Cancelled")
+                    .Set(b => b.UpdatedAt, DateTime.UtcNow)
+            );
 
-            await bookings.UpdateOneAsync(b => b.BookingId == bookingId, update);
-
-            // free slot
-            var slots = _db.GetCollection<Slot>("Slots");
-            await slots.UpdateOneAsync(s => s.SlotId == booking.SlotId,
-                Builders<Slot>.Update.Set(s => s.Status, "Available"));
+            await timeSlotCol.UpdateOneAsync(
+                t => t.TimeSlotId == booking.TimeSlotId,
+                Builders<TimeSlot>.Update.Set(t => t.Status, "Available")
+            );
 
             return true;
         }
 
-        // ---------------------------
-        // 📌 Get Booking(s)
-        // ---------------------------
+        // ------------------------------
+        // Gets
+        // ------------------------------
         public async Task<BookingDto> GetBookingByIdAsync(string bookingId)
         {
-            var bookings = _db.GetCollection<Booking>("Bookings");
-            var b = await bookings.Find(bk => bk.BookingId == bookingId).FirstOrDefaultAsync();
+            var bookingCol = _db.GetCollection<Booking>("Bookings");
+            var b = await bookingCol.Find(x => x.BookingId == bookingId).FirstOrDefaultAsync();
             if (b == null) return null;
 
             return new BookingDto
@@ -221,6 +326,8 @@ namespace EvBackend.Services
                 BookingId = b.BookingId,
                 StationId = b.StationId,
                 SlotId = b.SlotId,
+                SlotNumber = b.SlotNumber,
+                TimeSlotId = b.TimeSlotId,
                 OwnerId = b.OwnerId,
                 Status = b.Status,
                 StartTime = b.StartTime,
@@ -231,20 +338,23 @@ namespace EvBackend.Services
                 QrExpiresAt = b.QrExpiresAt,
                 QrImageBase64 = b.QrImageBase64,
                 FormattedStartTime = FormatSriLankaTime(b.StartTime),
-                FormattedEndTime = FormatSriLankaTime(b.EndTime)
+                FormattedEndTime = FormatSriLankaTime(b.EndTime),
+                FormattedDate = FormatSriLankaDate(b.StartTime)
             };
         }
 
         public async Task<IEnumerable<BookingDto>> GetBookingsByOwnerAsync(string ownerId)
         {
-            var bookings = _db.GetCollection<Booking>("Bookings");
-            var list = await bookings.Find(b => b.OwnerId == ownerId).ToListAsync();
+            var bookingCol = _db.GetCollection<Booking>("Bookings");
+            var list = await bookingCol.Find(b => b.OwnerId == ownerId).SortByDescending(b => b.StartTime).ToListAsync();
 
             return list.Select(b => new BookingDto
             {
                 BookingId = b.BookingId,
                 StationId = b.StationId,
                 SlotId = b.SlotId,
+                SlotNumber = b.SlotNumber,
+                TimeSlotId = b.TimeSlotId,
                 OwnerId = b.OwnerId,
                 Status = b.Status,
                 StartTime = b.StartTime,
@@ -255,20 +365,23 @@ namespace EvBackend.Services
                 QrExpiresAt = b.QrExpiresAt,
                 QrImageBase64 = b.QrImageBase64,
                 FormattedStartTime = FormatSriLankaTime(b.StartTime),
-                FormattedEndTime = FormatSriLankaTime(b.EndTime)
+                FormattedEndTime = FormatSriLankaTime(b.EndTime),
+                FormattedDate = FormatSriLankaDate(b.StartTime)
             });
         }
 
         public async Task<IEnumerable<BookingDto>> GetBookingsByStationAsync(string stationId)
         {
-            var bookings = _db.GetCollection<Booking>("Bookings");
-            var list = await bookings.Find(b => b.StationId == stationId).ToListAsync();
+            var bookingCol = _db.GetCollection<Booking>("Bookings");
+            var list = await bookingCol.Find(b => b.StationId == stationId).SortByDescending(b => b.StartTime).ToListAsync();
 
             return list.Select(b => new BookingDto
             {
                 BookingId = b.BookingId,
                 StationId = b.StationId,
                 SlotId = b.SlotId,
+                SlotNumber = b.SlotNumber,
+                TimeSlotId = b.TimeSlotId,
                 OwnerId = b.OwnerId,
                 Status = b.Status,
                 StartTime = b.StartTime,
@@ -279,68 +392,22 @@ namespace EvBackend.Services
                 QrExpiresAt = b.QrExpiresAt,
                 QrImageBase64 = b.QrImageBase64,
                 FormattedStartTime = FormatSriLankaTime(b.StartTime),
-                FormattedEndTime = FormatSriLankaTime(b.EndTime)
+                FormattedEndTime = FormatSriLankaTime(b.EndTime),
+                FormattedDate = FormatSriLankaDate(b.StartTime)
             });
         }
-
-        // ---------------------------
-        // 📅 Filtered Station Bookings
-        // ---------------------------
 
         public async Task<IEnumerable<BookingDto>> GetTodayApprovedBookingsAsync(string stationId)
         {
-            var bookings = _db.GetCollection<Booking>("Bookings");
+            var bookingCol = _db.GetCollection<Booking>("Bookings");
 
-            // Convert to Sri Lanka local day
-            var zone = TimeZoneInfo.FindSystemTimeZoneById("Sri Lanka Standard Time");
-            var nowSL = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zone);
+            var tz = GetSriLankaTz();
+            var nowSL = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+            var startSL = new DateTime(nowSL.Year, nowSL.Month, nowSL.Day, 0, 0, 0);
+            var endSL = startSL.AddDays(1).AddTicks(-1);
 
-            var startOfDaySL = new DateTime(nowSL.Year, nowSL.Month, nowSL.Day, 0, 0, 0);
-            var endOfDaySL = startOfDaySL.AddDays(1).AddTicks(-1);
-
-            // Convert back to UTC for filtering
-            var startOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(startOfDaySL, zone);
-            var endOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(endOfDaySL, zone);
-
-            var filter = Builders<Booking>.Filter.And(
-                Builders<Booking>.Filter.Eq(b => b.StationId, stationId),
-                Builders<Booking>.Filter.Eq(b => b.Status, "Approved"),
-                Builders<Booking>.Filter.Gte(b => b.StartTime, startOfDayUtc),
-                Builders<Booking>.Filter.Lte(b => b.StartTime, endOfDayUtc)
-            );
-
-            var list = await bookings.Find(filter).SortBy(b => b.StartTime).ToListAsync();
-
-            return list.Select(b => new BookingDto
-            {
-                BookingId = b.BookingId,
-                StationId = b.StationId,
-                SlotId = b.SlotId,
-                OwnerId = b.OwnerId,
-                Status = b.Status,
-                StartTime = b.StartTime,
-                EndTime = b.EndTime,
-                CreatedAt = b.CreatedAt,
-                UpdatedAt = b.UpdatedAt,
-                QrCode = b.QrCode,
-                QrExpiresAt = b.QrExpiresAt,
-                QrImageBase64 = b.QrImageBase64,
-                FormattedStartTime = FormatSriLankaTime(b.StartTime),
-                FormattedEndTime = FormatSriLankaTime(b.EndTime)
-            });
-        }
-
-
-        public async Task<IEnumerable<BookingDto>> GetUpcomingApprovedBookingsAsync(string stationId)
-        {
-            var bookings = _db.GetCollection<Booking>("Bookings");
-
-            var zone = TimeZoneInfo.FindSystemTimeZoneById("Sri Lanka Standard Time");
-            var nowSL = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zone);
-
-            // Next 3 days window
-            var startUtc = TimeZoneInfo.ConvertTimeToUtc(nowSL.AddDays(1).Date, zone);
-            var endUtc = TimeZoneInfo.ConvertTimeToUtc(nowSL.AddDays(4).Date.AddTicks(-1), zone);
+            var startUtc = TimeZoneInfo.ConvertTimeToUtc(startSL, tz);
+            var endUtc = TimeZoneInfo.ConvertTimeToUtc(endSL, tz);
 
             var filter = Builders<Booking>.Filter.And(
                 Builders<Booking>.Filter.Eq(b => b.StationId, stationId),
@@ -349,13 +416,15 @@ namespace EvBackend.Services
                 Builders<Booking>.Filter.Lte(b => b.StartTime, endUtc)
             );
 
-            var list = await bookings.Find(filter).SortBy(b => b.StartTime).ToListAsync();
+            var list = await bookingCol.Find(filter).SortBy(b => b.StartTime).ToListAsync();
 
             return list.Select(b => new BookingDto
             {
                 BookingId = b.BookingId,
                 StationId = b.StationId,
                 SlotId = b.SlotId,
+                SlotNumber = b.SlotNumber,
+                TimeSlotId = b.TimeSlotId,
                 OwnerId = b.OwnerId,
                 Status = b.Status,
                 StartTime = b.StartTime,
@@ -366,112 +435,136 @@ namespace EvBackend.Services
                 QrExpiresAt = b.QrExpiresAt,
                 QrImageBase64 = b.QrImageBase64,
                 FormattedStartTime = FormatSriLankaTime(b.StartTime),
-                FormattedEndTime = FormatSriLankaTime(b.EndTime)
+                FormattedEndTime = FormatSriLankaTime(b.EndTime),
+                FormattedDate = FormatSriLankaDate(b.StartTime)
             });
         }
 
+        public async Task<IEnumerable<BookingDto>> GetUpcomingApprovedBookingsAsync(string stationId)
+        {
+            var bookingCol = _db.GetCollection<Booking>("Bookings");
 
-        // ---------------------------
-        // 📌 Operator Actions
-        // ---------------------------
+            var tz = GetSriLankaTz();
+            var nowSL = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+
+            var startUtc = TimeZoneInfo.ConvertTimeToUtc(nowSL.AddDays(1).Date, tz);
+            var endUtc = TimeZoneInfo.ConvertTimeToUtc(nowSL.AddDays(4).Date.AddTicks(-1), tz);
+
+            var filter = Builders<Booking>.Filter.And(
+                Builders<Booking>.Filter.Eq(b => b.StationId, stationId),
+                Builders<Booking>.Filter.Eq(b => b.Status, "Approved"),
+                Builders<Booking>.Filter.Gte(b => b.StartTime, startUtc),
+                Builders<Booking>.Filter.Lte(b => b.StartTime, endUtc)
+            );
+
+            var list = await bookingCol.Find(filter).SortBy(b => b.StartTime).ToListAsync();
+
+            return list.Select(b => new BookingDto
+            {
+                BookingId = b.BookingId,
+                StationId = b.StationId,
+                SlotId = b.SlotId,
+                SlotNumber = b.SlotNumber,
+                TimeSlotId = b.TimeSlotId,
+                OwnerId = b.OwnerId,
+                Status = b.Status,
+                StartTime = b.StartTime,
+                EndTime = b.EndTime,
+                CreatedAt = b.CreatedAt,
+                UpdatedAt = b.UpdatedAt,
+                QrCode = b.QrCode,
+                QrExpiresAt = b.QrExpiresAt,
+                QrImageBase64 = b.QrImageBase64,
+                FormattedStartTime = FormatSriLankaTime(b.StartTime),
+                FormattedEndTime = FormatSriLankaTime(b.EndTime),
+                FormattedDate = FormatSriLankaDate(b.StartTime)
+            });
+        }
+
+        // ------------------------------
+        // Operator/Admin actions
+        // ------------------------------
         public async Task<bool> ApproveBookingAsync(string bookingId, string operatorId)
         {
-            var bookings = _db.GetCollection<Booking>("Bookings");
-            var booking = await bookings.Find(b => b.BookingId == bookingId).FirstOrDefaultAsync();
-            if (booking == null) return false;
-
-            var update = Builders<Booking>.Update
-                .Set(b => b.Status, "Approved")
-                .Set(b => b.UpdatedAt, DateTime.UtcNow);
-
-            await bookings.UpdateOneAsync(b => b.BookingId == bookingId, update);
-            return true;
+            var col = _db.GetCollection<Booking>("Bookings");
+            var result = await col.UpdateOneAsync(
+                b => b.BookingId == bookingId && b.Status == "Pending",
+                Builders<Booking>.Update
+                    .Set(b => b.Status, "Approved")
+                    .Set(b => b.UpdatedAt, DateTime.UtcNow)
+            );
+            return result.ModifiedCount > 0;
         }
 
         public async Task<bool> StartChargingAsync(string bookingId, string operatorId)
         {
-            var collection = _db.GetCollection<Booking>("Bookings");
-            var booking = await collection.Find(b => b.BookingId == bookingId).FirstOrDefaultAsync();
-
-            if (booking == null) return false;
-
-            booking.Status = "Charging";
-            booking.UpdatedAt = DateTime.UtcNow;
-
-            var filter = Builders<Booking>.Filter.Eq(b => b.BookingId, bookingId);
-            var update = Builders<Booking>.Update
-                .Set(b => b.Status, "Charging")
-                .Set(b => b.UpdatedAt, DateTime.UtcNow);
-
-            await collection.UpdateOneAsync(filter, update);
-            return true;
+            var col = _db.GetCollection<Booking>("Bookings");
+            var result = await col.UpdateOneAsync(
+                b => b.BookingId == bookingId && (b.Status == "Approved" || b.Status == "Pending"),
+                Builders<Booking>.Update
+                    .Set(b => b.Status, "Charging")
+                    .Set(b => b.UpdatedAt, DateTime.UtcNow)
+            );
+            return result.ModifiedCount > 0;
         }
-
 
         public async Task<bool> FinalizeBookingAsync(string bookingId, string operatorId)
         {
-            var bookings = _db.GetCollection<Booking>("Bookings");
-            var booking = await bookings.Find(b => b.BookingId == bookingId).FirstOrDefaultAsync();
-            if (booking == null) return false;
-
-            var update = Builders<Booking>.Update
-                .Set(b => b.Status, "Finalized")
-                .Set(b => b.UpdatedAt, DateTime.UtcNow);
-
-            await bookings.UpdateOneAsync(b => b.BookingId == bookingId, update);
-
-            // free slot again
-            var slots = _db.GetCollection<Slot>("Slots");
-            await slots.UpdateOneAsync(s => s.SlotId == booking.SlotId,
-                Builders<Slot>.Update.Set(s => s.Status, "Available"));
-
-            return true;
+            var col = _db.GetCollection<Booking>("Bookings");
+            var result = await col.UpdateOneAsync(
+                b => b.BookingId == bookingId && (b.Status == "Charging" || b.Status == "Approved"),
+                Builders<Booking>.Update
+                    .Set(b => b.Status, "Finalized")
+                    .Set(b => b.UpdatedAt, DateTime.UtcNow)
+            );
+            // We intentionally do NOT flip Slot.Status; bookings depend on Slot.Status == "Available" at create time.
+            return result.ModifiedCount > 0;
         }
 
-        // ---------------------------
-        // 📌 QR Code
-        // ---------------------------
+        // ------------------------------
+        // QR
+        // ------------------------------
         public async Task<(string? base64Image, DateTime? expiresAt)> GenerateQrCodeAsync(string bookingId)
         {
-            var bookings = _db.GetCollection<Booking>("Bookings");
-            var booking = await bookings.Find(b => b.BookingId == bookingId).FirstOrDefaultAsync();
-            if (booking == null) return (null, null);
+            var col = _db.GetCollection<Booking>("Bookings");
+            var b = await col.Find(x => x.BookingId == bookingId).FirstOrDefaultAsync();
+            if (b == null) return (null, null);
 
             var token = Guid.NewGuid().ToString();
-            var expiresAt = booking.StartTime > DateTime.UtcNow.AddMinutes(15)
+            var expiresAt = b.StartTime > DateTime.UtcNow.AddMinutes(15)
                 ? DateTime.UtcNow.AddMinutes(15)
-                : booking.StartTime;
+                : b.StartTime;
 
             using var qrGen = new QRCodeGenerator();
             var qrData = qrGen.CreateQrCode(token, QRCodeGenerator.ECCLevel.Q);
             var pngQr = new PngByteQRCode(qrData);
-            var bytes = pngQr.GetGraphic(20);
-            string base64 = Convert.ToBase64String(bytes);
+            var base64 = Convert.ToBase64String(pngQr.GetGraphic(20));
 
-            var update = Builders<Booking>.Update
-                .Set(b => b.QrCode, token)
-                .Set(b => b.QrExpiresAt, expiresAt)
-                .Set(b => b.QrImageBase64, base64)
-                .Set(b => b.UpdatedAt, DateTime.UtcNow);
-
-            await bookings.UpdateOneAsync(b => b.BookingId == bookingId, update);
+            await col.UpdateOneAsync(
+                x => x.BookingId == bookingId,
+                Builders<Booking>.Update
+                    .Set(x => x.QrCode, token)
+                    .Set(x => x.QrExpiresAt, expiresAt)
+                    .Set(x => x.QrImageBase64, base64)
+                    .Set(x => x.UpdatedAt, DateTime.UtcNow)
+            );
 
             return (base64, expiresAt);
         }
 
+        // ------------------------------
+        // Counts
+        // ------------------------------
         public async Task<long> CountPendingBookingsAsync()
         {
-            var bookings = _db.GetCollection<Booking>("Bookings");
-            return await bookings.CountDocumentsAsync(b => b.Status == "Pending");
+            var col = _db.GetCollection<Booking>("Bookings");
+            return await col.CountDocumentsAsync(b => b.Status == "Pending");
         }
 
         public async Task<long> CountApprovedFutureBookingsAsync()
         {
-            var bookings = _db.GetCollection<Booking>("Bookings");
-            return await bookings.CountDocumentsAsync(
-                b => b.Status == "Approved" && b.StartTime > DateTime.UtcNow
-            );
+            var col = _db.GetCollection<Booking>("Bookings");
+            return await col.CountDocumentsAsync(b => b.Status == "Approved" && b.StartTime > DateTime.UtcNow);
         }
-
     }
 }

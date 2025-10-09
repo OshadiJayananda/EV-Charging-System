@@ -1,11 +1,11 @@
 // --------------------------------------------------------------
 // File Name: BookingDto.cs
 // Author: Miyuri Lokuhewage
-// Description: DTOs for booking management. Simplified so that owners
-// only provide stationId, connectorType, and time range. OwnerId comes
-// from JWT and slot is auto-selected by backend.
-// Created/Updated On: 27/09/2025
+// Description: DTOs for booking management aligned to the new flow.
+// Created/Updated On: 09/10/2025
 // --------------------------------------------------------------
+
+using System;
 
 namespace EvBackend.Models.DTOs
 {
@@ -13,35 +13,43 @@ namespace EvBackend.Models.DTOs
     {
         public string BookingId { get; set; }
         public string StationId { get; set; }
+
         public string SlotId { get; set; }
-        public string OwnerId { get; set; }   // NIC
-        public string Status { get; set; }    // Pending, Approved, Finalized, Cancelled
+        public int SlotNumber { get; set; }
+
+        public string TimeSlotId { get; set; }
+        public string OwnerId { get; set; }
+        public string Status { get; set; } // Pending, Approved, Charging, Finalized, Cancelled
+
+        // UTC in DB
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
+
         public string? QrCode { get; set; }
         public DateTime? QrExpiresAt { get; set; }
         public string? QrImageBase64 { get; set; }
 
-        // ✅ Added for Sri Lanka formatted date/time (for UI display)
-        public string? FormattedStartTime { get; set; }
-        public string? FormattedEndTime { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+
+        // For UI (Sri Lanka 24h formatting)
+        public string? FormattedStartTime { get; set; } // "yyyy MMM dd, HH:mm"
+        public string? FormattedEndTime { get; set; }   // "yyyy MMM dd, HH:mm"
+        public string? FormattedDate { get; set; }      // "yyyy MMM dd"
     }
 
-    // ✅ Owners only send basic details; backend auto-selects slot + owner
+    // Create = StationId + TimeSlotId + SlotId
     public class CreateBookingDto
     {
         public string StationId { get; set; }
-        public string ConnectorType { get; set; } // e.g., Type2, CCS
-        public DateTime StartTime { get; set; }
-        public DateTime EndTime { get; set; }
+        public string TimeSlotId { get; set; }
+        public string SlotId { get; set; }
     }
 
-    // ✅ Used for rescheduling
+    // Update (reschedule) = move to another timeslot+slot
     public class UpdateBookingDto
     {
-        public DateTime StartTime { get; set; }
-        public DateTime EndTime { get; set; }
+        public string NewTimeSlotId { get; set; }
+        public string NewSlotId { get; set; }
     }
 }
