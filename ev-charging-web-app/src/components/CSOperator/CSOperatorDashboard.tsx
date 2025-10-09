@@ -184,88 +184,76 @@ function CSOperatorDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <Battery className="w-6 h-6 text-green-600" />
-              </div>
-              <span className="text-sm font-medium text-green-600 flex items-center gap-1">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Available
-              </span>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
-              {stationMetrics.availableSlots}
-            </div>
-            <div className="text-sm text-gray-600">of {stationMetrics.totalSlots} total slots</div>
-            <div className="mt-4 bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-green-500 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${(stationMetrics.availableSlots / stationMetrics.totalSlots) * 100}%` }}
-              ></div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Calendar className="w-6 h-6 text-blue-600" />
-              </div>
-              <span className="text-sm font-medium text-blue-600 flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                Real-time
-              </span>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
-              {stationMetrics.activeBookings}
-            </div>
-            <div className="text-sm text-gray-600">Currently charging</div>
-            <div className="mt-4 text-xs text-blue-600 font-medium">
-              {stationMetrics.chargingSlots} active • {stationMetrics.bookedSlots} booked
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-purple-500">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <DollarSign className="w-6 h-6 text-purple-600" />
-              </div>
-              <span className="text-sm font-medium text-purple-600 flex items-center gap-1">
-                <TrendingUp className="w-4 h-4" />
-                +12%
-              </span>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
-              ${stationMetrics.todayRevenue.toFixed(2)}
-            </div>
-            <div className="text-sm text-gray-600">Today's revenue</div>
-            <div className="mt-4 text-xs text-purple-600 font-medium">
-              +12% from yesterday
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <TrendingUp className="w-6 h-6 text-yellow-600" />
-              </div>
-              <span className="text-sm font-medium text-yellow-600">Efficiency</span>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
-              {stationMetrics.utilizationRate}%
-            </div>
-            <div className="text-sm text-gray-600">Utilization Rate</div>
-            <div className="mt-4 bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-yellow-500 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${stationMetrics.utilizationRate}%` }}
-              ></div>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+  {/* Available Slots Card */}
+  <div className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow border border-gray-100 p-6">
+    <div className="flex items-start justify-between mb-4">
+      <div className="flex items-center gap-3">
+        <div className="p-3 bg-green-100 rounded-xl">
+          <Battery className="w-6 h-6 text-green-600" />
         </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800">Available Slots</h3>
+          <p className="text-sm text-gray-500">Charging slots ready for use</p>
+        </div>
+      </div>
+      <span className="inline-flex items-center text-green-600 bg-green-50 px-2.5 py-1 rounded-lg text-xs font-medium border border-green-100">
+        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        Available
+      </span>
+    </div>
+
+    <div className="text-4xl font-extrabold text-gray-900 mb-1">
+      {stationMetrics.availableSlots}
+    </div>
+    <div className="text-sm text-gray-500 mb-3">
+      of {stationMetrics.totalSlots} total slots
+    </div>
+
+    {/* Progress Bar */}
+    <div className="w-full bg-gray-100 rounded-full h-2">
+      <div
+        className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all duration-500"
+        style={{ width: `${(stationMetrics.availableSlots / stationMetrics.totalSlots) * 100}%` }}
+      ></div>
+    </div>
+  </div>
+
+  {/* Active Bookings Card */}
+  <div className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow border border-gray-100 p-6">
+    <div className="flex items-start justify-between mb-4">
+      <div className="flex items-center gap-3">
+        <div className="p-3 bg-blue-100 rounded-xl">
+          <Calendar className="w-6 h-6 text-blue-600" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800">Active Bookings</h3>
+          <p className="text-sm text-gray-500">Real-time charging status</p>
+        </div>
+      </div>
+      <span className="inline-flex items-center text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg text-xs font-medium border border-blue-100">
+        <Clock className="w-4 h-4 mr-1" />
+        Live
+      </span>
+    </div>
+
+    <div className="text-4xl font-extrabold text-gray-900 mb-1">
+      {stationMetrics.activeBookings}
+    </div>
+    <div className="text-sm text-gray-500 mb-3">
+      Currently charging vehicles
+    </div>
+
+    <div className="flex items-center justify-between text-sm font-medium text-blue-600">
+      <span>{stationMetrics.chargingSlots} active</span>
+      <span className="text-blue-500">•</span>
+      <span>{stationMetrics.bookedSlots} booked</span>
+    </div>
+  </div>
+</div>
+
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-md p-6">
@@ -439,3 +427,5 @@ function CSOperatorDashboard() {
 }
 
 export default CSOperatorDashboard;
+
+
