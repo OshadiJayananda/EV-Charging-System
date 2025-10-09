@@ -1,4 +1,10 @@
-// ChangePasswordDto.cs
+// --------------------------------------------------------------
+// File Name: ChangePasswordDto.cs
+// Author: Oshadi Jaananda
+// Description: Data transfer object for changing user passwords
+// Created On: 08/10/2025
+// --------------------------------------------------------------
+
 using System.ComponentModel.DataAnnotations;
 
 namespace EvBackend.Models.DTOs

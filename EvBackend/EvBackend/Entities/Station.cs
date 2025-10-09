@@ -42,5 +42,11 @@ namespace EvBackend.Entities
 
         [BsonElement("slotIds")]
         public List<string> SlotIds { get; set; } = new();
+
+         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+        public DateTime CreatedAt { get; set; }
+
+        [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+        public DateTime UpdatedAt { get; set; }
     }
 }

@@ -19,6 +19,9 @@ import StationList from "./pages/stations/StationList";
 import StationForm from "./pages/stations/StationForm";
 import StationSlots from "./pages/stations/StationSlots";
 import UserManagement from "./components/Admin/UserManagement";
+import OperatorStations from "./pages/operator/OperatorStations";
+import OperatorSlotManagement from "./pages/operator/OperatorSlotManagement";
+import OperatorBookings from "./pages/operator/OperatorBookings";
 
 function App() {
   const location = useLocation();
@@ -79,6 +82,18 @@ function App() {
               <Route
                 path="/operator/dashboard"
                 element={<CSOperatorDashboard />}
+              />
+              <Route
+                path="/operator/stations"
+                element={<OperatorStations />}
+              />
+              <Route
+                path="/operator/stations/:stationId/slots"
+                element={<OperatorSlotManagement />}
+              />
+              <Route
+                path="/operator/stations/:stationId/bookings"
+                element={<OperatorBookings />}
               />
             </Route>
           </Route>

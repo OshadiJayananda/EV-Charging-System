@@ -385,8 +385,7 @@ function UserManagement() {
 
       const operatorId =
         selectedOperatorForStationUpdate._id ||
-        selectedOperatorForStationUpdate.id ||
-        selectedOperatorForStationUpdate.Id;
+        selectedOperatorForStationUpdate.id;
 
       if (!operatorId) {
         toast.error("Operator ID not found");
@@ -1519,7 +1518,6 @@ function UserManagement() {
                   </div>
                 </>
               )}
-              // In the User Details modal, add this button for operators:
               {selectedUser.role === "Operator" && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <button

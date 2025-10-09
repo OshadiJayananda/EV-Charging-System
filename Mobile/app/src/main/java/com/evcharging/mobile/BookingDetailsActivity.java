@@ -1,8 +1,6 @@
 package com.evcharging.mobile;
 
 import android.Manifest;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -10,77 +8,74 @@ import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
 import android.widget.*;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import android.content.pm.PackageManager;
+import android.widget.ImageButton;
+
 import com.evcharging.mobile.network.ApiClient;
 import com.evcharging.mobile.network.ApiResponse;
 import com.evcharging.mobile.session.SessionManager;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
+import org.json.JSONObject;
+
 public class BookingDetailsActivity extends AppCompatActivity {
 
     private TextView tvBookingId, tvStatus, tvStartTime, tvEndTime;
     private ImageView ivQrCode;
     private Button btnScanQr, btnFinalize;
+    private ImageButton btnBack;
+    private SwipeRefreshLayout srBookingDetails;
+
     private SessionManager session;
     private ApiClient apiClient;
     private String bookingId;
-    private String currentStatus;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_booking_details);
         setTitle("Booking Details");
+        FooterHelper.setupFooter(this);
 
         session = new SessionManager(this);
         apiClient = new ApiClient(session);
 
         bindViews();
-        
-        ImageButton btnBack = findViewById(R.id.btnBack);
+
         btnBack.setOnClickListener(v -> finish());
 
-
-        // Retrieve data from intent
-        bookingId = getIntent().getStringExtra("bookingId");
-        currentStatus = getIntent().getStringExtra("status");
-        String startTime = getIntent().getStringExtra("formattedStartTime");
-        if (startTime == null || startTime.isEmpty())
-            startTime = getIntent().getStringExtra("startTime");
-
-        String endTime = getIntent().getStringExtra("formattedEndTime");
-        if (endTime == null || endTime.isEmpty())
-            endTime = getIntent().getStringExtra("endTime");
-
-        String qrImageBase64 = getIntent().getStringExtra("qrImageBase64");
-
-        tvBookingId.setText("Booking ID: " + bookingId);
-        tvStatus.setText("Status: " + currentStatus);
-        tvStartTime.setText("Start: " + startTime);
-        tvEndTime.setText("End: " + endTime);
-
-        // ✅ Show QR image if available
-        if (qrImageBase64 != null && !qrImageBase64.isEmpty()) {
-            byte[] decoded = Base64.decode(qrImageBase64, Base64.DEFAULT);
-            Bitmap bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
-            ivQrCode.setImageBitmap(bitmap);
-        } else {
-            ivQrCode.setImageResource(android.R.drawable.ic_menu_report_image);
-        }
-
-        // Request camera permission if not granted
+        // camera permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 101);
         }
 
+        // pull-to-refresh
+        srBookingDetails.setOnRefreshListener(this::refreshBookingFromServer);
+
+        // initial data (from intent)
+        bookingId = getIntent().getStringExtra("bookingId");
+        bindFromIntent();
+
+        // refresh buttons
         btnScanQr.setOnClickListener(v -> startQrScanner());
         btnFinalize.setOnClickListener(v -> new FinalizeBookingTask().execute());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // auto-refresh in case status changed while away
+        refreshBookingFromServer();
     }
 
     private void bindViews() {
@@ -91,6 +86,34 @@ public class BookingDetailsActivity extends AppCompatActivity {
         ivQrCode = findViewById(R.id.ivQrCode);
         btnScanQr = findViewById(R.id.btnScanQr);
         btnFinalize = findViewById(R.id.btnFinalize);
+        btnBack = findViewById(R.id.btnBack);
+        srBookingDetails = findViewById(R.id.srBookingDetails);
+    }
+
+    private void bindFromIntent() {
+        String status = getIntent().getStringExtra("status");
+        String startTime = getIntent().getStringExtra("formattedStartTime");
+        if (startTime == null || startTime.isEmpty())
+            startTime = getIntent().getStringExtra("startTime");
+
+        String endTime = getIntent().getStringExtra("formattedEndTime");
+        if (endTime == null || endTime.isEmpty())
+            endTime = getIntent().getStringExtra("endTime");
+
+        String qrImageBase64 = getIntent().getStringExtra("qrImageBase64");
+
+        tvBookingId.setText(bookingId != null ? bookingId : "-");
+        tvStatus.setText("Status: " + (status != null ? status : "-"));
+        tvStartTime.setText("Start: " + (startTime != null ? startTime : "-"));
+        tvEndTime.setText("End: " + (endTime != null ? endTime : "-"));
+
+        if (qrImageBase64 != null && !qrImageBase64.isEmpty()) {
+            byte[] decoded = Base64.decode(qrImageBase64, Base64.DEFAULT);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+            ivQrCode.setImageBitmap(bitmap);
+        } else {
+            ivQrCode.setImageResource(android.R.drawable.ic_menu_report_image);
+        }
     }
 
     private void startQrScanner() {
@@ -110,44 +133,86 @@ public class BookingDetailsActivity extends AppCompatActivity {
                     String scannedCode = result.getContents();
                     Log.d("QR_SCAN", "Scanned QR Code: " + scannedCode);
 
-                    String qrCode = getIntent().getStringExtra("qrCode");
-                    if (qrCode != null && scannedCode.trim().equalsIgnoreCase(qrCode.trim())) {
+                    String expectedQr = getIntent().getStringExtra("qrCode");
+                    if (expectedQr != null && scannedCode.trim().equalsIgnoreCase(expectedQr.trim())) {
                         Toast.makeText(this, "QR matched! Starting charging...", Toast.LENGTH_SHORT).show();
-                        new UpdateBookingStatusTask("Charging").execute();
+                        new UpdateBookingStatusTask().execute();
                     } else {
                         Toast.makeText(this, "Invalid QR: does not match this booking", Toast.LENGTH_LONG).show();
-                        Log.d("QR_SCAN", "Expected: " + qrCode + ", Got: " + scannedCode);
+                        Log.d("QR_SCAN", "Expected: " + expectedQr + ", Got: " + scannedCode);
                     }
                 }
             });
 
-    private class UpdateBookingStatusTask extends AsyncTask<Void, Void, ApiResponse> {
-        private final String newStatus;
-        UpdateBookingStatusTask(String status) {
-            this.newStatus = status;
+    /** Re-fetch booking from /bookings/{bookingId} and update UI */
+    private void refreshBookingFromServer() {
+        if (bookingId == null || bookingId.isEmpty()) {
+            srBookingDetails.setRefreshing(false);
+            return;
         }
 
+        srBookingDetails.setRefreshing(true);
+
+        new AsyncTask<Void, Void, ApiResponse>() {
+            @Override
+            protected ApiResponse doInBackground(Void... voids) {
+                return apiClient.get("/bookings/" + bookingId);
+            }
+
+            @Override
+            protected void onPostExecute(ApiResponse response) {
+                srBookingDetails.setRefreshing(false);
+                if (response == null || !response.isSuccess() || response.getData() == null) {
+                    Toast.makeText(BookingDetailsActivity.this, "Failed to refresh booking", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                try {
+                    JSONObject o = new JSONObject(response.getData());
+
+                    String status = o.optString("status", "-");
+                    String startTime = o.optString("formattedStartTime", o.optString("startTime", "-"));
+                    String endTime = o.optString("formattedEndTime", o.optString("endTime", "-"));
+                    String qrImageBase64 = o.optString("qrImageBase64", null);
+
+                    tvBookingId.setText(bookingId);
+                    tvStatus.setText("Status: " + status);
+                    tvStartTime.setText("Start: " + startTime);
+                    tvEndTime.setText("End: " + endTime);
+
+                    if (qrImageBase64 != null && !qrImageBase64.isEmpty()) {
+                        byte[] decoded = Base64.decode(qrImageBase64, Base64.DEFAULT);
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+                        ivQrCode.setImageBitmap(bitmap);
+                    }
+
+                } catch (Exception e) {
+                    Log.e("BOOKING_DETAILS", "parse error: " + e.getMessage());
+                }
+            }
+        }.execute();
+    }
+
+    /** PATCH /bookings/{id}/start */
+    private class UpdateBookingStatusTask extends AsyncTask<Void, Void, ApiResponse> {
         @Override
         protected ApiResponse doInBackground(Void... voids) {
-            try {
-                return apiClient.patch("/bookings/" + bookingId + "/start", null);
-            } catch (Exception e) {
-                Log.e("BookingDetails", "Error starting booking", e);
-                return new ApiResponse(false, "Error starting booking", null);
-            }
+            return apiClient.patch("/bookings/" + bookingId + "/start", null);
         }
 
         @Override
         protected void onPostExecute(ApiResponse response) {
-            if (response.isSuccess()) {
+            if (response != null && response.isSuccess()) {
                 Toast.makeText(BookingDetailsActivity.this, "Booking marked as Charging", Toast.LENGTH_SHORT).show();
-                tvStatus.setText("Status: Charging");
+                refreshBookingFromServer();
             } else {
-                Toast.makeText(BookingDetailsActivity.this, "Failed: " + response.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(BookingDetailsActivity.this, "Failed to start: " +
+                        (response != null ? response.getMessage() : "Unknown"), Toast.LENGTH_SHORT).show();
             }
         }
     }
 
+    /** PATCH /bookings/{id}/finalize */
     private class FinalizeBookingTask extends AsyncTask<Void, Void, ApiResponse> {
         @Override
         protected ApiResponse doInBackground(Void... voids) {
@@ -156,11 +221,12 @@ public class BookingDetailsActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(ApiResponse response) {
-            if (response.isSuccess()) {
-                Toast.makeText(BookingDetailsActivity.this, "Booking finalized successfully", Toast.LENGTH_SHORT).show();
-                tvStatus.setText("Status: Completed");
+            if (response != null && response.isSuccess()) {
+                Toast.makeText(BookingDetailsActivity.this, "Booking finalized", Toast.LENGTH_SHORT).show();
+                refreshBookingFromServer();
             } else {
-                Toast.makeText(BookingDetailsActivity.this, "Finalize failed: " + response.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(BookingDetailsActivity.this, "Finalize failed: " +
+                        (response != null ? response.getMessage() : "Unknown"), Toast.LENGTH_SHORT).show();
             }
         }
     }
