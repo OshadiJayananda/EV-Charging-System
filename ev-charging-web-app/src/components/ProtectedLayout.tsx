@@ -65,7 +65,7 @@ export default function ProtectedLayout() {
         {userRole === "operator" && (
           <nav className="flex flex-col space-y-2">
             <NavLink
-              to="/operator/update-slot-availability"
+              to="/operator/stations/${stationMetrics.stationId}/slots"
               className={({ isActive }) =>
                 `flex items-center gap-2 px-4 py-2 rounded-lg transition ${
                   isActive ? "bg-green-600 text-white" : "hover:bg-green-100"
@@ -76,7 +76,7 @@ export default function ProtectedLayout() {
               Update Slot Availability
             </NavLink>
             <NavLink
-              to="/operator/view-station-status"
+              to="/operator/stations/${stationMetrics.stationId}/bookings"
               className={({ isActive }) =>
                 `flex items-center gap-2 px-4 py-2 rounded-lg transition ${
                   isActive ? "bg-green-600 text-white" : "hover:bg-green-100"
@@ -84,7 +84,7 @@ export default function ProtectedLayout() {
               }
             >
               <Activity className="w-5 h-5" />
-              View Station Status
+              View Booking Status
             </NavLink>
           </nav>
         )}
