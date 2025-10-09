@@ -63,6 +63,9 @@ interface UserDetails {
   stationId?: string;
   stationName?: string;
   stationLocation?: string;
+  StationId?: string;
+  StationName?: string;
+  StationLocation?: string;
 }
 
 interface CreateOperatorForm {
@@ -121,6 +124,18 @@ function UserManagement() {
     fullName: "",
     email: "",
     password: "",
+    stationId: "",
+    stationName: "",
+    stationLocation: "",
+  });
+
+  const [showUpdateStation, setShowUpdateStation] = useState<boolean>(false);
+  const [updatingStation, setUpdatingStation] = useState<boolean>(false);
+  const [
+    selectedOperatorForStationUpdate,
+    setSelectedOperatorForStationUpdate,
+  ] = useState<UserDetails | null>(null);
+  const [stationUpdateForm, setStationUpdateForm] = useState({
     stationId: "",
     stationName: "",
     stationLocation: "",
@@ -335,7 +350,90 @@ function UserManagement() {
       toast.error("Failed to fetch stations");
     }
   };
+  const handleUpdateStationClick = (operator: UserDetails): void => {
+    setSelectedOperatorForStationUpdate(operator);
+    setStationUpdateForm({
+      stationId: operator.stationId || operator.StationId || "",
+      stationName: operator.stationName || operator.StationName || "",
+      stationLocation:
+        operator.stationLocation || operator.StationLocation || "",
+    });
+    setShowUpdateStation(true);
+  };
 
+  const handleStationUpdateChange = (stationId: string): void => {
+    const selectedStation = stations.find(
+      (station) => station.stationId === stationId
+    );
+    if (selectedStation) {
+      setStationUpdateForm({
+        stationId: selectedStation.stationId,
+        stationName: selectedStation.name,
+        stationLocation: selectedStation.location,
+      });
+    }
+  };
+
+  const handleUpdateOperatorStation = async (): Promise<void> => {
+    if (!selectedOperatorForStationUpdate || !stationUpdateForm.stationId) {
+      toast.error("Please select a station");
+      return;
+    }
+
+    try {
+      setUpdatingStation(true);
+
+      const operatorId =
+        selectedOperatorForStationUpdate._id ||
+        selectedOperatorForStationUpdate.id;
+
+      if (!operatorId) {
+        toast.error("Operator ID not found");
+        return;
+      }
+
+      const updateData = {
+        fullName: getUserDisplayName(selectedOperatorForStationUpdate),
+        email: getUserEmail(selectedOperatorForStationUpdate),
+        isActive: getUserStatus(selectedOperatorForStationUpdate),
+        stationId: stationUpdateForm.stationId,
+        stationName: stationUpdateForm.stationName,
+        stationLocation: stationUpdateForm.stationLocation,
+      };
+
+      const result = await api.put(`/operators/${operatorId}`, updateData);
+
+      if (result?.status === 200) {
+        toast.success("Operator station updated successfully");
+        setShowUpdateStation(false);
+        setSelectedOperatorForStationUpdate(null);
+
+        // Refresh operators list
+        await fetchOperators();
+
+        // If we're viewing the operator details, update that too
+        if (selectedUser && selectedUser.id === operatorId) {
+          setSelectedUser({
+            ...selectedUser,
+            stationId: stationUpdateForm.stationId,
+            stationName: stationUpdateForm.stationName,
+            stationLocation: stationUpdateForm.stationLocation,
+          });
+        }
+      } else {
+        toast.error(
+          result?.data?.message || "Failed to update operator station"
+        );
+      }
+    } catch (err: any) {
+      const errorMessage =
+        err?.response?.data?.message || "Error updating operator station";
+      toast.error(errorMessage);
+      console.error("Error updating operator station:", err);
+    } finally {
+      setUpdatingStation(false);
+    }
+  };
   // Pagination handlers
   const handleOperatorsPageChange = (newPage: number): void => {
     setOperatorsPagination((prev) => ({ ...prev, page: newPage }));
@@ -616,14 +714,18 @@ function UserManagement() {
   const getStationInfo = (user: EVOwner | Operator | UserDetails): string => {
     if ("role" in user && user.role === "Operator") {
       const operator = user as UserDetails;
-      if (operator.stationName && operator.stationLocation) {
-        return `${operator.stationName} - ${operator.stationLocation}`;
+      const stationName = operator.stationName || operator.StationName;
+      const stationLocation =
+        operator.stationLocation || operator.StationLocation;
+
+      if (stationName && stationLocation) {
+        return `${stationName} - ${stationLocation}`;
       }
-      if (operator.stationName) {
-        return operator.stationName;
+      if (stationName) {
+        return stationName;
       }
-      if (operator.stationLocation) {
-        return operator.stationLocation;
+      if (stationLocation) {
+        return stationLocation;
       }
       return "No station assigned";
     } else if ("stationName" in user || "stationLocation" in user) {
@@ -998,7 +1100,6 @@ function UserManagement() {
                           </div>
                         )}
                       </div>
-
                       <div className="flex flex-col sm:flex-row gap-2 ml-4">
                         <button
                           onClick={() => handleViewUserDetails(operator, false)}
@@ -1006,6 +1107,24 @@ function UserManagement() {
                         >
                           <span>Details</span>
                         </button>
+
+                        {/* Add this new button for station update */}
+                        <button
+                          onClick={() =>
+                            handleUpdateStationClick({
+                              ...operator,
+                              role: "Operator",
+                              id: operator._id || operator.id,
+                              stationId: operator.stationId,
+                              stationName: operator.stationName,
+                              stationLocation: operator.stationLocation,
+                            })
+                          }
+                          className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 text-sm transition-colors flex items-center gap-1"
+                        >
+                          <span>Change Station</span>
+                        </button>
+
                         {getUserStatus(operator) ? (
                           <button
                             onClick={() =>
@@ -1140,6 +1259,103 @@ function UserManagement() {
         </div>
       )}
 
+      {/* Update Station Modal */}
+      {showUpdateStation && selectedOperatorForStationUpdate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Update Operator Station</h3>
+              <button
+                onClick={() => {
+                  setShowUpdateStation(false);
+                  setSelectedOperatorForStationUpdate(null);
+                }}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Operator
+                </label>
+                <p className="text-gray-900 font-medium">
+                  {getUserDisplayName(selectedOperatorForStationUpdate)}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {getUserEmail(selectedOperatorForStationUpdate)}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Current Station
+                </label>
+                <p className="text-gray-900">
+                  {getStationInfo(selectedOperatorForStationUpdate)}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  New Station *
+                </label>
+                <select
+                  value={stationUpdateForm.stationId}
+                  onChange={(e) => handleStationUpdateChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="">Select a new station</option>
+                  {stations
+                    .filter((station) => station.isActive)
+                    .map((station) => (
+                      <option key={station.stationId} value={station.stationId}>
+                        {station.name} - {station.location}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {stationUpdateForm.stationId && (
+                <div className="bg-gray-50 p-3 rounded-md">
+                  <h4 className="font-semibold text-sm mb-2">
+                    Selected Station:
+                  </h4>
+                  <p className="text-sm">
+                    <strong>Name:</strong> {stationUpdateForm.stationName}
+                  </p>
+                  <p className="text-sm">
+                    <strong>Location:</strong>{" "}
+                    {stationUpdateForm.stationLocation}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowUpdateStation(false);
+                  setSelectedOperatorForStationUpdate(null);
+                }}
+                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
+                disabled={updatingStation}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateOperatorStation}
+                disabled={updatingStation || !stationUpdateForm.stationId}
+                className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {updatingStation ? "Updating..." : "Update Station"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Create Operator Modal */}
       {showCreateOperator && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -1286,12 +1502,10 @@ function UserManagement() {
                 <label className="font-semibold">Name:</label>
                 <p className="mt-1">{getUserDisplayName(selectedUser)}</p>
               </div>
-
               <div>
                 <label className="font-semibold">Email:</label>
                 <p className="mt-1">{getUserEmail(selectedUser)}</p>
               </div>
-
               {selectedUser.role === "Owner" && (
                 <>
                   <div>
@@ -1304,21 +1518,23 @@ function UserManagement() {
                   </div>
                 </>
               )}
-
               {selectedUser.role === "Operator" && (
-                <>
-                  <div>
-                    <label className="font-semibold">Station:</label>
-                    <p className="mt-1">{getStationInfo(selectedUser)}</p>
-                  </div>
-                </>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setShowUserDetails(false);
+                      handleUpdateStationClick(selectedUser);
+                    }}
+                    className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 text-sm transition-colors w-full"
+                  >
+                    Change Station
+                  </button>
+                </div>
               )}
-
               <div>
                 <label className="font-semibold">Role:</label>
                 <p className="mt-1">{selectedUser.role}</p>
               </div>
-
               <div>
                 <label className="font-semibold">Status:</label>
                 <p
@@ -1331,7 +1547,6 @@ function UserManagement() {
                   {getUserStatus(selectedUser) ? "Active" : "Inactive"}
                 </p>
               </div>
-
               {getReactivationRequested(selectedUser) && (
                 <div>
                   <label className="font-semibold text-yellow-600">
@@ -1340,7 +1555,6 @@ function UserManagement() {
                   <p className="mt-1">Yes</p>
                 </div>
               )}
-
               <div>
                 <label className="font-semibold">Created At:</label>
                 <p className="mt-1">

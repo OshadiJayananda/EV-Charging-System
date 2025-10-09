@@ -169,5 +169,38 @@ namespace EvBackend.Controllers
                 return StatusCode(500, new { message = "An unexpected error occurred." });
             }
         }
+
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
+        {
+            try
+            {
+                var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(new { message = "Invalid token" });
+
+                await _authService.ChangePassword(userId, changePasswordDto);
+
+                _logger.LogInformation("ChangePassword: Password changed successfully for user {UserId}", userId);
+                return Ok(new { message = "Password changed successfully" });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning("ChangePassword: User not found");
+                return NotFound(new { message = ex.Message });
+            }
+            catch (AuthenticationException ex)
+            {
+                _logger.LogWarning("ChangePassword: Authentication failed - {Message}", ex.Message);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ChangePassword: Unexpected error occurred");
+                return StatusCode(500, new { message = "An unexpected error occurred" });
+            }
+        }
     }
 }
