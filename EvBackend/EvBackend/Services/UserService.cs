@@ -67,7 +67,8 @@ namespace EvBackend.Services
                 FullName = user.FullName,
                 Email = user.Email,
                 Role = user.Role,
-                IsActive = user.IsActive
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt
             };
         }
 
