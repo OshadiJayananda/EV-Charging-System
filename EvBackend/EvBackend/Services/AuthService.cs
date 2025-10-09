@@ -180,7 +180,6 @@ namespace EvBackend.Services
             }
         }
 
-        //reset password method can be added here
         public async Task ResetPassword(ResetPasswordDto resetPasswordDto)
         {
             // Try to find user in Users collection by reset token
@@ -214,6 +213,21 @@ namespace EvBackend.Services
             }
 
             throw new KeyNotFoundException("Invalid reset token");
+        }
+
+        public async Task ChangePassword(string userId, ChangePasswordDto changePasswordDto)
+        {
+            var user = await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+            if (user == null)
+                throw new KeyNotFoundException("User not found");
+
+            // Verify old password
+            if (!BCrypt.Net.BCrypt.Verify(changePasswordDto.OldPassword, user.PasswordHash))
+                throw new AuthenticationException("Current password is incorrect");
+
+            // Update to new password
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(changePasswordDto.NewPassword);
+            await _users.ReplaceOneAsync(u => u.Id == user.Id, user);
         }
     }
 }
