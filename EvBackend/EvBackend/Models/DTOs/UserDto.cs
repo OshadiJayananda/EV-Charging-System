@@ -28,6 +28,8 @@ namespace EvBackend.Models.DTOs
         public string Role { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? StationName { get; set; }
+        public string? StationLocation { get; set; }
     }
 
     public class CreateUserDto

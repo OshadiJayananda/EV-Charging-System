@@ -68,7 +68,10 @@ namespace EvBackend.Services
                 Email = user.Email,
                 Role = user.Role,
                 IsActive = user.IsActive,
-                CreatedAt = user.CreatedAt
+                CreatedAt = user.CreatedAt,
+
+                StationName = user.StationName,
+                StationLocation = user.StationLocation
             };
         }
 
