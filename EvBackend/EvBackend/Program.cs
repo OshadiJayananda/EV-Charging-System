@@ -12,15 +12,28 @@ using Microsoft.OpenApi.Models;
 using EvBackend.Hubs;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.SignalR;
+using EvBackend.BackgroundJobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
 Env.Load();
 builder.Configuration.AddEnvironmentVariables();
 
+// ---------------------------------------------------------
+// ✅ LOGGING SETUP
+// ---------------------------------------------------------
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
+// File-based daily rotating log
+builder.Logging.AddFile("Logs/evbackend-{Date}.log");
+
+// ---------------------------------------------------------
 // MongoDB Configuration
+// ---------------------------------------------------------
 builder.Services.Configure<MongoDbSettings>(
     builder.Configuration.GetSection("MongoDB"));
+
 // Email Configuration
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("EmailSettings"));
@@ -38,14 +51,18 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
     return client.GetDatabase(settings.DatabaseName);
 });
 
+// ---------------------------------------------------------
+// Controllers + JSON Config
+// ---------------------------------------------------------
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-
-// Register UserService
+// ---------------------------------------------------------
+// Service Registrations
+// ---------------------------------------------------------
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IStationService, StationService>();
@@ -58,15 +75,14 @@ builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 
-// Controllers
-builder.Services.AddControllers();
-
 builder.Services.Configure<Microsoft.AspNetCore.Routing.RouteOptions>(options =>
 {
     options.LowercaseUrls = true;
 });
 
-// Swagger
+// ---------------------------------------------------------
+// Swagger + JWT Auth Configuration
+// ---------------------------------------------------------
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -75,8 +91,9 @@ builder.Services.AddSwaggerGen(c =>
         Title = "EV Backend API",
         Version = "v1"
     });
+      //  Enable Swagger Annotations
+    c.EnableAnnotations();
 
-    // ✅ Proper JWT bearer configuration
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
@@ -106,8 +123,9 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-
+// ---------------------------------------------------------
 // JWT Authentication
+// ---------------------------------------------------------
 var secretKey = builder.Configuration["Jwt:Key"] ?? builder.Configuration["Jwt__Key"];
 var issuer = builder.Configuration["Jwt:Issuer"] ?? builder.Configuration["Jwt__Issuer"];
 var audience = builder.Configuration["Jwt:Audience"] ?? builder.Configuration["Jwt__Audience"];
@@ -136,6 +154,9 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+// ---------------------------------------------------------
+// CORS
+// ---------------------------------------------------------
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -146,11 +167,22 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Add SignalR
+// ---------------------------------------------------------
+// Background Scheduler Services
+// ---------------------------------------------------------
+builder.Services.AddSingleton<TimeSlotSchedulerService>();
+builder.Services.AddHostedService<DailyTimeSlotWorker>();
+
+// ---------------------------------------------------------
+// SignalR
+// ---------------------------------------------------------
 builder.Services.AddSignalR();
 
 var app = builder.Build();
 
+// ---------------------------------------------------------
+// DB Seeder
+// ---------------------------------------------------------
 using (var scope = app.Services.CreateScope())
 {
     try
@@ -164,7 +196,9 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Middleware
+// ---------------------------------------------------------
+// Middleware Pipeline
+// ---------------------------------------------------------
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -183,7 +217,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Add SignalR NotificationHub endpoint
+// SignalR
 app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();
