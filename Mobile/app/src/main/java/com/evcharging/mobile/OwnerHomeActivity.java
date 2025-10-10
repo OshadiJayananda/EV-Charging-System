@@ -283,8 +283,11 @@ public class OwnerHomeActivity extends AppCompatActivity
         private void setupButtonActions() {
                 btnNotifications.setOnClickListener(v -> startActivity(new Intent(this, NotificationActivity.class)));
 
-                btnReserve.setOnClickListener(
-                                v -> Toast.makeText(this, "Reserve Slot Clicked", Toast.LENGTH_SHORT).show());
+                btnReserve.setOnClickListener(v -> {
+                        Intent intent = new Intent(this, com.evcharging.mobile.OwnerBookingActivity.class);
+                        startActivity(intent);
+                });
+
 
                 btnBookings.setOnClickListener(
                                 v -> Toast.makeText(this, "My Bookings Clicked", Toast.LENGTH_SHORT).show());

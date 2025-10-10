@@ -38,7 +38,7 @@ import okhttp3.Response;
  */
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE = "https://fc8899c91d61.ngrok-free.app";
+    private static final String BASE = "https://6fc6c9dd7e7a.ngrok-free.app";
     private static final String BASE_URL = BASE + "/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
@@ -646,6 +646,24 @@ public class ApiClient {
             return new ApiResponse(false, "Network error", null);
         }
     }
+    // ---------------------------------------------------------------------
+    // 🔹 Owner Functions (Newly added)
+    // ---------------------------------------------------------------------
+
+    // ADD: nearby stations filtered by type (Owner flow)
+    public ApiResponse getNearbyStationsByType(String type, double latitude, double longitude, double radiusKm) {
+        String endpoint = String.format("/station/nearby-by-type?type=%s&latitude=%f&longitude=%f&radiusKm=%f",
+                type, latitude, longitude, radiusKm);
+        return get(endpoint);
+    }
+
+    // OPTIONAL fallback if Owner cannot call /station/{id} yet.
+    // This will try slots endpoint first; if server denies, the caller can decide UX.
+    public ApiResponse getStationPublic(String stationId) {
+        // If you added /station/public/{stationId} in backend, map here.
+        return get("/station/" + stationId); // current admin/operator-only; we'll handle 401/403 gracefully in UI
+    }
+
 
     // ---------------------------------------------------------------------
     // 🔹 HELPERS: AUTH + LOGGING

@@ -10,6 +10,7 @@ using EvBackend.Entities;
 using EvBackend.Models.DTOs;
 using EvBackend.Services.Interfaces;
 using MongoDB.Driver;
+using System.Linq;
 
 namespace EvBackend.Services
 {
@@ -230,6 +231,37 @@ namespace EvBackend.Services
                     Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
             return R * 2 * Math.Asin(Math.Sqrt(a));
         }
+
+        public async Task<List<StationDto>> GetNearbyStationsByTypeAsync(string type, double latitude, double longitude, double radiusKm)
+        {
+             try
+            {
+                if (string.IsNullOrWhiteSpace(type))
+                    throw new ArgumentException("Type is required (AC/DC)");
+
+                // Step 1: Get nearby stations
+                var nearbyStations = await GetNearbyStationsAsync(latitude, longitude, radiusKm);
+
+                // ✅ FIX: use Count() extension and null check properly
+                if (nearbyStations == null || !nearbyStations.Any())
+                    return new List<StationDto>();
+
+                // Step 2: Filter by type (case-insensitive)
+                var filtered = nearbyStations
+                    .Where(s => s != null && 
+                                !string.IsNullOrEmpty(s.Type) && 
+                                string.Equals(s.Type, type, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                return filtered;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[StationService] Error in GetNearbyStationsByTypeAsync: {ex.Message}");
+                throw;
+            }
+        }
+
 
         private StationDto ToDto(Station station)
         {

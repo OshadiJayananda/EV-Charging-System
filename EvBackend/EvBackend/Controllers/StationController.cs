@@ -93,7 +93,7 @@ namespace EvBackend.Controllers
 
         // Get station by id
         [HttpGet("{stationId}")]
-        [Authorize(Roles = "Admin,Operator")]
+        [Authorize(Roles = "Owner,Admin,Operator")]
         public async Task<IActionResult> GetStationById(string stationId)
         {
             try
@@ -164,22 +164,56 @@ namespace EvBackend.Controllers
             }
         }
 
+        // GET: /api/station/nearby-by-type?type=AC&latitude=6.9271&longitude=79.8612&radiusKm=10
+        [HttpGet("nearby-by-type")]
+       [Authorize(Roles = "Admin,Operator,Owner")]
+        public async Task<IActionResult> GetNearbyStationsByType(
+            [FromQuery] string type,
+            [FromQuery] double latitude,
+            [FromQuery] double longitude,
+            [FromQuery] double radiusKm = 5)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(type))
+                    return BadRequest(new { message = "Type is required (AC/DC)" });
+
+                // Step 1: Fetch nearby stations
+                var nearby = await _stationService.GetNearbyStationsAsync(latitude, longitude, radiusKm);
+                if (nearby == null || !nearby.Any())
+                    return Ok(Enumerable.Empty<object>());
+
+                // Step 2: Filter by type (case-insensitive)
+                var filtered = nearby
+                    .Where(s => string.Equals(s.Type, type, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                return Ok(filtered);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500, new { message = "Unexpected error while fetching stations by type" });
+            }
+        }
+
+
         [HttpDelete("{stationId}")]
-[Authorize(Roles = "Admin,Backoffice")]
-public async Task<IActionResult> DeleteStation(string stationId)
-{
-    try
-    {
-        var ok = await _stationService.DeleteStationWithRelationsAsync(stationId);
-        if (!ok) return NotFound(new { message = "Station not found" });
-        return Ok(new { message = "Station and related data deleted successfully" });
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine(ex);
-        return StatusCode(500, new { message = "Error deleting station" });
-    }
-}
+        [Authorize(Roles = "Admin,Backoffice")]
+        public async Task<IActionResult> DeleteStation(string stationId)
+        {
+            try
+            {
+                var ok = await _stationService.DeleteStationWithRelationsAsync(stationId);
+                if (!ok) return NotFound(new { message = "Station not found" });
+                return Ok(new { message = "Station and related data deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500, new { message = "Error deleting station" });
+            }
+        }
 
     }
 }
