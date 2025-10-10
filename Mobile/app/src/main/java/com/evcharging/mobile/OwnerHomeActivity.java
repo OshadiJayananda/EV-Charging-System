@@ -74,6 +74,9 @@ public class OwnerHomeActivity extends AppCompatActivity
         private AutoCompleteTextView searchStations;
         private Spinner spinnerStationType;
         private String selectedStationType = "DC";
+
+        private Button btnMyBookings, btnChargingHistory;
+
         @Override
         protected void onCreate(Bundle savedInstanceState) {
                 super.onCreate(savedInstanceState);
@@ -116,6 +119,9 @@ public class OwnerHomeActivity extends AppCompatActivity
                 // --- SignalR ---
                 signalRService = new SignalRService(this);
                 signalRService.setNotificationListener(this);
+
+                btnMyBookings = findViewById(R.id.btnMyBookings);
+                btnChargingHistory = findViewById(R.id.btnChargingHistory);
 
                 // --- Notification channel ---
                 createNotificationChannel();
@@ -289,12 +295,14 @@ public class OwnerHomeActivity extends AppCompatActivity
                 });
 
 
-                btnBookings.setOnClickListener(
-                                v -> Toast.makeText(this, "My Bookings Clicked", Toast.LENGTH_SHORT).show());
+                btnMyBookings.setOnClickListener(v ->
+                        startActivity(new Intent(this, OwnerBookingsActivity.class))
+                );
 
-                btnHistory.setOnClickListener(
-                                v -> Toast.makeText(this, "Charging History Clicked", Toast.LENGTH_SHORT).show());
-
+                btnChargingHistory.setOnClickListener(v ->
+                        startActivity(new Intent(this, ChargingHistoryActivity.class))
+                );
+                
                 ivProfile.setOnClickListener(v -> startActivity(new Intent(this, OwnerProfileActivity.class)));
 
                 btnLogout.setOnClickListener(v -> attemptLogout());
