@@ -1,31 +1,55 @@
 import { useEffect, useState } from "react";
 import { getRequest, patchRequest } from "../../components/common/api";
-import type { Station } from "../../types";
+import type { PagedResult, Station } from "../../types";
 import { useNavigate } from "react-router-dom";
 import Loading from "../../components/common/Loading";
 
 const StationList = () => {
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1); // Current page
+  const [pageSize, setPageSize] = useState<number>(10); // Page size
+  const [totalCount, setTotalCount] = useState<number>(0); // Total stations count
   const navigate = useNavigate();
 
-  const fetchStations = async () => {
+  const fetchStations = async (page: number, pageSize: number) => {
     setLoading(true);
-    const res = await getRequest<Station[]>("/station");
-    if (res) setStations(res.data);
+    const res = await getRequest<PagedResult<Station>>("/station", {
+      params: {
+        page,
+        pageSize,
+      },
+    });
+
+    if (res) {
+      setStations(res.data.items); // Using items from paginated response
+      setTotalCount(res.data.totalCount); // Total count for pagination
+    }
+
     setLoading(false);
   };
 
-  const handleDeactivate = async (id: string) => {
+  const handleToggleStatus = async (id: string) => {
     setLoading(true);
-    await patchRequest(`/station/${id}/deactivate`);
-    await fetchStations();
+    await patchRequest(`/station/${id}/toggle-status`); // Calling the toggle status API
+    await fetchStations(currentPage, pageSize);
     setLoading(false);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    fetchStations(newPage, pageSize);
+  };
+
+  const handlePageSizeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setPageSize(Number(event.target.value));
+    setCurrentPage(1); // Reset to first page on page size change
+    fetchStations(1, Number(event.target.value));
   };
 
   useEffect(() => {
-    fetchStations();
-  }, []);
+    fetchStations(currentPage, pageSize);
+  }, [currentPage, pageSize]);
 
   return (
     <div className="p-6">
@@ -106,10 +130,12 @@ const StationList = () => {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDeactivate(s.stationId)}
-                      className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition"
+                      onClick={() => handleToggleStatus(s.stationId)} // Toggle status
+                      className={`px-3 py-1 text-white rounded-md transition ${
+                        s.isActive ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-500 hover:bg-green-600"
+                      }`}
                     >
-                      Deactivate
+                      {s.isActive ? "Deactivate" : "Activate"}
                     </button>
                   </td>
                 </tr>
@@ -128,6 +154,42 @@ const StationList = () => {
           </table>
         </div>
       )}
+
+      {/* Pagination Controls */}
+      <div className="flex justify-between items-center mt-6">
+        <div className="flex items-center">
+          <span className="text-sm text-gray-600">Page Size: </span>
+          <select
+            value={pageSize}
+            onChange={handlePageSizeChange}
+            className="ml-2 px-2 py-1 border border-gray-300 rounded-md"
+          >
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+          </select>
+        </div>
+
+        <div className="flex items-center">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="mx-3 text-sm text-gray-600">
+            Page {currentPage}
+          </span>
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={stations.length < pageSize}
+            className="px-3 py-1 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

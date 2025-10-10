@@ -287,15 +287,24 @@ namespace EvBackend.Services
         }
 
 
-        public async Task<bool> DeactivateStationAsync(string stationId)
+        public async Task<bool> ToggleStationStatusAsync(string stationId)
         {
+            // First, check if the station has active bookings
             if (await HasActiveBookingsAsync(stationId))
-                throw new InvalidOperationException("Cannot deactivate station with active bookings.");
+                throw new InvalidOperationException("Cannot modify station status with active bookings.");
+
+            // Get the current station status
+            var station = await _stations.Find(s => s.StationId == stationId).FirstOrDefaultAsync();
+            if (station == null) return false;
+
+            // Toggle the status (if active, set to inactive, and vice versa)
+            var newStatus = !station.IsActive;
 
             var filter = Builders<Station>.Filter.Eq(s => s.StationId, stationId);
-            var update = Builders<Station>.Update.Set(s => s.IsActive, false);
+            var update = Builders<Station>.Update.Set(s => s.IsActive, newStatus);
             var result = await _stations.UpdateOneAsync(filter, update);
-            return result.ModifiedCount > 0;
+
+            return result.ModifiedCount > 0; // Returns true if update is successful
         }
 
         public async Task<StationDto> GetStationByIdAsync(string stationId)
@@ -304,15 +313,38 @@ namespace EvBackend.Services
             return station != null ? ToDto(station) : null;
         }
 
-        public async Task<IEnumerable<StationDto>> GetAllStationsAsync(bool onlyActive = false)
+        public async Task<PagedResultDto<StationDto>> GetAllStationsAsync(bool onlyActive = false, int page = 1, int pageSize = 10)
         {
+            // Ensure page is greater than 0
+            page = page < 1 ? 1 : page;
+
+            // Calculate the number of records to skip
+            var skip = (page - 1) * pageSize;
+
+            // Define the filter (only active or all stations)
             var filter = onlyActive
                 ? Builders<Station>.Filter.Eq(s => s.IsActive, true)
                 : Builders<Station>.Filter.Empty;
 
-            var stations = await _stations.Find(filter).ToListAsync();
-            return stations.Select(ToDto);
+            // Fetch the stations with pagination (skip and limit)
+            var stations = await _stations.Find(filter)
+                                          .Skip(skip)
+                                          .Limit(pageSize)
+                                          .ToListAsync();
+
+            // Get the total count of records
+            var totalCount = await _stations.CountDocumentsAsync(filter);
+
+            return new PagedResultDto<StationDto>
+            {
+                TotalCount = (int)totalCount,
+                TotalPages = (int)Math.Ceiling((double)totalCount / pageSize),
+                CurrentPage = page,
+                PageSize = pageSize,
+                Items = stations.Select(ToDto)
+            };
         }
+
 
         public async Task<IEnumerable<StationDto>> SearchStationsAsync(string type, string location)
         {

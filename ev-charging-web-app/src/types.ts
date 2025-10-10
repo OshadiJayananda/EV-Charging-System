@@ -81,6 +81,11 @@ export interface UpdateStationRequest {
   availableSlots?: number;
 }
 
+export interface PagedResult<T> {
+  totalCount: number;
+  items: T[];
+}
+
 
 // ==============================
 // Booking types
