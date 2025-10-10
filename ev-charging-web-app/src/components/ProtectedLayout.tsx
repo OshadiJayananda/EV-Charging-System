@@ -6,6 +6,7 @@ import {
   Building,
   Wrench,
   Activity,
+  Clock,
 } from "lucide-react";
 import { roleNavigate, roleRoute } from "./common/RoleBasedAccess";
 import { useAuth } from "../context/AuthContext";
@@ -90,7 +91,7 @@ export default function ProtectedLayout() {
                 }`
               }
             >
-              <Building className="w-5 h-5" />
+              <Clock className="w-5 h-5" />
               Booking Management
             </NavLink>
           )}

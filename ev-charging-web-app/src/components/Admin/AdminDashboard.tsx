@@ -163,9 +163,11 @@ function AdminDashboard() {
             </p>
           </div>
           <div className="mt-4">
-            <p className="text-sm text-gray-600">Most Popular Time Slot:</p>
+            <p className="text-sm text-gray-600">
+              Most Popular Time Slot Start Time:
+            </p>
             <p className="text-xl font-bold text-indigo-600">
-              {mostPopularTimeSlot}
+              {new Date(mostPopularTimeSlot).toLocaleString()}
             </p>
           </div>
           <div className="mt-6">
