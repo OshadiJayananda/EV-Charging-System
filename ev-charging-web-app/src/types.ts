@@ -91,13 +91,26 @@ export interface PagedResult<T> {
 // Booking types
 // ==============================
 export interface Booking {
-  id: number;
-  stationId: number;
-  userId: number;
+  bookingId: string;
+  stationId: string;
+  slotId: string;
   slotNumber: number;
-  status: "pending" | "approved" | "finalized" | "canceled";
+  timeSlotId: string;
+  ownerId: string;
+  status: string;
   startTime: string;
-  endTime?: string;
+  endTime: string;
+  createdAt: string;
+  updatedAt: string;
+  qrCode?: string;
+  qrExpiresAt?: string;
+  qrImageBase64?: string;
+  formattedStartTime?: string;
+  formattedEndTime?: string;
+  formattedDate?: string;
+  ownerName?: string;
+  stationName?: string;
+  connectorType?: string;
 }
 
 export interface GetBookingsByStation {
