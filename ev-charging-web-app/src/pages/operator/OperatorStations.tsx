@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getRequest } from "../../components/common/api";
+import { getRequestWithPagination } from "../../components/common/api";
 import type { Station } from "../../types";
 import { useNavigate } from "react-router-dom";
 import Loading from "../../components/common/Loading";
@@ -11,10 +11,12 @@ const OperatorStations = () => {
 
   const fetchStations = async () => {
     setLoading(true);
-    const res = await getRequest<Station[]>("/station");
-    if (res) {
-      setStations(res.data.filter(s => s.isActive));
+    const res = await getRequestWithPagination<Station>("/station");
+
+    if (res && res.data.items) {
+      setStations(res.data.items.filter((s) => s.isActive));
     }
+
     setLoading(false);
   };
 
