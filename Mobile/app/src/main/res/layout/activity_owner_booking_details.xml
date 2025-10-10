@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/swipeRefresh"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Booking Details"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Status: Pending"
+                android:layout_marginTop="8dp" />
+            <TextView
+                android:id="@+id/tvReason"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#FF5555"
+                android:textStyle="italic"
+                android:paddingTop="6dp"
+                android:textSize="14sp"
+                android:visibility="gone"
+                android:text="Reason: " />
+
+
+            <TextView
+                android:id="@+id/tvStation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Station: —"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/tvSlot"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Slot: —"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/tvTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Time: —"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/tvBookingId"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Booking ID: —"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/tvHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Show this QR to the operator at the station."
+                android:textStyle="bold"
+                android:textColor="#1976D2"
+                android:layout_marginTop="14dp" />
+
+            <ImageView
+                android:id="@+id/ivQr"
+                android:layout_width="260dp"
+                android:layout_height="260dp"
+                android:layout_gravity="center"
+                android:layout_marginTop="12dp"
+                android:contentDescription="@string/app_name" />
+
+            <Button
+                android:id="@+id/btnShareQr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Share QR Code"
+                android:layout_gravity="center"
+                android:layout_marginTop="20dp"
+                android:backgroundTint="#1976D2"
+                android:textColor="@android:color/white" />
+
+        </LinearLayout>
+    </ScrollView>
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

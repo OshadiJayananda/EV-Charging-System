@@ -5,8 +5,6 @@ import Loading from "../common/Loading";
 import {
   Battery,
   Clock,
-  // DollarSign,
-  // TrendingUp,
   Zap,
   CheckCircle,
   AlertCircle,
@@ -29,6 +27,17 @@ interface StationMetrics {
   utilizationRate: number;
 }
 
+interface OperatorData {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  stationId: string;
+  stationName: string;
+  stationLocation: string;
+}
+
 function CSOperatorDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -36,75 +45,88 @@ function CSOperatorDashboard() {
     null
   );
   const [slots, setSlots] = useState<any[]>([]);
+  const [operatorData, setOperatorData] = useState<OperatorData | null>(null);
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchOperatorData();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchOperatorData = async () => {
     setLoading(true);
     try {
-      const stationsRes = await getRequestWithPagination<any>("/station");
-      console.log("Stations response:", stationsRes?.data);
-      if (
-        stationsRes &&
-        stationsRes.data.items &&
-        stationsRes.data.items.length > 0
-      ) {
-        const station = stationsRes.data.items[0];
+      // Fetch operator details first
+      const operatorId = localStorage.getItem("userId"); // Or from your auth context
+      if (!operatorId) {
+        console.error("No operator ID found");
+        setLoading(false);
+        return;
+      }
 
-        const detailsRes = await getRequest<any>(
-          `/station/${station.stationId}`
-        );
-        if (detailsRes) {
-          const stationDetails = detailsRes.data;
-          const slotsData = stationDetails.slots || [];
-          setSlots(slotsData);
+      const operatorRes = await getRequest<any>(`/operators/${operatorId}`);
+      if (operatorRes && operatorRes.data) {
+        const operator = operatorRes.data;
+        setOperatorData(operator);
 
-          const available = slotsData.filter(
-            (s: any) => s.status === "Available"
-          ).length;
-          const charging = slotsData.filter(
-            (s: any) => s.status === "Charging"
-          ).length;
-          const booked = slotsData.filter(
-            (s: any) => s.status === "Booked"
-          ).length;
-          const inactive = slotsData.filter(
-            (s: any) =>
-              s.status === "Under Maintenance" ||
-              s.status === "Out Of Order" ||
-              s.status === "Inactive"
-          ).length;
-
-          const bookingsRes = await getRequest<any[]>(
-            `/bookings/station/${station.stationId}/today`
-          );
-          const activeBookingsList = bookingsRes?.data || [];
-
-          const metrics: StationMetrics = {
-            stationId: station.stationId,
-            name: stationDetails.name,
-            location: stationDetails.location,
-            status: "Online",
-            totalSlots: slotsData.length,
-            availableSlots: available,
-            chargingSlots: charging,
-            bookedSlots: booked,
-            inactiveSlots: inactive,
-            activeBookings: activeBookingsList.length,
-            todayRevenue: activeBookingsList.length * 24.55,
-            utilizationRate:
-              slotsData.length > 0
-                ? Math.round(((charging + booked) / slotsData.length) * 100)
-                : 0,
-          };
-
-          setStationMetrics(metrics);
-        }
+        // Now fetch the operator's specific station
+        await fetchStationData(operator.stationId);
       }
     } catch (error) {
-      console.error("Error fetching dashboard data:", error);
+      console.error("Error fetching operator data:", error);
+      setLoading(false);
+    }
+  };
+
+  const fetchStationData = async (stationId: string) => {
+    try {
+      const detailsRes = await getRequest<any>(`/station/${stationId}`);
+      if (detailsRes) {
+        const stationDetails = detailsRes.data;
+        const slotsData = stationDetails.slots || [];
+        setSlots(slotsData);
+
+        const available = slotsData.filter(
+          (s: any) => s.status === "Available"
+        ).length;
+        const charging = slotsData.filter(
+          (s: any) => s.status === "Charging"
+        ).length;
+        const booked = slotsData.filter(
+          (s: any) => s.status === "Booked"
+        ).length;
+        const inactive = slotsData.filter(
+          (s: any) =>
+            s.status === "Under Maintenance" ||
+            s.status === "Out Of Order" ||
+            s.status === "Inactive"
+        ).length;
+
+        const bookingsRes = await getRequest<any[]>(
+          `/bookings/station/${stationId}/today`
+        );
+        const activeBookingsList = bookingsRes?.data || [];
+
+        const metrics: StationMetrics = {
+          stationId: stationId,
+          name: stationDetails.name,
+          location: stationDetails.location,
+          status: "Online",
+          totalSlots: slotsData.length,
+          availableSlots: available,
+          chargingSlots: charging,
+          bookedSlots: booked,
+          inactiveSlots: inactive,
+          activeBookings: activeBookingsList.length,
+          todayRevenue: activeBookingsList.length * 24.55,
+          utilizationRate:
+            slotsData.length > 0
+              ? Math.round(((charging + booked) / slotsData.length) * 100)
+              : 0,
+        };
+
+        setStationMetrics(metrics);
+      }
+    } catch (error) {
+      console.error("Error fetching station data:", error);
     } finally {
       setLoading(false);
     }
@@ -153,7 +175,7 @@ function CSOperatorDashboard() {
     );
   }
 
-  if (!stationMetrics) {
+  if (!stationMetrics || !operatorData) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center">
@@ -178,11 +200,11 @@ function CSOperatorDashboard() {
               Dashboard Overview
             </h1>
             <p className="text-gray-600 mt-1">
-              Manage your charging station operations
+              Welcome back, {operatorData.fullName}
             </p>
           </div>
           <button
-            onClick={() => fetchDashboardData()}
+            onClick={() => fetchOperatorData()}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <svg
@@ -251,6 +273,7 @@ function CSOperatorDashboard() {
           </div>
         </div>
 
+        {/* Rest of your JSX remains the same */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* Available Slots Card */}
           <div className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow border border-gray-100 p-6">
@@ -345,6 +368,7 @@ function CSOperatorDashboard() {
           </div>
         </div>
 
+        {/* Rest of your existing JSX */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex items-center justify-between mb-6">
@@ -492,7 +516,7 @@ function CSOperatorDashboard() {
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
           <button
             onClick={() =>
               navigate(`/operator/stations/${stationMetrics.stationId}/slots`)
@@ -534,23 +558,6 @@ function CSOperatorDashboard() {
               </div>
               <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
                 <Calendar className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => navigate("/operator/stations")}
-            className="p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition-all border-2 border-transparent hover:border-purple-500 group"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-semibold text-gray-900 text-lg mb-1">
-                  All Stations
-                </h4>
-                <p className="text-gray-600 text-sm">Manage all stations</p>
-              </div>
-              <div className="p-3 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
-                <Zap className="w-6 h-6 text-purple-600" />
               </div>
             </div>
           </button>

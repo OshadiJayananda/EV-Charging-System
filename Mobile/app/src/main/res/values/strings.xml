@@ -4,4 +4,6 @@
     <string name="hntEmail">Email</string>
     <string name="hntPassword">Password</string>
     <string name="txtNoAccount">"Don't have an account? Register"</string>
+    <string name="booking_confirmed_message">Booking Confirmed! Scan this QR at the charging station.</string>
+    <string name="app_name">EV Charge</string>
 </resources>

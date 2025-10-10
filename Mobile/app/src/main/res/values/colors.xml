@@ -25,6 +25,8 @@
     <color name="light_green">#C8E6C9</color>        <!-- Light green for backgrounds -->
     <color name="text_primary">#212121</color>       <!-- Dark text -->
     <color name="text_secondary">#757575</color>     <!-- Secondary text -->
-
+    <color name="statusPending">#FFA000</color>
+    <color name="statusApproved">#4CAF50</color>
+    <color name="statusCharging">#2196F3</color>
     <color name="logout_card_background">#FFEBEE</color>  <!-- Very light red/pink for logout card -->
 </resources>

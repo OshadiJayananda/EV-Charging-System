@@ -39,6 +39,10 @@ namespace EvBackend.Services.Interfaces
         Task<long> CountPendingBookingsAsync();
         Task<long> CountApprovedFutureBookingsAsync();
 
+        Task<int> AutoCancelFutureBookingsForSlotAsync(
+            string slotId,
+            string reason = "Slot unavailable",
+            string cancelledBy = "System");
         Task<object> GetReservationOverviewAsync(DateTime? fromDate, DateTime? toDate);
 
         Task<IEnumerable<BookingDto>> GetPendingBookingsAsync(int pageNumber, int pageSize);

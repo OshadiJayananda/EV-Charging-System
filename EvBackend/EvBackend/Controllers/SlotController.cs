@@ -10,6 +10,7 @@ using MongoDB.Driver;
 using EvBackend.Entities;
 using System;
 using System.Threading.Tasks;
+using EvBackend.Services.Interfaces;
 
 namespace EvBackend.Controllers
 {
@@ -18,14 +19,17 @@ namespace EvBackend.Controllers
     public class SlotController : ControllerBase
     {
         private readonly IMongoDatabase _db;
+        private readonly IBookingService _bookingService;
 
-        public SlotController(IMongoDatabase db)
+
+        public SlotController(IMongoDatabase db, IBookingService bookingService)
         {
             _db = db;
+            _bookingService = bookingService;
         }
 
         [HttpGet("station/{stationId}")]
-        [Authorize(Roles = "Operator,Admin,Backoffice")]
+        [Authorize]
         public async Task<IActionResult> GetSlotsByStation(string stationId)
         {
             var slots = _db.GetCollection<Slot>("Slots");
@@ -76,6 +80,7 @@ namespace EvBackend.Controllers
             });
         }
 
+
         [HttpPatch("{slotId}/status")]
         [Authorize(Roles = "Operator,Admin,Backoffice")]
         public async Task<IActionResult> UpdateSlotStatus(string slotId, [FromBody] SlotStatusUpdateDto dto)
@@ -83,9 +88,13 @@ namespace EvBackend.Controllers
             if (string.IsNullOrWhiteSpace(dto.Status))
                 return BadRequest(new { message = "Status is required" });
 
+            var normalized = dto.Status.Trim();
+            if (string.Equals(normalized, "Out of Order", StringComparison.OrdinalIgnoreCase))
+                normalized = "Out Of Order";
+
             var validStatuses = new[] { "Available", "Under Maintenance", "Out Of Order" };
-            if (!validStatuses.Contains(dto.Status))
-                return BadRequest(new { message = "Invalid status. Must be: Available, Under Maintenance, or Out Of Order" });
+            if (!validStatuses.Contains(normalized))
+                return BadRequest(new { message = "Invalid status" });
 
             var slots = _db.GetCollection<Slot>("Slots");
             var bookings = _db.GetCollection<Booking>("Bookings");
@@ -94,32 +103,49 @@ namespace EvBackend.Controllers
             if (slot == null)
                 return NotFound(new { message = "Slot not found" });
 
-            if (slot.Status == "Charging")
-                return Conflict(new { message = "Cannot change status of an active charging slot" });
-
-            var activeBooking = await bookings.Find(b =>
+            // Block if slot is currently charging
+            var now = DateTime.UtcNow;
+            var active = await bookings.Find(b =>
                 b.SlotId == slotId &&
-                (b.Status == "Pending" || b.Status == "Approved" || b.Status == "Charging")
-            ).FirstOrDefaultAsync();
+                b.Status == "Charging" &&
+                b.StartTime <= now && now < b.EndTime).AnyAsync();
 
-            if (activeBooking != null)
-                return Conflict(new { message = "Cannot change status of a slot with an active booking" });
+            if (active)
+                return Conflict(new { message = "Cannot change status while slot is actively charging" });
 
-            var update = Builders<Slot>.Update
-                .Set(s => s.Status, dto.Status)
-                .Set(s => s.UpdatedAt, DateTime.UtcNow);
+            // Update slot status
+            await slots.UpdateOneAsync(
+                s => s.SlotId == slotId,
+                Builders<Slot>.Update
+                    .Set(s => s.Status, normalized)
+                    .Set(s => s.UpdatedAt, DateTime.UtcNow)
+            );
 
-            await slots.UpdateOneAsync(s => s.SlotId == slotId, update);
+            // Auto-cancel future bookings if slot becomes unavailable
+            int cancelled = 0;
+            if (normalized is "Under Maintenance" or "Out Of Order")
+            {
+                cancelled = await _bookingService.AutoCancelFutureBookingsForSlotAsync(
+                    slotId,
+                    $"Auto-cancelled because slot set to '{normalized}'",
+                    "System");
+            }
 
             return Ok(new
             {
-                message = $"Slot {slot.Number} status updated to {dto.Status}",
-                status = dto.Status,
+                message = $"Slot {slot.Number} set to {normalized}" +
+                        (cancelled > 0 ? $"; auto-cancelled {cancelled} future booking(s)." : ""),
+                status = normalized,
                 slotId = slot.SlotId,
                 slotNumber = slot.Number
             });
         }
+
+
+
+
     }
+    
 
     public class SlotStatusUpdateDto
     {

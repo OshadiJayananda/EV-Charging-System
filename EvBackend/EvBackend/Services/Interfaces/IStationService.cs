@@ -24,6 +24,7 @@ public interface IStationService
         Task<bool> HasActiveBookingsAsync(string stationId); // extra logic
         Task<IEnumerable<StationNameDto>> GetStationNameSuggestionsAsync(string? type = null, string? location = null);
         Task<bool> DeleteStationWithRelationsAsync(string stationId);
+        Task<List<StationDto>> GetNearbyStationsByTypeAsync(string type, double latitude, double longitude, double radiusKm);
 
         Task<object> GetActiveInactiveStationCountAsync();
 

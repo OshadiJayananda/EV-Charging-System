@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.evcharging.mobile">
+
     <!-- Permissions -->
     <uses-feature
         android:name="android.hardware.camera"
@@ -20,6 +21,7 @@
         android:theme="@style/Theme.AppCompat.Light.NoActionBar"
         android:usesCleartextTraffic="true"
         tools:replace="android:label">
+
         <activity
             android:name=".OwnerEditProfileActivity"
             android:exported="false" />
@@ -38,12 +40,34 @@
         <activity
             android:name=".OwnerHomeActivity"
             android:exported="false" />
+        <activity
+            android:name=".OwnerBookingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+        <activity
+            android:name=".BookingConfirmationActivity"
+            android:exported="false" />
+        <activity android:name=".OwnerBookingsActivity" />
+        <activity android:name=".ChargingHistoryActivity" />
+        <activity android:name=".OwnerBookingDetailsActivity" />
 
         <activity
             android:name="com.journeyapps.barcodescanner.CaptureActivity"
             android:screenOrientation="portrait"
             android:stateNotNeeded="true"
             tools:replace="android:screenOrientation" />
+
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
 
         <meta-data
@@ -66,13 +90,12 @@
             android:name=".LoginActivity"
             android:exported="true">
 
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>

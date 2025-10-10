@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:text="Select Type"
+            android:textStyle="bold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <Spinner
+            android:id="@+id/spnType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <Space android:layout_width="1dp" android:layout_height="12dp"/>
+
+        <TextView
+            android:text="Select Station (Nearby)"
+            android:textStyle="bold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <Spinner
+            android:id="@+id/spnStation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <Space android:layout_width="1dp" android:layout_height="12dp"/>
+
+        <Button
+            android:id="@+id/btnSelectDate"
+            android:text="Select Date (Today … +6)"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/tvSelectedDate"
+            android:text="No date selected"
+            android:layout_marginTop="6dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <Space android:layout_width="1dp" android:layout_height="12dp"/>
+
+        <TextView
+            android:text="Select Slot"
+            android:textStyle="bold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <Spinner
+            android:id="@+id/spnSlot"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <Space android:layout_width="1dp" android:layout_height="12dp"/>
+
+        <TextView
+            android:text="Select Time Slot"
+            android:textStyle="bold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <Spinner
+            android:id="@+id/spnTimeSlot"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <Space android:layout_width="1dp" android:layout_height="16dp"/>
+
+        <Button
+            android:id="@+id/btnConfirmBooking"
+            android:text="Confirm Booking"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/tvHints"
+            android:text=""
+            android:textColor="#DD333333"
+            android:layout_marginTop="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+</ScrollView>
