@@ -7,7 +7,7 @@ function BookingDetailsPage() {
   const navigate = useNavigate();
 
   // State to store the booking details
-  const [bookingDetails, setBookingDetails] = useState(null);
+  const [bookingDetails, setBookingDetails] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Fetch booking details
@@ -53,30 +53,32 @@ function BookingDetailsPage() {
               <div className="flex justify-between">
                 <p className="text-sm text-gray-600">Booking ID:</p>
                 <p className="text-sm font-semibold">
-                  {bookingDetails.bookingId}
+                  {bookingDetails.bookingId || "N/A"}
                 </p>
               </div>
               <div className="flex justify-between">
                 <p className="text-sm text-gray-600">Station Name:</p>
                 <p className="text-sm font-semibold">
-                  {bookingDetails.stationName}
+                  {bookingDetails.stationName || "N/A"}
                 </p>
               </div>
               <div className="flex justify-between">
                 <p className="text-sm text-gray-600">Time Slot:</p>
                 <p className="text-sm font-semibold">
-                  {bookingDetails.timeSlot}
+                  {bookingDetails.timeSlotRange || "N/A"}
                 </p>
               </div>
               <div className="flex justify-between">
                 <p className="text-sm text-gray-600">Owner:</p>
                 <p className="text-sm font-semibold">
-                  {bookingDetails.ownerName}
+                  {bookingDetails.ownerName || "N/A"}
                 </p>
               </div>
               <div className="flex justify-between">
                 <p className="text-sm text-gray-600">Booking Status:</p>
-                <p className="text-sm font-semibold">{bookingDetails.status}</p>
+                <p className="text-sm font-semibold">
+                  {bookingDetails.status || "N/A"}
+                </p>
               </div>
             </div>
           </div>

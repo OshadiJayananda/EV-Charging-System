@@ -712,7 +712,7 @@ namespace EvBackend.Services
 
             var col = _db.GetCollection<Booking>("Bookings");
             var list = await col.Find(b => b.Status == "Pending")
-                                .SortBy(b => b.CreatedAt)
+                                .SortByDescending(b => b.CreatedAt)
                                 .Skip((pageNumber - 1) * pageSize)
                                 .Limit(pageSize)
                                 .ToListAsync();
@@ -732,7 +732,10 @@ namespace EvBackend.Services
                 UpdatedAt = b.UpdatedAt,
                 FormattedStartTime = FormatSriLankaTime(b.StartTime),
                 FormattedEndTime = FormatSriLankaTime(b.EndTime),
-                FormattedDate = FormatSriLankaDate(b.StartTime)
+                FormattedDate = FormatSriLankaDate(b.StartTime),
+                StationName = _stationService.GetStationByIdAsync(b.StationId).Result?.Name,
+                TimeSlotRange = _db.GetCollection<TimeSlot>("TimeSlots").Find(t => t.TimeSlotId == b.TimeSlotId).FirstOrDefault()?.StartTime.ToString("hh:mm tt") + " - " +
+                               _db.GetCollection<TimeSlot>("TimeSlots").Find(t => t.TimeSlotId == b.TimeSlotId).FirstOrDefault()?.EndTime.ToString("hh:mm tt")
             });
         }
 

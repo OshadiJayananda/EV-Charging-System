@@ -5,31 +5,26 @@ import { useNavigate } from "react-router-dom";
 function BookingManagementPage() {
   const navigate = useNavigate();
 
-  // State to store the bookings data
-  const [pendingBookings, setPendingBookings] = useState([]);
-  const [approvedBookings, setApprovedBookings] = useState([]);
-  const [completedBookings, setCompletedBookings] = useState([]);
+  const [pendingBookings, setPendingBookings] = useState<any>([]);
+  const [approvedBookings, setApprovedBookings] = useState<any>([]);
+  const [completedBookings, setCompletedBookings] = useState<any>([]);
   const [loading, setLoading] = useState(true); // Loading state
 
-  // Fetch bookings for all statuses
   const fetchBookings = async () => {
-    setLoading(true); // Start loading
+    setLoading(true);
     try {
-      // Fetch pending bookings
       const pendingResponse = await getRequest("/bookings/pending");
       if (pendingResponse) setPendingBookings(pendingResponse.data);
 
-      // Fetch approved bookings
       const approvedResponse = await getRequest("/bookings/approved");
       if (approvedResponse) setApprovedBookings(approvedResponse.data);
 
-      // Fetch completed bookings
       const completedResponse = await getRequest("/bookings/completed");
       if (completedResponse) setCompletedBookings(completedResponse.data);
     } catch (error) {
       console.error("Error fetching bookings:", error);
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false);
     }
   };
 
@@ -37,28 +32,26 @@ function BookingManagementPage() {
     fetchBookings();
   }, []);
 
-  // Function to handle approval of a booking
   const handleApproveBooking = async (bookingId: string) => {
     try {
       const response = await fetch(`/api/bookings/${bookingId}/approve`, {
         method: "PATCH",
       });
       if (response.ok) {
-        fetchBookings(); // Refetch bookings after approval
+        fetchBookings();
       }
     } catch (error) {
       console.error("Error approving booking:", error);
     }
   };
 
-  // Function to handle cancellation of a booking
   const handleCancelBooking = async (bookingId: string) => {
     try {
       const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
         method: "PATCH",
       });
       if (response.ok) {
-        fetchBookings(); // Refetch bookings after cancellation
+        fetchBookings();
       }
     } catch (error) {
       console.error("Error cancelling booking:", error);
@@ -79,7 +72,7 @@ function BookingManagementPage() {
       </h2>
 
       {loading ? (
-        <LoadingSpinner /> // Show loading spinner when fetching data
+        <LoadingSpinner />
       ) : (
         <>
           {/* Pending Bookings Section */}
@@ -87,7 +80,14 @@ function BookingManagementPage() {
             <h3 className="text-xl font-semibold text-gray-800 mb-4">
               Pending Bookings
             </h3>
-            <p className="text-gray-600 mb-4">Manage pending bookings</p>
+            <div className="flex justify-start mb-4">
+              <button
+                onClick={() => navigate("/admin/bookings/pending")}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all"
+              >
+                View All Pending Bookings
+              </button>
+            </div>
             <div className="space-y-4">
               {pendingBookings.length === 0 ? (
                 <p className="text-gray-500">No pending bookings.</p>
@@ -110,6 +110,14 @@ function BookingManagementPage() {
                         className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-all"
                       >
                         Cancel
+                      </button>
+                      <button
+                        onClick={() =>
+                          navigate(`/admin/bookings/${booking.bookingId}`)
+                        }
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all"
+                      >
+                        View Details
                       </button>
                     </div>
                   </div>
