@@ -14,13 +14,18 @@ public interface IStationService
 {
         Task<StationDto> CreateStationAsync(CreateStationDto dto);
         Task<StationDto> UpdateStationAsync(string stationId, UpdateStationDto dto);
-        Task<bool> DeactivateStationAsync(string stationId);
+        Task<bool> ToggleStationStatusAsync(string stationId);
         Task<StationDto> GetStationByIdAsync(string stationId);
-        Task<IEnumerable<StationDto>> GetAllStationsAsync(bool onlyActive = false);
+        //Task<IEnumerable<StationDto>> GetAllStationsAsync(bool onlyActive = false);
+        Task<PagedResultDto<StationDto>> GetAllStationsAsync(bool onlyActive = false, int page = 1, int pageSize = 10);
+
         Task<IEnumerable<StationDto>> SearchStationsAsync(string type, string location);
         Task<IEnumerable<StationDto>> GetNearbyStationsAsync(double latitude, double longitude, double radiusKm);
         Task<bool> HasActiveBookingsAsync(string stationId); // extra logic
         Task<IEnumerable<StationNameDto>> GetStationNameSuggestionsAsync(string? type = null, string? location = null);
-         Task<bool> DeleteStationWithRelationsAsync(string stationId);
+        Task<bool> DeleteStationWithRelationsAsync(string stationId);
+
+        Task<object> GetActiveInactiveStationCountAsync();
+
 
 }
