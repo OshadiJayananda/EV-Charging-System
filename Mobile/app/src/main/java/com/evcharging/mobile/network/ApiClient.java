@@ -5,6 +5,7 @@ import android.util.Log;
 import com.evcharging.mobile.model.Notification;
 import com.evcharging.mobile.model.User;
 import com.evcharging.mobile.session.SessionManager;
+import com.evcharging.mobile.utils.JwtUtils;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -30,13 +31,14 @@ import okhttp3.Response;
 
 /**
  * ApiClient – Handles all network requests for EV Charging Mobile App
+ * 🔹 Supports both EV Owner and Operator functions
  * 🔹 Includes clean logging for request + response (pretty JSON)
  * 🔹 Safe with ngrok SSL (for dev)
- * 🔹 Keeps all endpoints intact
+ * 🔹 Uses JwtUtils for proper token parsing
  */
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE = "https://8e12f8cc2184.ngrok-free.app";
+    private static final String BASE = "https://6fc6c9dd7e7a.ngrok-free.app";
     private static final String BASE_URL = BASE + "/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
@@ -84,32 +86,7 @@ public class ApiClient {
     public static String getApiBaseUrl() { return BASE_URL; }
 
     // ---------------------------------------------------------------------
-    // NOTIFICATIONS
-    // ---------------------------------------------------------------------
-    public ApiResponse getUserNotifications() {
-        return get("/notifications/user");
-    }
-
-    public ApiResponse markNotificationAsRead(String id) {
-        return patch("/notifications/" + id + "/read", null);
-    }
-
-    public ApiResponse deleteNotification(String id) {
-        return delete("/notifications/" + id);
-    }
-
-    public List<Notification> parseNotifications(String json) {
-        try {
-            Type listType = new TypeToken<List<Notification>>() {}.getType();
-            return gson.fromJson(json, listType);
-        } catch (Exception e) {
-            Log.e(TAG, "Error parsing notifications", e);
-            return null;
-        }
-    }
-
-    // ---------------------------------------------------------------------
-    // LOGIN & REGISTER
+    // AUTHENTICATION & USER MANAGEMENT
     // ---------------------------------------------------------------------
     public ApiResponse login(String email, String password) {
         try {
@@ -135,6 +112,14 @@ public class ApiClient {
                 String token = json.optString("token", null);
                 if (token != null) {
                     sessionManager.saveToken(token);
+
+                    // Immediately get and save user info from token
+                    User user = JwtUtils.getUserFromToken(token);
+                    if (user != null) {
+                        sessionManager.saveLoggedInUser(user);
+                        Log.d(TAG, "User logged in: " + user.getRole() + " - " + user.getFullName());
+                    }
+
                     return new ApiResponse(true, "Login successful", token);
                 }
             }
@@ -146,11 +131,13 @@ public class ApiClient {
         }
     }
 
-    public ApiResponse register(String name, String email, String password) {
+    public ApiResponse registerOwner(String nic, String fullName, String email, String phone, String password) {
         try {
             JSONObject data = new JSONObject();
-            data.put("name", name);
+            data.put("nic", nic);
+            data.put("fullName", fullName);
             data.put("email", email);
+            data.put("phone", phone);
             data.put("password", password);
 
             logRequest("POST", "/owners/register", data);
@@ -173,13 +160,362 @@ public class ApiClient {
                 return new ApiResponse(false, err.optString("message", "Registration failed"), null);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Registration error", e);
+            Log.e(TAG, "Owner registration error", e);
+            return new ApiResponse(false, "Network or parsing error", null);
+        }
+    }
+
+    public ApiResponse registerOperator(String fullName, String email, String phone, String password) {
+        try {
+            JSONObject data = new JSONObject();
+            data.put("fullName", fullName);
+            data.put("email", email);
+            data.put("phone", phone);
+            data.put("password", password);
+
+            logRequest("POST", "/operators/register", data);
+
+            RequestBody body = RequestBody.create(data.toString(), JSON);
+            Request request = new Request.Builder()
+                    .url(BASE_URL + "/operators/register")
+                    .addHeader("X-Client-Type", "Mobile")
+                    .post(body)
+                    .build();
+
+            Response response = client.newCall(request).execute();
+            String responseBody = response.body() != null ? response.body().string() : "";
+            logApi("POST", "/operators/register", response, responseBody);
+
+            if (response.isSuccessful()) {
+                return new ApiResponse(true, "Registration successful", responseBody);
+            } else {
+                JSONObject err = new JSONObject(responseBody);
+                return new ApiResponse(false, err.optString("message", "Registration failed"), null);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Operator registration error", e);
             return new ApiResponse(false, "Network or parsing error", null);
         }
     }
 
     // ---------------------------------------------------------------------
-    // GENERIC REQUESTS
+    // USER PROFILE MANAGEMENT
+    // ---------------------------------------------------------------------
+    public ApiResponse getUser() {
+        return get("/auth/me");
+    }
+
+    public ApiResponse updateOwnerProfile(String nic, String fullName, String email, String phone) {
+        try {
+            JSONObject data = new JSONObject();
+            data.put("fullName", fullName);
+            data.put("email", email);
+            data.put("phone", phone);
+
+            return put("/owners/" + nic, data);
+        } catch (JSONException e) {
+            Log.e(TAG, "Error creating update profile data", e);
+            return new ApiResponse(false, "Error updating profile", null);
+        }
+    }
+
+    public ApiResponse updateOperatorProfile(String operatorId, String fullName, String email, String phone) {
+        try {
+            JSONObject data = new JSONObject();
+            data.put("fullName", fullName);
+            data.put("email", email);
+            data.put("phone", phone);
+
+            return put("/operators/" + operatorId, data);
+        } catch (JSONException e) {
+            Log.e(TAG, "Error creating update profile data", e);
+            return new ApiResponse(false, "Error updating profile", null);
+        }
+    }
+
+    public ApiResponse deactivateEvOwner(String nic) {
+        return patch("/owners/" + nic + "/deactivate", null);
+    }
+
+    public ApiResponse requestReactivation(String nic) {
+        return patch("/owners/" + nic + "/request-reactivation", null);
+    }
+
+    public ApiResponse deactivateOperator(String operatorId) {
+        return patch("/operators/" + operatorId + "/deactivate", null);
+    }
+
+    // ---------------------------------------------------------------------
+    // STATION MANAGEMENT (Operator & Shared)
+    // ---------------------------------------------------------------------
+    public ApiResponse getAllStations(boolean onlyActive) {
+        String endpoint = onlyActive ? "/station/nearby?latitude=6.931960&longitude=79.857750&radiusKm=100&onlyActive=true"
+                : "/station/nearby?latitude=6.931960&longitude=79.857750&radiusKm=100";
+        return get(endpoint);
+    }
+
+    public ApiResponse getStationById(String stationId) {
+        return get("/station/" + stationId);
+    }
+
+    public ApiResponse getNearbyStations(double latitude, double longitude, double radiusKm) {
+        String endpoint = String.format("/station/nearby?latitude=%f&longitude=%f&radiusKm=%f",
+                latitude, longitude, radiusKm);
+        return get(endpoint);
+    }
+
+    public ApiResponse searchStations(String type, String location) {
+        String endpoint = "/station/nearby?latitude=6.931960&longitude=79.857750&radiusKm=50";
+        return get(endpoint); // We'll filter by type/location in the service layer
+    }
+
+    public ApiResponse getStationNameSuggestions(String type, String location) {
+        String endpoint = "/station/names";
+        if (type != null || location != null) {
+            endpoint += "?";
+            if (type != null) endpoint += "type=" + type + "&";
+            if (location != null) endpoint += "location=" + location;
+        }
+        return get(endpoint);
+    }
+
+    // ---------------------------------------------------------------------
+    // BOOKING MANAGEMENT (EV Owner Functions)
+    // ---------------------------------------------------------------------
+    public ApiResponse getAvailableTimeSlots(String stationId, String date) {
+        String endpoint = "/bookings/stations/" + stationId + "/timeslots?date=" + date;
+        return get(endpoint);
+    }
+
+    public ApiResponse getAvailableSlotsForTimeSlot(String timeSlotId) {
+        String endpoint = "/bookings/timeslots/" + timeSlotId + "/available-slots";
+        return get(endpoint);
+    }
+
+    public ApiResponse createBooking(String stationId, String timeSlotId, String slotId) {
+        try {
+            JSONObject data = new JSONObject();
+            data.put("stationId", stationId);
+            data.put("timeSlotId", timeSlotId);
+            data.put("slotId", slotId);
+
+            return post("/bookings", data);
+        } catch (JSONException e) {
+            Log.e(TAG, "Error creating booking data", e);
+            return new ApiResponse(false, "Error creating booking", null);
+        }
+    }
+
+    public ApiResponse getBookingsByOwner(String ownerId) {
+        String endpoint = "/bookings/owner/" + ownerId;
+        return get(endpoint);
+    }
+
+    public ApiResponse cancelBooking(String bookingId) {
+        String endpoint = "/bookings/" + bookingId + "/cancel";
+        return patch(endpoint, null);
+    }
+
+    public ApiResponse updateBooking(String bookingId, String newTimeSlotId, String newSlotId) {
+        try {
+            JSONObject data = new JSONObject();
+            data.put("newTimeSlotId", newTimeSlotId);
+            data.put("newSlotId", newSlotId);
+
+            return put("/bookings/" + bookingId, data);
+        } catch (JSONException e) {
+            Log.e(TAG, "Error creating update booking data", e);
+            return new ApiResponse(false, "Error updating booking", null);
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // OPERATOR BOOKING MANAGEMENT
+    // ---------------------------------------------------------------------
+    public ApiResponse getBookingsByStation(String stationId) {
+        if (stationId == null || stationId.isEmpty() || stationId.equals("string"))
+            return new ApiResponse(false, "No station assigned", null);
+        return get("/bookings/station/" + stationId);
+    }
+
+    public ApiResponse getTodayBookingsByStation(String stationId) {
+        return get("/bookings/station/" + stationId + "/today");
+    }
+
+    public ApiResponse getUpcomingBookingsByStation(String stationId) {
+        return get("/bookings/station/" + stationId + "/upcoming");
+    }
+
+    public ApiResponse approveBooking(String bookingId) {
+        String endpoint = "/bookings/" + bookingId + "/approve";
+        return patch(endpoint, null);
+    }
+
+    public ApiResponse startCharging(String bookingId) {
+        String endpoint = "/bookings/" + bookingId + "/start";
+        return patch(endpoint, null);
+    }
+
+    public ApiResponse finalizeBooking(String bookingId) {
+        String endpoint = "/bookings/" + bookingId + "/finalize";
+        return patch(endpoint, null);
+    }
+
+    public ApiResponse generateQRCode(String bookingId) {
+        return get("/bookings/" + bookingId + "/qrcode");
+    }
+
+    // ---------------------------------------------------------------------
+    // SLOT MANAGEMENT (Operator Functions)
+    // ---------------------------------------------------------------------
+    public ApiResponse getSlotsByStation(String stationId) {
+        return get("/slots/station/" + stationId);
+    }
+
+    public ApiResponse toggleSlotStatus(String slotId) {
+        String endpoint = "/slots/" + slotId + "/toggle";
+        return patch(endpoint, null);
+    }
+
+    public ApiResponse updateSlotStatus(String slotId, String status) {
+        try {
+            JSONObject data = new JSONObject();
+            data.put("status", status);
+            return patch("/slots/" + slotId + "/status", data);
+        } catch (JSONException e) {
+            Log.e(TAG, "Error creating slot status data", e);
+            return new ApiResponse(false, "Error updating slot status", null);
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // NOTIFICATIONS
+    // ---------------------------------------------------------------------
+    public ApiResponse getUserNotifications() {
+        return get("/notifications/user");
+    }
+
+    public ApiResponse markNotificationAsRead(String id) {
+        return patch("/notifications/" + id + "/read", null);
+    }
+
+    public ApiResponse deleteNotification(String id) {
+        return delete("/notifications/" + id);
+    }
+
+    public List<Notification> parseNotifications(String json) {
+        try {
+            Type listType = new TypeToken<List<Notification>>() {}.getType();
+            return gson.fromJson(json, listType);
+        } catch (Exception e) {
+            Log.e(TAG, "Error parsing notifications", e);
+            return null;
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // STATISTICS & COUNTS
+    // ---------------------------------------------------------------------
+    public ApiResponse countPendingBookings() {
+        return get("/bookings/count/pending");
+    }
+
+    public ApiResponse countApprovedFutureBookings() {
+        return get("/bookings/count/approved");
+    }
+
+    // ---------------------------------------------------------------------
+    // LOGOUT
+    // ---------------------------------------------------------------------
+    public ApiResponse logout() {
+        try {
+            post("/auth/logout", new JSONObject());
+        } catch (Exception ignored) {}
+        sessionManager.clearToken();
+        return new ApiResponse(true, "Logged out", null);
+    }
+
+    public ApiResponse logoutAndForget() {
+        try {
+            post("/auth/logout", new JSONObject());
+        } catch (Exception ignored) {}
+        sessionManager.clearAll();
+        return new ApiResponse(true, "Logged out & credentials cleared", null);
+    }
+
+    // ---------------------------------------------------------------------
+    // USER PARSER (Universal for Owner, Operator, Admin)
+    // ---------------------------------------------------------------------
+    public User parseLoggedOwner(String json) {
+        if (json == null || json.isEmpty()) {
+            Log.e(TAG, "Cannot parse user: empty JSON");
+            return null;
+        }
+
+        try {
+            JSONObject o = new JSONObject(json);
+
+            // Extract data from API response
+            String id = o.optString("nic", null); // EV Owner uses "nic"
+            if (id == null || id.equals("null")) {
+                id = o.optString("id", null); // Operator uses "id"
+            }
+
+            String fullName = o.optString("fullName", null);
+            String email = o.optString("email", null);
+            boolean isActive = o.optBoolean("isActive", false);
+            String createdAt = o.optString("createdAt", null);
+            String phone = o.optString("phone", null);
+            boolean reactivationRequested = o.optBoolean("reactivationRequested", false);
+
+            // Get user from JWT token for additional info
+            User userFromToken = null;
+            String token = sessionManager.getToken();
+            if (token != null) {
+                userFromToken = JwtUtils.getUserFromToken(token);
+            }
+
+            // Start building user - prioritize API response data
+            User user = new User();
+
+            // Use ID from API response (nic/id)
+            user.setUserId(id);
+
+            // Use personal info from API response
+            user.setFullName(fullName);
+            user.setEmail(email);
+            user.setActive(isActive);
+            user.setCreatedAt(createdAt);
+            user.setPhone(phone);
+            user.setReactivationRequested(reactivationRequested);
+
+            // Use role and station info from JWT token (more reliable)
+            if (userFromToken != null) {
+                user.setRole(userFromToken.getRole());
+                user.setStationId(userFromToken.getStationId());
+                user.setStationName(userFromToken.getStationName());
+                user.setStationLocation(userFromToken.getStationLocation());
+            } else {
+                // Fallback if JWT parsing fails
+                user.setRole("Owner"); // Default for EV Owner app
+            }
+
+            Log.d(TAG, "✅ Final parsed user - " +
+                    "ID: " + user.getUserId() + ", " +
+                    "Role: " + user.getRole() + ", " +
+                    "Active: " + user.isActive() + ", " +
+                    "Station: " + (user.getStationId() != null ? user.getStationId() : "None"));
+
+            return user;
+
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing user JSON", e);
+            return null;
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // GENERIC HTTP METHODS
     // ---------------------------------------------------------------------
     public ApiResponse get(String endpoint) {
         try {
@@ -310,95 +646,22 @@ public class ApiClient {
             return new ApiResponse(false, "Network error", null);
         }
     }
+    // ---------------------------------------------------------------------
+    // 🔹 Owner Functions (Newly added)
+    // ---------------------------------------------------------------------
 
-    // ---------------------------------------------------------------------
-    // OTHER API FUNCTIONS
-    // ---------------------------------------------------------------------
-    public ApiResponse getUser() { return get("/auth/me"); }
-    public ApiResponse getBookingsByStation(String stationId) {
-        if (stationId == null || stationId.isEmpty() || stationId.equals("string"))
-            return new ApiResponse(false, "No station assigned", null);
-        return get("/bookings/station/" + stationId);
-    }
-    public ApiResponse deactivateEvOwner(String nic) { return patch("/owners/" + nic + "/deactivate", null); }
-    public ApiResponse requestReactivation(String nic) { return patch("/owners/" + nic + "/request-reactivation", null); }
-
-    // ---------------------------------------------------------------------
-    // LOGOUT
-    // ---------------------------------------------------------------------
-    public ApiResponse logout() {
-        try { post("/auth/logout", new JSONObject()); } catch (Exception ignored) {}
-        sessionManager.clearToken();
-        return new ApiResponse(true, "Logged out", null);
+    // ADD: nearby stations filtered by type (Owner flow)
+    public ApiResponse getNearbyStationsByType(String type, double latitude, double longitude, double radiusKm) {
+        String endpoint = String.format("/station/nearby-by-type?type=%s&latitude=%f&longitude=%f&radiusKm=%f",
+                type, latitude, longitude, radiusKm);
+        return get(endpoint);
     }
 
-    public ApiResponse logoutAndForget() {
-        try { post("/auth/logout", new JSONObject()); } catch (Exception ignored) {}
-        sessionManager.clearAll();
-        return new ApiResponse(true, "Logged out & credentials cleared", null);
-    }
-
-    // ---------------------------------------------------------------------
-// JWT DECODER – Extract operator station info from token
-// ---------------------------------------------------------------------
-    private JSONObject decodeJwtPayload(String token) {
-        try {
-            String[] parts = token.split("\\.");
-            if (parts.length < 2) return null;
-            String payload = new String(android.util.Base64.decode(parts[1], android.util.Base64.URL_SAFE));
-            return new JSONObject(payload);
-        } catch (Exception e) {
-            Log.e(TAG, "JWT decode failed", e);
-            return null;
-        }
-    }
-
-
-    // ---------------------------------------------------------------------
-// USER PARSER (Universal for Owner, Operator, Admin)
-// ---------------------------------------------------------------------
-    public User parseLoggedOwner(String json) {
-        if (json == null || json.isEmpty()) {
-            Log.e(TAG, "Cannot parse user: empty JSON");
-            return null;
-        }
-
-        try {
-            JSONObject o = new JSONObject(json);
-
-            // Basic info
-            String id = o.optString("id", null);
-            String fullName = o.optString("fullName", null);
-            String email = o.optString("email", null);
-            String role = o.optString("role", null);
-            boolean isActive = o.optBoolean("isActive", false);
-            String createdAt = o.optString("createdAt", null);
-
-            // Start building user
-            User user = new User();
-            user.setUserId(id);
-            user.setFullName(fullName);
-            user.setEmail(email);
-            user.setRole(role);
-            user.setActive(isActive);
-            user.setCreatedAt(createdAt);
-
-            // ✅ Try to extract station info from JWT
-            String token = sessionManager.getToken();
-            JSONObject payload = decodeJwtPayload(token);
-            if (payload != null) {
-                user.setStationId(payload.optString("stationId", null));
-                user.setStationName(payload.optString("stationName", null));
-                user.setStationLocation(payload.optString("stationLocation", null));
-            }
-
-            Log.d(TAG, "✅ Parsed logged user: " + user.toString());
-            return user;
-
-        } catch (JSONException e) {
-            Log.e(TAG, "Error parsing user JSON", e);
-            return null;
-        }
+    // OPTIONAL fallback if Owner cannot call /station/{id} yet.
+    // This will try slots endpoint first; if server denies, the caller can decide UX.
+    public ApiResponse getStationPublic(String stationId) {
+        // If you added /station/public/{stationId} in backend, map here.
+        return get("/station/" + stationId); // current admin/operator-only; we'll handle 401/403 gracefully in UI
     }
 
 

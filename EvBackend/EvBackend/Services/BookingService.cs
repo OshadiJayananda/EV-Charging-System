@@ -48,7 +48,7 @@ namespace EvBackend.Services
         {
             var tz = GetSriLankaTz();
             var lt = TimeZoneInfo.ConvertTimeFromUtc(utc, tz);
-            return lt.ToString("yyyy MMM dd, HH:mm");
+            return lt.ToString("yyyy MMM dd, hh:mm tt"); // ✅ 12-hour format with AM/PM
         }
 
         // ------------------------------
@@ -412,7 +412,7 @@ namespace EvBackend.Services
 
             var filter = Builders<Booking>.Filter.And(
                 Builders<Booking>.Filter.Eq(b => b.StationId, stationId),
-                Builders<Booking>.Filter.Eq(b => b.Status, "Approved"),
+                Builders<Booking>.Filter.In(b => b.Status, new[] { "Approved", "Charging" }),
                 Builders<Booking>.Filter.Gte(b => b.StartTime, startUtc),
                 Builders<Booking>.Filter.Lte(b => b.StartTime, endUtc)
             );

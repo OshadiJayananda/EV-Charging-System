@@ -25,7 +25,7 @@ namespace EvBackend.Controllers
         }
 
         [HttpGet("station/{stationId}")]
-        [Authorize(Roles = "Operator,Admin,Backoffice")]
+        [Authorize]
         public async Task<IActionResult> GetSlotsByStation(string stationId)
         {
             var slots = _db.GetCollection<Slot>("Slots");
