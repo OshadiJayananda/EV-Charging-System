@@ -1,101 +1,164 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/swipeRefresh"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#F5F7FA">
 
-    <ScrollView
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <LinearLayout
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:layout_height="match_parent"
+            android:fillViewport="true">
 
-            <TextView
-                android:id="@+id/tvTitle"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Booking Details"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:orientation="vertical"
+                android:padding="20dp">
 
-            <TextView
-                android:id="@+id/tvStatus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Status: Pending"
-                android:layout_marginTop="8dp" />
-            <TextView
-                android:id="@+id/tvReason"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#FF5555"
-                android:textStyle="italic"
-                android:paddingTop="6dp"
-                android:textSize="14sp"
-                android:visibility="gone"
-                android:text="Reason: " />
+                <!-- 🧾 Card Container -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_card_rounded"
+                    android:orientation="vertical"
+                    android:padding="20dp"
+                    android:elevation="4dp">
 
+                    <!-- Title -->
+                    <TextView
+                        android:id="@+id/tvTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Booking Details"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/primary_dark" />
 
-            <TextView
-                android:id="@+id/tvStation"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Station: —"
-                android:layout_marginTop="4dp" />
+                    <!-- Status -->
+                    <TextView
+                        android:id="@+id/tvStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Status: Pending"
+                        android:textStyle="bold"
+                        android:layout_marginTop="8dp"
+                        android:textColor="#FFA000" />
 
-            <TextView
-                android:id="@+id/tvSlot"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Slot: —"
-                android:layout_marginTop="4dp" />
+                    <!-- Cancel Reason -->
+                    <TextView
+                        android:id="@+id/tvReason"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="#D32F2F"
+                        android:textStyle="italic"
+                        android:paddingTop="4dp"
+                        android:textSize="14sp"
+                        android:visibility="gone"
+                        android:text="Reason: " />
 
-            <TextView
-                android:id="@+id/tvTime"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Time: —"
-                android:layout_marginTop="4dp" />
+                    <!-- Info Section -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginTop="10dp">
 
-            <TextView
-                android:id="@+id/tvBookingId"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Booking ID: —"
-                android:layout_marginTop="4dp" />
+                        <TextView
+                            android:id="@+id/tvStation"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Station: —"
+                            android:textColor="#333"
+                            android:textSize="16sp"
+                            android:layout_marginTop="2dp" />
 
-            <TextView
-                android:id="@+id/tvHint"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Show this QR to the operator at the station."
-                android:textStyle="bold"
-                android:textColor="#1976D2"
-                android:layout_marginTop="14dp" />
+                        <TextView
+                            android:id="@+id/tvSlot"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Slot: —"
+                            android:textColor="#333"
+                            android:textSize="16sp"
+                            android:layout_marginTop="2dp" />
 
-            <ImageView
-                android:id="@+id/ivQr"
-                android:layout_width="260dp"
-                android:layout_height="260dp"
-                android:layout_gravity="center"
-                android:layout_marginTop="12dp"
-                android:contentDescription="@string/app_name" />
+                        <TextView
+                            android:id="@+id/tvTime"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Time: —"
+                            android:textColor="#333"
+                            android:textSize="16sp"
+                            android:layout_marginTop="2dp" />
 
-            <Button
-                android:id="@+id/btnShareQr"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Share QR Code"
-                android:layout_gravity="center"
-                android:layout_marginTop="20dp"
-                android:backgroundTint="#1976D2"
-                android:textColor="@android:color/white" />
+                        <TextView
+                            android:id="@+id/tvBookingId"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Booking ID: —"
+                            android:textColor="#333"
+                            android:textSize="16sp"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
 
-        </LinearLayout>
-    </ScrollView>
-</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+                    <!-- Hint -->
+                    <TextView
+                        android:id="@+id/tvHint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Show this QR to the operator at the station."
+                        android:textStyle="bold"
+                        android:textColor="@color/primary"
+                        android:layout_marginTop="18dp"
+                        android:textSize="14sp"
+                        android:gravity="center" />
+
+                    <!-- QR Code Container -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="14dp"
+                        android:padding="14dp"
+                        android:background="@drawable/bg_qr_border"
+                        android:elevation="3dp">
+
+                        <ImageView
+                            android:id="@+id/ivQr"
+                            android:layout_width="230dp"
+                            android:layout_height="230dp"
+                            android:contentDescription="@string/app_name"
+                            android:scaleType="fitCenter" />
+                    </LinearLayout>
+
+                    <!-- Share Button -->
+                    <Button
+                        android:id="@+id/btnShareQr"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Share QR Code"
+                        android:textAllCaps="false"
+                        android:textColor="@android:color/white"
+                        android:textSize="16sp"
+                        android:layout_marginTop="24dp"
+                        android:elevation="4dp"
+                        android:background="@drawable/bg_gradient_button" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!-- 🔹 Fixed Footer -->
+    <include
+        android:id="@+id/footerLayout"
+        layout="@layout/footer_owner"
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+</RelativeLayout>
