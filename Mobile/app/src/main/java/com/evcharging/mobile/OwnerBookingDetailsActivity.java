@@ -46,8 +46,6 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
     private com.evcharging.mobile.model.BookingItem currentBooking;
     private com.evcharging.mobile.network.ApiClient apiClient;
 
-
-
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -65,31 +63,49 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
         ivQr = findViewById(R.id.ivQr);
         btnShareQr = findViewById(R.id.btnShareQr);
 
-        bookingId = getIntent().getStringExtra("bookingId");
-        stationId = getIntent().getStringExtra("stationId");
-        slotNumber = getIntent().getIntExtra("slotNumber", 0);
-        startMs = getIntent().getLongExtra("start", 0);
-        endMs = getIntent().getLongExtra("end", 0);
-        status = getIntent().getStringExtra("status");
-        qrBase64 = getIntent().getStringExtra("qrBase64");
+        // --- Handle both JSON and individual extras ---
+        String bookingJson = getIntent().getStringExtra("booking");
+        if (bookingJson != null) {
+            // From OwnerBookingsActivity
+            currentBooking = new com.google.gson.Gson().fromJson(bookingJson, com.evcharging.mobile.model.BookingItem.class);
+        } else {
+            // From ChargingHistoryActivity
+            currentBooking = new com.evcharging.mobile.model.BookingItem();
+            currentBooking.setBookingId(getIntent().getStringExtra("bookingId"));
+            currentBooking.setStationName(getIntent().getStringExtra("stationName"));
+            currentBooking.setSlotNumber(getIntent().getStringExtra("slotNumber"));
+            currentBooking.setStatus(getIntent().getStringExtra("status"));
+            currentBooking.setStartTime(getIntent().getStringExtra("start"));
+            currentBooking.setEndTime(getIntent().getStringExtra("end"));
+            currentBooking.setQrImageBase64(getIntent().getStringExtra("qrBase64"));
+        }
 
-        tvStatus.setText("Status: " + status);
-        tvSlot.setText("Slot: #" + slotNumber);
-        tvTime.setText("Time: " + fmt.format(new Date(startMs)) + " – " + fmt.format(new Date(endMs)));
-        tvBookingId.setText("Booking ID: " + (bookingId != null ? bookingId : "-"));
+        // --- Display Data ---
+        if (currentBooking != null) {
+            tvStatus.setText("Status: " + currentBooking.getStatus());
+            tvStation.setText("Station: " + (currentBooking.getStationName() != null ? currentBooking.getStationName() : "-"));
+            tvSlot.setText("Slot:" + (currentBooking.getSlotNumber() != null ? currentBooking.getSlotNumber() : "-"));
+            tvBookingId.setText("Booking ID: " + (currentBooking.getBookingId() != null ? currentBooking.getBookingId() : "-"));
 
-        // Load QR if available
-        if (qrBase64 != null && !qrBase64.isEmpty()) renderQr(qrBase64);
+            try {
+                tvTime.setText(currentBooking.getStartTimeFormatted() + " – " + currentBooking.getEndTimeFormatted());
+            } catch (Exception e) {
+                tvTime.setText("Time: -");
+            }
 
-        // Fetch station name
-        fetchStationName();
+            if (currentBooking.getQrImageBase64() != null && !currentBooking.getQrImageBase64().isEmpty()) {
+                renderQr(currentBooking.getQrImageBase64());
+            }
+        }
 
-        // Setup swipe refresh
+
+        // Swipe refresh
         swipeRefresh.setOnRefreshListener(this::refreshFromServer);
 
         // Share QR
         btnShareQr.setOnClickListener(v -> shareQr());
     }
+
 
     @Override
     protected void onResume() {
@@ -97,21 +113,6 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
         refreshBookingDetails();
     }
 
-    private void fetchStationName() {
-        new AsyncTask<Void, Void, String>() {
-            @Override protected String doInBackground(Void... voids) {
-                ApiResponse res = api.getStationById(stationId);
-                if (res == null || !res.isSuccess()) return null;
-                try {
-                    JSONObject o = new JSONObject(res.getData());
-                    return o.optString("name", null);
-                } catch (Exception e) { return null; }
-            }
-            @Override protected void onPostExecute(String name) {
-                tvStation.setText("Station: " + (name != null ? name : "-"));
-            }
-        }.execute();
-    }
 
     private void refreshFromServer() {
         swipeRefresh.setRefreshing(true);

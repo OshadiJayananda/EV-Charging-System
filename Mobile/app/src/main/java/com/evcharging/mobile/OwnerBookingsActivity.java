@@ -13,6 +13,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.evcharging.mobile.adapter.OwnerBookingAdapter;
 import com.evcharging.mobile.model.BookingItem;
+import com.evcharging.mobile.model.User;
 import com.evcharging.mobile.network.ApiClient;
 import com.evcharging.mobile.network.ApiResponse;
 import com.evcharging.mobile.session.SessionManager;
@@ -60,7 +61,8 @@ public class OwnerBookingsActivity extends AppCompatActivity {
             @Override
             protected ApiResponse doInBackground(Void... voids) {
                 try {
-                    String ownerId = session.getUserId(); // Make sure this matches OwnerId in DB
+                    User loggedUser = session.getLoggedInUser();
+                    String ownerId = (loggedUser != null) ? loggedUser.getUserId() : null; // Make sure this matches OwnerId in DB
                     return apiClient.get("/bookings/owner/" + ownerId);
                 } catch (Exception e) {
                     Log.e("OwnerBookings", "Error fetching bookings", e);

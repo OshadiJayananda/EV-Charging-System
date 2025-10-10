@@ -62,12 +62,20 @@ public class BookingItem {
         try {
             java.text.SimpleDateFormat inFmt = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault());
             inFmt.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
-            java.text.SimpleDateFormat outFmt = new java.text.SimpleDateFormat("MMM dd, hh:mm a", java.util.Locale.getDefault());
+
+            // if input has milliseconds or Z timezone
+            if (utcTime.endsWith("Z")) {
+                inFmt = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.getDefault());
+                inFmt.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            }
+
+            java.text.SimpleDateFormat outFmt = new java.text.SimpleDateFormat("dd MMM yyyy, h:mm a", java.util.Locale.getDefault());
             java.util.Date d = inFmt.parse(utcTime);
             return outFmt.format(d);
-        } catch (java.text.ParseException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return utcTime;
         }
     }
+
 }

@@ -13,6 +13,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.evcharging.mobile.adapter.OwnerBookingAdapter;
 import com.evcharging.mobile.model.BookingItem;
+import com.evcharging.mobile.model.User;
 import com.evcharging.mobile.network.ApiClient;
 import com.evcharging.mobile.network.ApiResponse;
 import com.evcharging.mobile.session.SessionManager;
@@ -50,6 +51,7 @@ public class ChargingHistoryActivity extends AppCompatActivity {
         adapter = new OwnerBookingAdapter(new ArrayList<>(), item -> {
             Intent i = new Intent(this, OwnerBookingDetailsActivity.class);
             i.putExtra("bookingId", item.getBookingId());
+            i.putExtra("stationId", item.getStationId());
             i.putExtra("stationName", item.getStationName());
             i.putExtra("slotNumber", item.getSlotNumber());
             i.putExtra("start", item.getStartTime());
@@ -82,7 +84,8 @@ public class ChargingHistoryActivity extends AppCompatActivity {
             protected List<BookingItem> doInBackground(Void... voids) {
                 try {
                     // Fetch owner ID
-                    String ownerId = session.getUserId();
+                    User loggedUser = session.getLoggedInUser();
+                    String ownerId = (loggedUser != null) ? loggedUser.getUserId() : null;
                     if (ownerId == null || ownerId.isEmpty()) return null;
 
                     ApiResponse res = apiClient.getBookingsByOwner(ownerId);
@@ -96,7 +99,7 @@ public class ChargingHistoryActivity extends AppCompatActivity {
                         BookingItem b = new BookingItem();
 
                         b.setBookingId(o.optString("bookingId", o.optString("_id", null)));
-                        b.setStationId(o.optString("stationId"));
+                        b.setStationId(o.optString("stationId", o.optString("StationId", null)));
                         b.setStationName(o.optString("stationName", ""));
                         b.setSlotId(o.optString("slotId"));
                         b.setSlotNumber(o.optString("slotNumber", o.optString("slotNo", "")));

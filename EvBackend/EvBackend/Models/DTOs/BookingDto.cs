@@ -13,6 +13,7 @@ namespace EvBackend.Models.DTOs
     {
         public string BookingId { get; set; }
         public string StationId { get; set; }
+        public string StationName { get; set; }
 
         public string SlotId { get; set; }
         public int SlotNumber { get; set; }
