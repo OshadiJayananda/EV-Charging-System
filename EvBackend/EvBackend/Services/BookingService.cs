@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using EvBackend.Entities;
 using EvBackend.Models.DTOs;
 using EvBackend.Services.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using QRCoder;
 
@@ -630,6 +631,46 @@ namespace EvBackend.Services
             return ids.Count;
         }
 
+
+
+        public async Task<object> GetReservationOverviewAsync(DateTime? fromDate, DateTime? toDate)
+        {
+            // Create the filters
+            var filter = Builders<Booking>.Filter.Empty;
+
+            if (fromDate.HasValue)
+                filter &= Builders<Booking>.Filter.Gte(b => b.StartTime, fromDate.Value);
+
+            if (toDate.HasValue)
+                filter &= Builders<Booking>.Filter.Lte(b => b.EndTime, toDate.Value);
+
+            var bookingCol = _db.GetCollection<Booking>("Bookings");
+
+            // Pending Reservation count
+            var pendingFilter = filter & Builders<Booking>.Filter.Eq(b => b.Status, "Pending");
+            var pendingCount = await bookingCol.CountDocumentsAsync(pendingFilter);
+
+            // Approved Reservation count
+            var approvedFilter = filter & Builders<Booking>.Filter.Eq(b => b.Status, "Approved");
+            var approvedCount = await bookingCol.CountDocumentsAsync(approvedFilter);
+
+            // Charging Reservation count
+            var chargingFilter = filter & Builders<Booking>.Filter.Eq(b => b.Status, "Charging");
+            var chargingCount = await bookingCol.CountDocumentsAsync(chargingFilter);
+
+            // Completed Reservation count
+            var completedFilter = filter & Builders<Booking>.Filter.In(b => b.Status, new[] { "Completed", "Finalized" });
+            var completedCount = await bookingCol.CountDocumentsAsync(completedFilter);
+
+            // Return the counts
+            return new
+            {
+                PendingReservations = pendingCount,
+                ApprovedReservations = approvedCount,
+                ChargingReservations = chargingCount,
+                CompletedReservations = completedCount
+            };
+        }
 
     }
 }

@@ -16,15 +16,20 @@ namespace EvBackend.Services
 {
     public class EVOwnerService : IEVOwnerService
     {
+        // MongoDB collection for EV owners
         private readonly IMongoCollection<EVOwner> _owners;
+
+        // Notification service for sending alerts
         private readonly INotificationService _notificationService;
 
+        // Constructor to initialize MongoDB collection and notification service
         public EVOwnerService(IMongoDatabase database, IOptions<MongoDbSettings> settings, INotificationService notificationService)
         {
             _owners = database.GetCollection<EVOwner>(settings.Value.EVOwnersCollectionName);
             _notificationService = notificationService;
         }
 
+        // Activate or Deactivate by backoffice (admin)
         public async Task<bool> ChangeEVOwnerStatus(string nic, bool isActive)
         {
             var updateBuilder = Builders<EVOwner>.Update;
@@ -60,6 +65,7 @@ namespace EvBackend.Services
             return result.ModifiedCount > 0;
         }
 
+        // Create new owner
         public async Task<EVOwnerDto> CreateEVOwner(CreateEVOwnerDto dto)
         {
             dto.Email = dto.Email.Trim().ToLower();
@@ -92,6 +98,7 @@ namespace EvBackend.Services
             };
         }
 
+        // Get all owners with pagination
         public Task<IEnumerable<EVOwnerDto>> GetAllEVOwners(int page, int pageSize)
         {
             var owners = _owners.Find(_ => true)
@@ -110,6 +117,7 @@ namespace EvBackend.Services
             return Task.FromResult(dtos);
         }
 
+        // Get owner by NIC
         public Task<EVOwnerDto> GetEVOwnerByNIC(string nic)
         {
             var owner = _owners.Find(o => o.NIC == nic).FirstOrDefault();
@@ -126,6 +134,7 @@ namespace EvBackend.Services
             return Task.FromResult(dto);
         }
 
+        // Update owner details
         public async Task<EVOwnerDto> UpdateEVOwner(string nic, UpdateEVOwnerDto dto)
         {
             dto.Email = dto.Email.Trim().ToLower();
@@ -152,6 +161,8 @@ namespace EvBackend.Services
             };
         }
 
+
+        // Request reactivation by owner
         public async Task<bool> RequestReactivation(string nic)
         {
             var owner = await _owners.Find(o => o.NIC == nic).FirstOrDefaultAsync();
@@ -174,12 +185,15 @@ namespace EvBackend.Services
 
             return result.ModifiedCount > 0;
         }
+
+        // Get count of reactivation requests, only for admin
         public async Task<int> GetReactivationRequestCount()
         {
             var count = await _owners.CountDocumentsAsync(o => o.ReactivationRequested == true);
             return (int)count;
         }
 
+        // Get list of reactivation requests, only for admin
         public async Task<IEnumerable<EVOwnerDto>> GetEVOwnersWithReactivationRequests()
         {
             var owners = await _owners.Find(o => o.ReactivationRequested == true && o.IsActive == false)
@@ -199,6 +213,7 @@ namespace EvBackend.Services
             return dtos;
         }
 
+        // Clear reactivation request by admin
         public async Task<bool> ClearReactivationRequest(string nic)
         {
             var update = Builders<EVOwner>.Update.Set(o => o.ReactivationRequested, false);

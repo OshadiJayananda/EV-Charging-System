@@ -6,6 +6,7 @@
 // --------------------------------------------------------------
 
 using EvBackend.Models.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace EvBackend.Services.Interfaces
 {
@@ -42,6 +43,7 @@ namespace EvBackend.Services.Interfaces
             string slotId,
             string reason = "Slot unavailable",
             string cancelledBy = "System");
+        Task<object> GetReservationOverviewAsync(DateTime? fromDate, DateTime? toDate);
 
     }
 }

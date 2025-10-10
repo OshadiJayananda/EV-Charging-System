@@ -281,5 +281,21 @@ namespace EvBackend.Controllers
             }
             catch (Exception ex) { Console.WriteLine(ex); return StatusCode(500, new { message = "Unexpected error" }); }
         }
+
+
+        [HttpGet("overview")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetReservationOverview([FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate)
+        {
+            try
+            {
+                var result = await _booking.GetReservationOverviewAsync(fromDate, toDate);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Unexpected error", details = ex.Message });
+            }
+        }
     }
 }

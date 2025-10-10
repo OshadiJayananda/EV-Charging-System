@@ -27,6 +27,7 @@ namespace EvBackend.Controllers
             _notificationService = notificationService;
         }
 
+        //get all owners, only for admin
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllOwners([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -35,6 +36,7 @@ namespace EvBackend.Controllers
             return Ok(owners);
         }
 
+        //register new owner
         [HttpPost("register")]
         public async Task<IActionResult> RegisterOwner([FromBody] CreateEVOwnerDto createEVOwnerDto)
         {
@@ -62,6 +64,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //update owner details
         [HttpPut("{nic}")]
         [Authorize(Roles = "Owner")]
         public async Task<IActionResult> UpdateOwner(string nic, [FromBody] UpdateEVOwnerDto dto)
@@ -83,6 +86,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        // get owner by nic
         [HttpGet("{nic}")]
         [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> GetOwner(string nic)
@@ -106,6 +110,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        // Deactivate self(owner)
         [HttpPatch("{nic}/deactivate")]
         [Authorize(Roles = "Owner")]
         public async Task<IActionResult> DeactivateSelf(string nic)
@@ -128,6 +133,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        // Activate by backoffice (admin)
         [HttpPatch("{nic}/activate")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ActivateByBackoffice(string nic)
@@ -153,6 +159,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        // Request reactivation by owner
         [HttpPatch("{nic}/request-reactivation")]
         [Authorize(Roles = "Owner")]
         public async Task<IActionResult> RequestReactivation(string nic)
@@ -177,6 +184,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        // Get count of reactivation requests, only for admin
         [HttpGet("reactivation-count")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetReactivationRequestCount()
@@ -192,6 +200,8 @@ namespace EvBackend.Controllers
             }
         }
 
+
+        // Get list of reactivation requests, only for admin
         [HttpGet("reactivation-requests")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetReactivationRequests()
@@ -227,6 +237,7 @@ namespace EvBackend.Controllers
         //     }
         // }
 
+        // Clear reactivation request by admin
         [HttpPatch("{nic}/clear-reactivation")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ClearReactivationRequest(string nic)

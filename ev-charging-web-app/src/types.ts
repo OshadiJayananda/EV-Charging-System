@@ -48,7 +48,7 @@ export interface Slot {
   stationId: string;
   connectorType: string;
   number: number;
-  status:string
+  status: string;
 }
 
 export type StationType = "AC" | "DC";
@@ -58,10 +58,10 @@ export interface Station {
   name: string;
   location: string;
   type: StationType;
-  capacity: number; 
-  availableSlots: number;   // total slots count
+  capacity: number;
+  availableSlots: number; // total slots count
   isActive: boolean;
-  slots?: Slot[];           // optional, only when fetching detailed view
+  slots?: Slot[]; // optional, only when fetching detailed view
 }
 
 // Payloads for requests
@@ -81,18 +81,35 @@ export interface UpdateStationRequest {
   availableSlots?: number;
 }
 
+export interface PagedResult<T> {
+  totalCount: number;
+  items: T[];
+}
 
 // ==============================
 // Booking types
 // ==============================
 export interface Booking {
-  id: number;
-  stationId: number;
-  userId: number;
+  bookingId: string;
+  stationId: string;
+  slotId: string;
   slotNumber: number;
-  status: "pending" | "approved" | "finalized" | "canceled";
+  timeSlotId: string;
+  ownerId: string;
+  status: string;
   startTime: string;
-  endTime?: string;
+  endTime: string;
+  createdAt: string;
+  updatedAt: string;
+  qrCode?: string;
+  qrExpiresAt?: string;
+  qrImageBase64?: string;
+  formattedStartTime?: string;
+  formattedEndTime?: string;
+  formattedDate?: string;
+  ownerName?: string;
+  stationName?: string;
+  connectorType?: string;
 }
 
 export interface GetBookingsByStation {
@@ -157,4 +174,10 @@ export interface UserResponse {
   status?: number;
 }
 
-
+export interface PaginatedResponse<T> {
+  currentPage: number;
+  items: T[];
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
