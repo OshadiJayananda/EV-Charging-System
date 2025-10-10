@@ -1,5 +1,6 @@
 import axios, { AxiosError, type AxiosRequestConfig } from "axios";
 import toast from "react-hot-toast";
+import type { PaginatedResponse } from "../../types";
 
 const API_BASE_URL =
   import.meta.env.VITE_APP_API_BASE_URL || "http://localhost:3000/api";
@@ -61,6 +62,19 @@ export const getRequest = async <T>(
   }
 };
 
+//get with pagination items
+export const getRequestWithPagination = async <T>(
+  url: string,
+  params?: object
+): Promise<{ data: PaginatedResponse<T>; status: number } | null> => {
+  try {
+    const response = await api.get<PaginatedResponse<T>>(url, { params });
+    return { data: response.data, status: response.status };
+  } catch (error) {
+    return handleError(error, "Error fetching data");
+  }
+};
+
 // POST request
 export const postRequest = async <T>(
   url: string,
@@ -113,6 +127,5 @@ export const patchRequest = async <T>(
     return handleError(error, "Error patching data");
   }
 };
-
 
 export default api;
