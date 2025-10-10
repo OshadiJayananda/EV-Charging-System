@@ -3,8 +3,9 @@ package com.evcharging.mobile;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.TextView;
+import android.util.Log;
+import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -12,105 +13,95 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.evcharging.mobile.adapter.OwnerBookingAdapter;
 import com.evcharging.mobile.model.BookingItem;
-import com.evcharging.mobile.model.Station;
 import com.evcharging.mobile.network.ApiClient;
 import com.evcharging.mobile.network.ApiResponse;
 import com.evcharging.mobile.session.SessionManager;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
 public class OwnerBookingsActivity extends AppCompatActivity {
 
-    private SwipeRefreshLayout swipe;
-    private RecyclerView rv;
-    private TextView tvEmpty;
-
-    private SessionManager session;
-    private ApiClient api;
+    private RecyclerView recyclerView;
+    private SwipeRefreshLayout swipeRefreshLayout;
     private OwnerBookingAdapter adapter;
+    private List<BookingItem> bookings = new ArrayList<>();
+    private ApiClient apiClient;
+    private SessionManager session;
+    private final Gson gson = new Gson();
 
     @Override
-    protected void onCreate(Bundle b) {
-        super.onCreate(b);
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_owner_bookings);
+        setTitle("My Bookings");
+
+        recyclerView = findViewById(R.id.recyclerViewBookings);
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
         session = new SessionManager(this);
-        api = new ApiClient(session);
+        apiClient = new ApiClient(session);
 
-        swipe = findViewById(R.id.swipe);
-        rv = findViewById(R.id.rvBookings);
-        tvEmpty = findViewById(R.id.tvEmpty);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new OwnerBookingAdapter(bookings, this::openDetails);
+        recyclerView.setAdapter(adapter);
 
-        adapter = new OwnerBookingAdapter(item -> {
-            Intent i = new Intent(this, OwnerBookingDetailsActivity.class);
-            i.putExtra("bookingId", item.bookingId);
-            i.putExtra("stationId", item.stationId);
-            i.putExtra("slotNumber", item.slotNumber);
-            i.putExtra("start", item.startTimeMs);
-            i.putExtra("end", item.endTimeMs);
-            i.putExtra("status", item.status);
-            i.putExtra("qrBase64", item.qrImageBase64); // may be null in list; details will refetch if needed
-            startActivity(i);
-        });
-
-        rv.setLayoutManager(new LinearLayoutManager(this));
-        rv.setAdapter(adapter);
-
-        swipe.setOnRefreshListener(this::loadData);
+        swipeRefreshLayout.setOnRefreshListener(this::fetchBookings);
+        fetchBookings();
     }
 
-    @Override protected void onResume() {
-        super.onResume();
-        loadData();
-    }
+    private void fetchBookings() {
+        swipeRefreshLayout.setRefreshing(true);
 
-    private void loadData() {
-        swipe.setRefreshing(true);
-        new AsyncTask<Void, Void, List<BookingItem>>() {
-            @Override protected List<BookingItem> doInBackground(Void... voids) {
-                String ownerId = session.getLoggedInUser() != null ? session.getLoggedInUser().getUserId() : null;
-                ApiResponse res = api.getBookingsByOwner(ownerId);
-                if (res == null || !res.isSuccess()) return null;
-
+        new AsyncTask<Void, Void, ApiResponse>() {
+            @Override
+            protected ApiResponse doInBackground(Void... voids) {
                 try {
-                    JSONArray arr = new JSONArray(res.getData());
-                    List<BookingItem> list = new ArrayList<>();
-                    for (int i = 0; i < arr.length(); i++) {
-                        JSONObject o = arr.getJSONObject(i);
-                        BookingItem b = new BookingItem();
-                        b.bookingId     = o.optString("bookingId", o.optString("_id", null));
-                        b.stationId     = o.optString("stationId");
-                        b.stationName   = o.optString("stationName", null);
-                        b.slotId        = o.optString("slotId");
-                        b.slotNumber    = o.optInt("slotNumber", o.optInt("slotNo", 0));
-                        b.timeSlotId    = o.optString("timeSlotId");
-                        b.ownerId       = o.optString("ownerId");
-                        b.status        = o.optString("status");
-                        b.startTimeMs   = o.optLong("startTimeMs", o.optJSONObject("startTime") != null ? o.optJSONObject("startTime").optLong("$date", 0) : o.optLong("startTime", 0));
-                        b.endTimeMs     = o.optLong("endTimeMs",   o.optJSONObject("endTime")   != null ? o.optJSONObject("endTime").optLong("$date", 0)   : o.optLong("endTime", 0));
-                        b.qrCode        = o.optString("qrCode", null);
-                        b.qrExpiresAtMs = o.optLong("qrExpiresAt", 0);
-                        b.qrImageBase64 = o.optString("qrImageBase64", null);
-                        // Filter: only upcoming
-                        if ("Pending".equals(b.status) || "Approved".equals(b.status) || "Charging".equals(b.status)) {
-                            list.add(b);
-                        }
-                    }
-                    return list;
-                } catch (Exception ignore) {
+                    String ownerId = session.getUserId(); // Make sure this matches OwnerId in DB
+                    return apiClient.get("/bookings/owner/" + ownerId);
+                } catch (Exception e) {
+                    Log.e("OwnerBookings", "Error fetching bookings", e);
                     return null;
                 }
             }
 
-            @Override protected void onPostExecute(List<BookingItem> data) {
-                swipe.setRefreshing(false);
-                adapter.setData(data);
-                tvEmpty.setVisibility(data == null || data.isEmpty() ? View.VISIBLE : View.GONE);
+            @Override
+            protected void onPostExecute(ApiResponse res) {
+                swipeRefreshLayout.setRefreshing(false);
+                if (res == null || !res.isSuccess()) {
+                    Toast.makeText(OwnerBookingsActivity.this, "Failed to load bookings", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                try {
+                    Type listType = new TypeToken<List<BookingItem>>() {}.getType();
+                    List<BookingItem> fetched = gson.fromJson(res.getData(), listType);
+
+                    // Show only Pending / Approved / Charging
+                    bookings.clear();
+                    for (BookingItem b : fetched) {
+                        if (b.getStatus().equalsIgnoreCase("Pending")
+                                || b.getStatus().equalsIgnoreCase("Approved")
+                                || b.getStatus().equalsIgnoreCase("Charging")) {
+                            bookings.add(b);
+                        }
+                    }
+
+                    adapter.notifyDataSetChanged();
+                } catch (Exception e) {
+                    Log.e("OwnerBookings", "Parse error", e);
+                    Toast.makeText(OwnerBookingsActivity.this, "Error parsing bookings", Toast.LENGTH_SHORT).show();
+                }
             }
         }.execute();
+    }
+
+    private void openDetails(BookingItem booking) {
+        Intent intent = new Intent(this, OwnerBookingDetailsActivity.class);
+        intent.putExtra("booking", gson.toJson(booking));
+        startActivity(intent);
     }
 }

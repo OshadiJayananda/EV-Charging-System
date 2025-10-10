@@ -5,6 +5,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -24,90 +25,114 @@ import java.util.List;
 
 public class ChargingHistoryActivity extends AppCompatActivity {
 
-    private SwipeRefreshLayout swipe;
-    private RecyclerView rv;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private RecyclerView recyclerViewHistory;
     private TextView tvEmpty;
 
     private SessionManager session;
-    private ApiClient api;
+    private ApiClient apiClient;
     private OwnerBookingAdapter adapter;
 
     @Override
-    protected void onCreate(Bundle b) {
-        super.onCreate(b);
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_charging_history);
 
+        // Initialize
         session = new SessionManager(this);
-        api = new ApiClient(session);
+        apiClient = new ApiClient(session);
 
-        swipe = findViewById(R.id.swipe);
-        rv = findViewById(R.id.rvHistory);
+        swipeRefreshLayout = findViewById(R.id.swipe);
+        recyclerViewHistory = findViewById(R.id.rvHistory);
         tvEmpty = findViewById(R.id.tvEmpty);
 
-        adapter = new OwnerBookingAdapter(item -> {
+        // Setup Adapter + RecyclerView
+        adapter = new OwnerBookingAdapter(new ArrayList<>(), item -> {
             Intent i = new Intent(this, OwnerBookingDetailsActivity.class);
-            i.putExtra("bookingId", item.bookingId);
-            i.putExtra("stationId", item.stationId);
-            i.putExtra("slotNumber", item.slotNumber);
-            i.putExtra("start", item.startTimeMs);
-            i.putExtra("end", item.endTimeMs);
-            i.putExtra("status", item.status);
-            i.putExtra("qrBase64", item.qrImageBase64);
+            i.putExtra("bookingId", item.getBookingId());
+            i.putExtra("stationName", item.getStationName());
+            i.putExtra("slotNumber", item.getSlotNumber());
+            i.putExtra("start", item.getStartTime());
+            i.putExtra("end", item.getEndTime());
+            i.putExtra("status", item.getStatus());
+            i.putExtra("qrBase64", item.getQrImageBase64());
             startActivity(i);
         });
 
-        rv.setLayoutManager(new LinearLayoutManager(this));
-        rv.setAdapter(adapter);
+        recyclerViewHistory.setLayoutManager(new LinearLayoutManager(this));
+        recyclerViewHistory.setAdapter(adapter);
 
-        swipe.setOnRefreshListener(this::loadData);
+        swipeRefreshLayout.setOnRefreshListener(this::loadData);
     }
 
-    @Override protected void onResume() {
+    @Override
+    protected void onResume() {
         super.onResume();
         loadData();
     }
 
+    /**
+     * Load past (Finalized/Expired/Canceled) bookings
+     */
     private void loadData() {
-        swipe.setRefreshing(true);
-        new AsyncTask<Void, Void, List<BookingItem>>() {
-            @Override protected List<BookingItem> doInBackground(Void... voids) {
-                String ownerId = session.getLoggedInUser() != null ? session.getLoggedInUser().getUserId() : null;
-                ApiResponse res = api.getBookingsByOwner(ownerId);
-                if (res == null || !res.isSuccess()) return null;
+        swipeRefreshLayout.setRefreshing(true);
 
+        new AsyncTask<Void, Void, List<BookingItem>>() {
+            @Override
+            protected List<BookingItem> doInBackground(Void... voids) {
                 try {
+                    // Fetch owner ID
+                    String ownerId = session.getUserId();
+                    if (ownerId == null || ownerId.isEmpty()) return null;
+
+                    ApiResponse res = apiClient.getBookingsByOwner(ownerId);
+                    if (res == null || !res.isSuccess()) return null;
+
                     JSONArray arr = new JSONArray(res.getData());
-                    List<BookingItem> list = new ArrayList<>();
+                    List<BookingItem> historyList = new ArrayList<>();
+
                     for (int i = 0; i < arr.length(); i++) {
                         JSONObject o = arr.getJSONObject(i);
                         BookingItem b = new BookingItem();
-                        b.bookingId     = o.optString("bookingId", o.optString("_id", null));
-                        b.stationId     = o.optString("stationId");
-                        b.stationName   = o.optString("stationName", null);
-                        b.slotId        = o.optString("slotId");
-                        b.slotNumber    = o.optInt("slotNumber", o.optInt("slotNo", 0));
-                        b.timeSlotId    = o.optString("timeSlotId");
-                        b.ownerId       = o.optString("ownerId");
-                        b.status        = o.optString("status");
-                        b.startTimeMs   = o.optLong("startTimeMs", o.optJSONObject("startTime") != null ? o.optJSONObject("startTime").optLong("$date", 0) : o.optLong("startTime", 0));
-                        b.endTimeMs     = o.optLong("endTimeMs",   o.optJSONObject("endTime")   != null ? o.optJSONObject("endTime").optLong("$date", 0)   : o.optLong("endTime", 0));
-                        b.qrImageBase64 = o.optString("qrImageBase64", null);
 
-                        // History filter: Finalized, Canceled, Expired
-                        if ("Finalized".equals(b.status) || "Canceled".equals(b.status) || "Expired".equals(b.status)) {
-                            list.add(b);
+                        b.setBookingId(o.optString("bookingId", o.optString("_id", null)));
+                        b.setStationId(o.optString("stationId"));
+                        b.setStationName(o.optString("stationName", ""));
+                        b.setSlotId(o.optString("slotId"));
+                        b.setSlotNumber(o.optString("slotNumber", o.optString("slotNo", "")));
+                        b.setTimeSlotId(o.optString("timeSlotId"));
+                        b.setOwnerId(o.optString("ownerId"));
+                        b.setStatus(o.optString("status"));
+                        b.setStartTime(o.optString("startTime"));
+                        b.setEndTime(o.optString("endTime"));
+                        b.setQrImageBase64(o.optString("qrImageBase64", null));
+
+                        // Include only past bookings
+                        if ("Finalized".equalsIgnoreCase(b.getStatus()) ||
+                                "Cancelled".equalsIgnoreCase(b.getStatus()) ||
+                                "Expired".equalsIgnoreCase(b.getStatus())) {
+                            historyList.add(b);
                         }
                     }
-                    return list;
-                } catch (Exception ignore) {
+                    return historyList;
+
+                } catch (Exception e) {
+                    e.printStackTrace();
                     return null;
                 }
             }
 
-            @Override protected void onPostExecute(List<BookingItem> data) {
-                swipe.setRefreshing(false);
-                adapter.setData(data);
-                tvEmpty.setVisibility(data == null || data.isEmpty() ? View.VISIBLE : View.GONE);
+            @Override
+            protected void onPostExecute(List<BookingItem> data) {
+                swipeRefreshLayout.setRefreshing(false);
+
+                if (data == null || data.isEmpty()) {
+                    tvEmpty.setVisibility(View.VISIBLE);
+                    adapter.setData(new ArrayList<>());
+                } else {
+                    tvEmpty.setVisibility(View.GONE);
+                    adapter.setData(data);
+                }
             }
         }.execute();
     }

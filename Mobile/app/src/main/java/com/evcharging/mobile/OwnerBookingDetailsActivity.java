@@ -43,6 +43,10 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
 
     private final SimpleDateFormat fmt = new SimpleDateFormat("dd MMM yyyy, h:mm a", Locale.getDefault());
     private Bitmap qrBitmap;
+    private com.evcharging.mobile.model.BookingItem currentBooking;
+    private com.evcharging.mobile.network.ApiClient apiClient;
+
+
 
     @Override
     protected void onCreate(Bundle b) {
@@ -90,7 +94,7 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        refreshFromServer();
+        refreshBookingDetails();
     }
 
     private void fetchStationName() {
@@ -137,6 +141,35 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
             }
         }.execute();
     }
+
+    private void refreshBookingDetails() {
+        new android.os.AsyncTask<Void, Void, com.evcharging.mobile.network.ApiResponse>() {
+            @Override
+            protected com.evcharging.mobile.network.ApiResponse doInBackground(Void... voids) {
+                try {
+                    String bookingId = currentBooking.getBookingId();
+                    return apiClient.get("/bookings/" + bookingId);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+
+            @Override
+            protected void onPostExecute(com.evcharging.mobile.network.ApiResponse res) {
+                if (res == null || !res.isSuccess()) return;
+
+                try {
+                    org.json.JSONObject obj = new org.json.JSONObject(res.getData());
+                    String newStatus = obj.optString("status", "Pending");
+                    tvStatus.setText("Status: " + newStatus);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }.execute();
+    }
+
 
     private void renderQr(String base64) {
         try {

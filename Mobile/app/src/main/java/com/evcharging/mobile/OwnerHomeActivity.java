@@ -302,7 +302,7 @@ public class OwnerHomeActivity extends AppCompatActivity
                 btnChargingHistory.setOnClickListener(v ->
                         startActivity(new Intent(this, ChargingHistoryActivity.class))
                 );
-                
+
                 ivProfile.setOnClickListener(v -> startActivity(new Intent(this, OwnerProfileActivity.class)));
 
                 btnLogout.setOnClickListener(v -> attemptLogout());
