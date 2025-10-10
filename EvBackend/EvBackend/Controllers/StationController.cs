@@ -69,19 +69,21 @@ namespace EvBackend.Controllers
             catch (Exception ex) { Console.WriteLine(ex); return StatusCode(500, new { message = "Unexpected error" }); }
         }
 
-        [HttpPatch("{stationId}/deactivate")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DeactivateStation(string stationId)
+        [HttpPatch("{stationId}/toggle-status")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ToggleStationStatus(string stationId)
         {
             try
             {
-                var success = await _stationService.DeactivateStationAsync(stationId);
-                if (!success) return BadRequest(new { message = "Cannot deactivate station (may have active bookings)" });
-                return Ok(new { message = "Station deactivated" });
+                var success = await _stationService.ToggleStationStatusAsync(stationId);
+                if (!success)
+                    return BadRequest(new { message = "Cannot toggle station status (may have active bookings or some other issue)" });
+
+                return Ok(new { message = "Station status updated successfully" });
             }
             catch (InvalidOperationException ex)
             {
-                // Business rule: active bookings prevent deactivation
+                // Business rule: active bookings prevent deactivation or other validation failures
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
@@ -90,6 +92,7 @@ namespace EvBackend.Controllers
                 return StatusCode(500, new { message = "Unexpected error" });
             }
         }
+
 
         // Get station by id
         [HttpGet("{stationId}")]
@@ -107,16 +110,22 @@ namespace EvBackend.Controllers
 
         // Get all stations
         [HttpGet]
-        //[Authorize]
-        public async Task<IActionResult> GetAllStations([FromQuery] bool onlyActive = false)
+        [Authorize]
+        public async Task<IActionResult> GetAllStations([FromQuery] bool onlyActive = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             try
             {
-                var list = await _stationService.GetAllStationsAsync(onlyActive);
-                return Ok(list);
+                // Pass page number and page size to service method
+                var result = await _stationService.GetAllStationsAsync(onlyActive, page, pageSize);
+                return Ok(result);
             }
-            catch (Exception ex) { Console.WriteLine(ex); return StatusCode(500, new { message = "Unexpected error" }); }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500, new { message = "Unexpected error" });
+            }
         }
+
 
         // Search stations
         [HttpGet("search")]
@@ -165,21 +174,21 @@ namespace EvBackend.Controllers
         }
 
         [HttpDelete("{stationId}")]
-[Authorize(Roles = "Admin,Backoffice")]
-public async Task<IActionResult> DeleteStation(string stationId)
-{
-    try
-    {
-        var ok = await _stationService.DeleteStationWithRelationsAsync(stationId);
-        if (!ok) return NotFound(new { message = "Station not found" });
-        return Ok(new { message = "Station and related data deleted successfully" });
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine(ex);
-        return StatusCode(500, new { message = "Error deleting station" });
-    }
-}
+        [Authorize(Roles = "Admin,Backoffice")]
+        public async Task<IActionResult> DeleteStation(string stationId)
+        {
+            try
+            {
+                var ok = await _stationService.DeleteStationWithRelationsAsync(stationId);
+                if (!ok) return NotFound(new { message = "Station not found" });
+                return Ok(new { message = "Station and related data deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500, new { message = "Error deleting station" });
+            }
+        }
 
     }
 }
