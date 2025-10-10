@@ -1,3 +1,10 @@
+// --------------------------------------------------------------
+// File Name: UsageAnalyticsDto.cs
+// Author: Denuwan Sathsara
+// Description: Data transfer object for usage analytics.
+// Created/Updated On: 27/09/2025
+// --------------------------------------------------------------
+
 using System;
 
 namespace EvBackend.Models.DTOs;

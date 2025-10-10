@@ -1,3 +1,9 @@
+// --------------------------------------------------------------
+// File Name: UsageAnalyticsService.cs
+// Author: Denuwan Sathsara
+// Description: Service for retrieving usage analytics data.
+// Created/Updated On: 27/09/2025
+// --------------------------------------------------------------
 using System;
 using MongoDB.Driver;
 using EvBackend.Entities;
