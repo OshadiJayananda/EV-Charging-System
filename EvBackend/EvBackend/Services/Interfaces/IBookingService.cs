@@ -6,6 +6,7 @@
 // --------------------------------------------------------------
 
 using EvBackend.Models.DTOs;
+using Microsoft.AspNetCore.Mvc;
 
 namespace EvBackend.Services.Interfaces
 {
@@ -37,5 +38,8 @@ namespace EvBackend.Services.Interfaces
 
         Task<long> CountPendingBookingsAsync();
         Task<long> CountApprovedFutureBookingsAsync();
+
+        Task<object> GetReservationOverviewAsync(DateTime? fromDate, DateTime? toDate);
+
     }
 }

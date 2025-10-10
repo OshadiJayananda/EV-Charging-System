@@ -190,5 +190,20 @@ namespace EvBackend.Controllers
             }
         }
 
+        [HttpGet("count")]
+        //[Authorize(Roles = "Admin,Backoffice")]
+        public async Task<IActionResult> GetActiveInactiveStationCount()
+        {
+            try
+            {
+                var result = await _stationService.GetActiveInactiveStationCountAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Unexpected error occurred", details = ex.Message });
+            }
+        }
+
     }
 }
