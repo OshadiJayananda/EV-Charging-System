@@ -26,7 +26,7 @@ namespace EvBackend.Controllers
             _csOperatorService = csOperatorService;
             _notificationService = notificationService;
         }
-
+        //create operator
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateOperator([FromBody] CreateCSOperatorDto createCSOperatorDto)
@@ -60,6 +60,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //get operator by id
         [HttpGet("{id}")]
         //[Authorize(Roles = "Admin,Operator")]
         public async Task<IActionResult> GetOperatorById(string id)
@@ -88,6 +89,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //get all operators with pagination
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllOperators([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -104,6 +106,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //update operator
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin,Operator")]
         public async Task<IActionResult> UpdateOperator(string id, [FromBody] UpdateCSOperatorDto csOperatorDto)
@@ -137,6 +140,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //change operator status (active/inactive)
         [HttpPatch("{id}/status")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ChangeOperatorStatus(string id, [FromQuery] bool isActive)
@@ -158,6 +162,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //deactivate self (operator)
         [HttpPatch("{id}/deactivate")]
         [Authorize(Roles = "Operator")]
         public async Task<IActionResult> DeactivateSelf(string id)
@@ -180,6 +185,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //request reactivation (operator)
         [HttpPatch("{id}/request-reactivation")]
         [Authorize(Roles = "Operator")]
         public async Task<IActionResult> RequestReactivation(string id)
@@ -204,6 +210,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //get count of reactivation requests (admin)
         [HttpGet("reactivation-count")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetReactivationRequestCount()
@@ -219,6 +226,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //get all operators with reactivation requests (admin)
         [HttpGet("reactivation-requests")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetReactivationRequests()
@@ -234,6 +242,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //clear reactivation request (admin)
         [HttpPatch("{id}/clear-reactivation")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ClearReactivationRequest(string id)
