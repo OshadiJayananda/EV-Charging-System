@@ -32,6 +32,7 @@ namespace EvBackend.Controllers
             _logger = logger;
         }
 
+        //login
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
@@ -54,6 +55,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //get logged in user details
         [HttpGet("me")]
         [Authorize]
         public async Task<IActionResult> Me()
@@ -121,6 +123,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //logout
         [HttpPost("logout")]
         [Authorize]
         public IActionResult Logout()
@@ -128,6 +131,7 @@ namespace EvBackend.Controllers
             return Ok(new { message = "Logged out successfully" });
         }
 
+        //reset password
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
         {
@@ -155,6 +159,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //forgot password
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto forgotPasswordDto)
         {
@@ -174,6 +179,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //change password
         [HttpPost("change-password")]
         [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
