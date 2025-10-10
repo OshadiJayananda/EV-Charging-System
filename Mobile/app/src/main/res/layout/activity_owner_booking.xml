@@ -1,94 +1,189 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:padding="16dp"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="#F5F7FA">
 
+    <!-- 🔹 HEADER BAR -->
     <LinearLayout
-        android:orientation="vertical"
+        android:id="@+id/headerLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:background="@color/primary">
 
+        <!-- Back Button -->
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_back_arrow"
+            app:tint="@android:color/white"
+            android:contentDescription="Back" />
+
+        <!-- Title -->
         <TextView
-            android:text="Select Type"
+            android:id="@+id/tvHeaderTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Make Reservation"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
             android:textStyle="bold"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <Spinner
-            android:id="@+id/spnType"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <Space android:layout_width="1dp" android:layout_height="12dp"/>
-
-        <TextView
-            android:text="Select Station (Nearby)"
-            android:textStyle="bold"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <Spinner
-            android:id="@+id/spnStation"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <Space android:layout_width="1dp" android:layout_height="12dp"/>
-
-        <Button
-            android:id="@+id/btnSelectDate"
-            android:text="Select Date (Today … +6)"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <TextView
-            android:id="@+id/tvSelectedDate"
-            android:text="No date selected"
-            android:layout_marginTop="6dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <Space android:layout_width="1dp" android:layout_height="12dp"/>
-
-        <TextView
-            android:text="Select Slot"
-            android:textStyle="bold"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <Spinner
-            android:id="@+id/spnSlot"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <Space android:layout_width="1dp" android:layout_height="12dp"/>
-
-        <TextView
-            android:text="Select Time Slot"
-            android:textStyle="bold"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <Spinner
-            android:id="@+id/spnTimeSlot"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <Space android:layout_width="1dp" android:layout_height="16dp"/>
-
-        <Button
-            android:id="@+id/btnConfirmBooking"
-            android:text="Confirm Booking"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <TextView
-            android:id="@+id/tvHints"
-            android:text=""
-            android:textColor="#DD333333"
-            android:layout_marginTop="10dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_marginStart="10dp" />
     </LinearLayout>
-</ScrollView>
+
+
+    <!-- 🔹 MAIN CONTENT BELOW HEADER -->
+    <ScrollView
+        android:id="@+id/scrollContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/headerLayout"
+        android:layout_above="@id/footerLayout"
+        android:fillViewport="true"
+        android:background="#F5F7FA"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- Card container -->
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="20dp"
+                android:background="@drawable/bg_card_rounded"
+                android:elevation="3dp"
+                android:layout_marginBottom="80dp">
+
+                <!-- Section: Select Type -->
+                <TextView
+                    android:text="Select Type"
+                    android:textStyle="bold"
+                    android:textColor="#333"
+                    android:textSize="15sp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <Spinner
+                    android:id="@+id/spnType"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_spinner"/>
+
+                <Space android:layout_width="match_parent" android:layout_height="16dp"/>
+
+                <!-- Section: Select Station -->
+                <TextView
+                    android:text="Select Station (Nearby)"
+                    android:textStyle="bold"
+                    android:textColor="#333"
+                    android:textSize="15sp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <Spinner
+                    android:id="@+id/spnStation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_spinner"/>
+
+                <Space android:layout_width="match_parent" android:layout_height="16dp"/>
+
+                <!-- Section: Select Date -->
+                <Button
+                    android:id="@+id/btnSelectDate"
+                    android:text="Select Date (Today … +6)"
+                    android:backgroundTint="@color/primary"
+                    android:textColor="@android:color/white"
+                    android:textAllCaps="false"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="10dp"/>
+
+                <TextView
+                    android:id="@+id/tvSelectedDate"
+                    android:text="No date selected"
+                    android:textColor="#666"
+                    android:layout_marginTop="8dp"
+                    android:textSize="14sp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <Space android:layout_width="match_parent" android:layout_height="16dp"/>
+
+                <!-- Section: Select Slot -->
+                <TextView
+                    android:text="Select Slot"
+                    android:textStyle="bold"
+                    android:textColor="#333"
+                    android:textSize="15sp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <Spinner
+                    android:id="@+id/spnSlot"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_spinner"/>
+
+                <Space android:layout_width="match_parent" android:layout_height="16dp"/>
+
+                <!-- Section: Select Time Slot -->
+                <TextView
+                    android:text="Select Time Slot"
+                    android:textStyle="bold"
+                    android:textColor="#333"
+                    android:textSize="15sp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <Spinner
+                    android:id="@+id/spnTimeSlot"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_spinner"/>
+
+                <Space android:layout_width="match_parent" android:layout_height="24dp"/>
+
+                <!-- Confirm Booking Button -->
+                <Button
+                    android:id="@+id/btnConfirmBooking"
+                    android:text="Confirm Booking"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:backgroundTint="@color/primary_dark"
+                    android:textColor="@android:color/white"
+                    android:textAllCaps="false"
+                    android:elevation="2dp"
+                    android:paddingVertical="10dp"/>
+
+                <TextView
+                    android:id="@+id/tvHints"
+                    android:text=""
+                    android:textColor="#DD333333"
+                    android:layout_marginTop="14dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+
+    <!-- 🔹 FIXED FOOTER -->
+    <include
+        android:id="@+id/footerLayout"
+        layout="@layout/footer_owner"
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+</RelativeLayout>
