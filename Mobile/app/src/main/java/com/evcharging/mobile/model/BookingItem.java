@@ -15,6 +15,11 @@ public class BookingItem {
     private String endTime;
     private String qrImageBase64;
 
+    private String cancellationReason;
+
+
+
+
     // --- Getters ---
     public String getBookingId() { return bookingId; }
     public String getStationId() { return stationId; }
@@ -27,6 +32,11 @@ public class BookingItem {
     public String getStartTime() { return startTime; }
     public String getEndTime() { return endTime; }
     public String getQrImageBase64() { return qrImageBase64; }
+    public String getCancellationReason() {
+        return cancellationReason;
+    }
+
+
 
     // --- Setters ---
     public void setBookingId(String bookingId) { this.bookingId = bookingId; }
@@ -40,6 +50,9 @@ public class BookingItem {
     public void setStartTime(String startTime) { this.startTime = startTime; }
     public void setEndTime(String endTime) { this.endTime = endTime; }
     public void setQrImageBase64(String qrImageBase64) { this.qrImageBase64 = qrImageBase64; }
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
+    }
 
     // --- Helper formatted display ---
     public String getStartTimeFormatted() {

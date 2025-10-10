@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Base64;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -45,6 +46,8 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
     private Bitmap qrBitmap;
     private com.evcharging.mobile.model.BookingItem currentBooking;
     private com.evcharging.mobile.network.ApiClient apiClient;
+    private TextView tvReason;
+
 
     @Override
     protected void onCreate(Bundle b) {
@@ -62,6 +65,8 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
         tvBookingId = findViewById(R.id.tvBookingId);
         ivQr = findViewById(R.id.ivQr);
         btnShareQr = findViewById(R.id.btnShareQr);
+        tvReason = findViewById(R.id.tvReason);
+
 
         // --- Handle both JSON and individual extras ---
         String bookingJson = getIntent().getStringExtra("booking");
@@ -83,6 +88,21 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
         // --- Display Data ---
         if (currentBooking != null) {
             tvStatus.setText("Status: " + currentBooking.getStatus());
+            if (currentBooking.getStatus().equalsIgnoreCase("Cancelled")) {
+                String reason = currentBooking.getCancellationReason();
+                if (reason != null && !reason.isEmpty()) {
+                    tvReason.setVisibility(View.VISIBLE);
+                    tvReason.setText("Reason: " + reason);
+                } else {
+                    tvReason.setVisibility(View.VISIBLE);
+                    tvReason.setText("Reason: Slot is under Maintenance recorded");
+                }
+            } else {
+                tvReason.setVisibility(View.GONE);
+            }
+
+
+
             tvStation.setText("Station: " + (currentBooking.getStationName() != null ? currentBooking.getStationName() : "-"));
             tvSlot.setText("Slot:" + (currentBooking.getSlotNumber() != null ? currentBooking.getSlotNumber() : "-"));
             tvBookingId.setText("Booking ID: " + (currentBooking.getBookingId() != null ? currentBooking.getBookingId() : "-"));

@@ -340,7 +340,8 @@ namespace EvBackend.Services
                 QrImageBase64 = b.QrImageBase64,
                 FormattedStartTime = FormatSriLankaTime(b.StartTime),
                 FormattedEndTime = FormatSriLankaTime(b.EndTime),
-                FormattedDate = FormatSriLankaDate(b.StartTime)
+                FormattedDate = FormatSriLankaDate(b.StartTime),
+                CancellationReason = b.CancellationReason
             };
         }
  
@@ -373,7 +374,7 @@ namespace EvBackend.Services
         {
             BookingId = b.BookingId,
             StationId = b.StationId,
-            StationName = stationName, 
+            StationName = stationName,
             SlotId = b.SlotId,
             SlotNumber = b.SlotNumber,
             TimeSlotId = b.TimeSlotId,
@@ -388,7 +389,9 @@ namespace EvBackend.Services
             QrImageBase64 = b.QrImageBase64,
             FormattedStartTime = FormatSriLankaTime(b.StartTime),
             FormattedEndTime = FormatSriLankaTime(b.EndTime),
-            FormattedDate = FormatSriLankaDate(b.StartTime)
+            FormattedDate = FormatSriLankaDate(b.StartTime),
+            CancellationReason = b.CancellationReason
+
         });
     }
 
@@ -419,7 +422,8 @@ namespace EvBackend.Services
                 QrImageBase64 = b.QrImageBase64,
                 FormattedStartTime = FormatSriLankaTime(b.StartTime),
                 FormattedEndTime = FormatSriLankaTime(b.EndTime),
-                FormattedDate = FormatSriLankaDate(b.StartTime)
+                FormattedDate = FormatSriLankaDate(b.StartTime),
+                CancellationReason = b.CancellationReason
             });
         }
 
@@ -462,7 +466,8 @@ namespace EvBackend.Services
                 QrImageBase64 = b.QrImageBase64,
                 FormattedStartTime = FormatSriLankaTime(b.StartTime),
                 FormattedEndTime = FormatSriLankaTime(b.EndTime),
-                FormattedDate = FormatSriLankaDate(b.StartTime)
+                FormattedDate = FormatSriLankaDate(b.StartTime),
+                CancellationReason = b.CancellationReason
             });
         }
 
@@ -503,7 +508,8 @@ namespace EvBackend.Services
                 QrImageBase64 = b.QrImageBase64,
                 FormattedStartTime = FormatSriLankaTime(b.StartTime),
                 FormattedEndTime = FormatSriLankaTime(b.EndTime),
-                FormattedDate = FormatSriLankaDate(b.StartTime)
+                FormattedDate = FormatSriLankaDate(b.StartTime),
+                CancellationReason = b.CancellationReason
             });
         }
 

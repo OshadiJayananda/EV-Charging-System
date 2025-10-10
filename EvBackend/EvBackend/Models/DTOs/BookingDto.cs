@@ -37,6 +37,8 @@ namespace EvBackend.Models.DTOs
         public string? FormattedStartTime { get; set; } // "yyyy MMM dd, HH:mm"
         public string? FormattedEndTime { get; set; }   // "yyyy MMM dd, HH:mm"
         public string? FormattedDate { get; set; }      // "yyyy MMM dd"
+        public string? CancellationReason { get; set; }
+
     }
 
     // Create = StationId + TimeSlotId + SlotId
