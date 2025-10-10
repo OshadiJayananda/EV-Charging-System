@@ -55,6 +55,13 @@ public class OwnerBookingActivity extends AppCompatActivity {
     private static final double DEFAULT_LON = 79.9395566;
     private static final double DEFAULT_RADIUS = 10.0;
 
+    private String preselectedStationId;
+    private String preselectedStationName;
+    private double preselectedLat;
+    private double preselectedLng;
+    private String preselectedLocation;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,6 +69,17 @@ public class OwnerBookingActivity extends AppCompatActivity {
 
         sessionManager = new SessionManager(this);
         apiClient = new ApiClient(sessionManager);
+
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra("selected_station_id")) {
+            preselectedStationId = intent.getStringExtra("selected_station_id");
+            preselectedStationName = intent.getStringExtra("selected_station_name");
+            preselectedLat = intent.getDoubleExtra("selected_station_lat", 0);
+            preselectedLng = intent.getDoubleExtra("selected_station_lng", 0);
+            preselectedLocation = intent.getStringExtra("selected_station_location");
+
+            Log.d("OwnerBookingsActivity", "Selected station: " + preselectedStationName + " (" + preselectedLocation + ")");
+        }
 
         bindViews();
         setupTypeSpinner();
@@ -114,8 +132,8 @@ public class OwnerBookingActivity extends AppCompatActivity {
 
                 try {
                     JSONArray arr = new JSONArray(finalRes.getData());
-
                     stations.clear();
+
                     for (int i = 0; i < arr.length(); i++) {
                         JSONObject obj = arr.getJSONObject(i);
                         Station s = new Station();
@@ -128,18 +146,52 @@ public class OwnerBookingActivity extends AppCompatActivity {
                         stations.add(s);
                     }
 
+                    // 🔹 Include preselected station (from intent) if not already present
+                    if (preselectedStationId != null) {
+                        boolean exists = false;
+                        for (Station s : stations) {
+                            if (s.getStationId().equals(preselectedStationId)) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (!exists) {
+                            Station pre = new Station();
+                            pre.setStationId(preselectedStationId);
+                            pre.setName(preselectedStationName + " (Selected)");
+                            pre.setLocation(preselectedLocation);
+                            pre.setLatitude(preselectedLat);
+                            pre.setLongitude(preselectedLng);
+                            pre.setType(selectedType);
+                            stations.add(0, pre); // put on top
+                        }
+                    }
+
                     if (stations.isEmpty()) {
                         toast("No nearby " + selectedType + " stations found");
                         return;
                     }
 
                     ArrayAdapter<String> stnAdapter = new ArrayAdapter<>(
-                            this, android.R.layout.simple_spinner_item,
-                            stations.stream().map(st -> st.getName()).toArray(String[]::new)
+                            this,
+                            android.R.layout.simple_spinner_item,
+                            stations.stream().map(Station::getName).toArray(String[]::new)
                     );
                     stnAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                     spnStation.setAdapter(stnAdapter);
 
+                    // 🔹 Preselect the station that came from the intent
+                    if (preselectedStationId != null) {
+                        for (int i = 0; i < stations.size(); i++) {
+                            if (stations.get(i).getStationId().equals(preselectedStationId)) {
+                                spnStation.setSelection(i);
+                                selectedStationId = preselectedStationId;
+                                break;
+                            }
+                        }
+                    }
+
+                    // 🔹 Handle selection change
                     spnStation.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                         @Override
                         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -151,6 +203,7 @@ public class OwnerBookingActivity extends AppCompatActivity {
                     });
 
                     toast(arr.length() + " stations found");
+
                 } catch (Exception e) {
                     Log.e("OwnerBooking", "JSON parse error", e);
                     toast("Error parsing station data");

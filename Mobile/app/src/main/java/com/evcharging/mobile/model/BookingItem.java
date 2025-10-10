@@ -15,6 +15,11 @@ public class BookingItem {
     private String endTime;
     private String qrImageBase64;
 
+    private String cancellationReason;
+
+
+
+
     // --- Getters ---
     public String getBookingId() { return bookingId; }
     public String getStationId() { return stationId; }
@@ -27,6 +32,11 @@ public class BookingItem {
     public String getStartTime() { return startTime; }
     public String getEndTime() { return endTime; }
     public String getQrImageBase64() { return qrImageBase64; }
+    public String getCancellationReason() {
+        return cancellationReason;
+    }
+
+
 
     // --- Setters ---
     public void setBookingId(String bookingId) { this.bookingId = bookingId; }
@@ -40,6 +50,9 @@ public class BookingItem {
     public void setStartTime(String startTime) { this.startTime = startTime; }
     public void setEndTime(String endTime) { this.endTime = endTime; }
     public void setQrImageBase64(String qrImageBase64) { this.qrImageBase64 = qrImageBase64; }
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
+    }
 
     // --- Helper formatted display ---
     public String getStartTimeFormatted() {
@@ -62,12 +75,20 @@ public class BookingItem {
         try {
             java.text.SimpleDateFormat inFmt = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault());
             inFmt.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
-            java.text.SimpleDateFormat outFmt = new java.text.SimpleDateFormat("MMM dd, hh:mm a", java.util.Locale.getDefault());
+
+            // if input has milliseconds or Z timezone
+            if (utcTime.endsWith("Z")) {
+                inFmt = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.getDefault());
+                inFmt.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            }
+
+            java.text.SimpleDateFormat outFmt = new java.text.SimpleDateFormat("dd MMM yyyy, h:mm a", java.util.Locale.getDefault());
             java.util.Date d = inFmt.parse(utcTime);
             return outFmt.format(d);
-        } catch (java.text.ParseException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return utcTime;
         }
     }
+
 }

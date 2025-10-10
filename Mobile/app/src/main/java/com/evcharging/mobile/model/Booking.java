@@ -11,6 +11,7 @@ public class Booking {
 
     public Booking() {}
 
+
     public Booking(String bookingId, String stationId, String slotId, String ownerId,
                    String status, String startTime, String endTime) {
         this.bookingId = bookingId;

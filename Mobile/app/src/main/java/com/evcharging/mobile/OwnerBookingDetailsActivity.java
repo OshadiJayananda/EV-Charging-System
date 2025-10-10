@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Base64;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -45,7 +46,7 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
     private Bitmap qrBitmap;
     private com.evcharging.mobile.model.BookingItem currentBooking;
     private com.evcharging.mobile.network.ApiClient apiClient;
-
+    private TextView tvReason;
 
 
     @Override
@@ -64,32 +65,67 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
         tvBookingId = findViewById(R.id.tvBookingId);
         ivQr = findViewById(R.id.ivQr);
         btnShareQr = findViewById(R.id.btnShareQr);
+        tvReason = findViewById(R.id.tvReason);
 
-        bookingId = getIntent().getStringExtra("bookingId");
-        stationId = getIntent().getStringExtra("stationId");
-        slotNumber = getIntent().getIntExtra("slotNumber", 0);
-        startMs = getIntent().getLongExtra("start", 0);
-        endMs = getIntent().getLongExtra("end", 0);
-        status = getIntent().getStringExtra("status");
-        qrBase64 = getIntent().getStringExtra("qrBase64");
 
-        tvStatus.setText("Status: " + status);
-        tvSlot.setText("Slot: #" + slotNumber);
-        tvTime.setText("Time: " + fmt.format(new Date(startMs)) + " – " + fmt.format(new Date(endMs)));
-        tvBookingId.setText("Booking ID: " + (bookingId != null ? bookingId : "-"));
+        // --- Handle both JSON and individual extras ---
+        String bookingJson = getIntent().getStringExtra("booking");
+        if (bookingJson != null) {
+            // From OwnerBookingsActivity
+            currentBooking = new com.google.gson.Gson().fromJson(bookingJson, com.evcharging.mobile.model.BookingItem.class);
+        } else {
+            // From ChargingHistoryActivity
+            currentBooking = new com.evcharging.mobile.model.BookingItem();
+            currentBooking.setBookingId(getIntent().getStringExtra("bookingId"));
+            currentBooking.setStationName(getIntent().getStringExtra("stationName"));
+            currentBooking.setSlotNumber(getIntent().getStringExtra("slotNumber"));
+            currentBooking.setStatus(getIntent().getStringExtra("status"));
+            currentBooking.setStartTime(getIntent().getStringExtra("start"));
+            currentBooking.setEndTime(getIntent().getStringExtra("end"));
+            currentBooking.setQrImageBase64(getIntent().getStringExtra("qrBase64"));
+        }
 
-        // Load QR if available
-        if (qrBase64 != null && !qrBase64.isEmpty()) renderQr(qrBase64);
+        // --- Display Data ---
+        if (currentBooking != null) {
+            tvStatus.setText("Status: " + currentBooking.getStatus());
+            if (currentBooking.getStatus().equalsIgnoreCase("Cancelled")) {
+                String reason = currentBooking.getCancellationReason();
+                if (reason != null && !reason.isEmpty()) {
+                    tvReason.setVisibility(View.VISIBLE);
+                    tvReason.setText("Reason: " + reason);
+                } else {
+                    tvReason.setVisibility(View.VISIBLE);
+                    tvReason.setText("Reason: Slot is under Maintenance recorded");
+                }
+            } else {
+                tvReason.setVisibility(View.GONE);
+            }
 
-        // Fetch station name
-        fetchStationName();
 
-        // Setup swipe refresh
+
+            tvStation.setText("Station: " + (currentBooking.getStationName() != null ? currentBooking.getStationName() : "-"));
+            tvSlot.setText("Slot:" + (currentBooking.getSlotNumber() != null ? currentBooking.getSlotNumber() : "-"));
+            tvBookingId.setText("Booking ID: " + (currentBooking.getBookingId() != null ? currentBooking.getBookingId() : "-"));
+
+            try {
+                tvTime.setText(currentBooking.getStartTimeFormatted() + " – " + currentBooking.getEndTimeFormatted());
+            } catch (Exception e) {
+                tvTime.setText("Time: -");
+            }
+
+            if (currentBooking.getQrImageBase64() != null && !currentBooking.getQrImageBase64().isEmpty()) {
+                renderQr(currentBooking.getQrImageBase64());
+            }
+        }
+
+
+        // Swipe refresh
         swipeRefresh.setOnRefreshListener(this::refreshFromServer);
 
         // Share QR
         btnShareQr.setOnClickListener(v -> shareQr());
     }
+
 
     @Override
     protected void onResume() {
@@ -97,21 +133,6 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
         refreshBookingDetails();
     }
 
-    private void fetchStationName() {
-        new AsyncTask<Void, Void, String>() {
-            @Override protected String doInBackground(Void... voids) {
-                ApiResponse res = api.getStationById(stationId);
-                if (res == null || !res.isSuccess()) return null;
-                try {
-                    JSONObject o = new JSONObject(res.getData());
-                    return o.optString("name", null);
-                } catch (Exception e) { return null; }
-            }
-            @Override protected void onPostExecute(String name) {
-                tvStation.setText("Station: " + (name != null ? name : "-"));
-            }
-        }.execute();
-    }
 
     private void refreshFromServer() {
         swipeRefresh.setRefreshing(true);
