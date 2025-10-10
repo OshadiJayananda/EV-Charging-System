@@ -1,3 +1,10 @@
+// --------------------------------------------------------------
+// File Name: NotificationController.cs
+// Author: Hasindu Koshitha
+// Description: Controller for managing user notifications.
+// Created On: 18/09/2025
+// --------------------------------------------------------------
+
 using Microsoft.AspNetCore.Mvc;
 using EvBackend.Services.Interfaces;
 using EvBackend.Entities;
