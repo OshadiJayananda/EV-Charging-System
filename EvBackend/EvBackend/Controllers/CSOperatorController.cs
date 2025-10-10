@@ -61,7 +61,7 @@ namespace EvBackend.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = "Admin,Operator")]
+        //[Authorize(Roles = "Admin,Operator")]
         public async Task<IActionResult> GetOperatorById(string id)
         {
             try

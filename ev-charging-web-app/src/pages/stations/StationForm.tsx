@@ -213,7 +213,7 @@ const StationForm = ({ isEdit = false }: { isEdit?: boolean }) => {
                             <thead className="bg-gray-100">
                                 <tr>
                                     <th className="px-3 py-2 text-left">Slot #</th>
-                                    <th className="px-3 py-2 text-left">Connector Type</th>
+                                    {/* <th className="px-3 py-2 text-left">Connector Type</th> */}
                                     <th className="px-3 py-2 text-left">Status</th>
                                     <th className="px-3 py-2 text-center">Actions</th>
                                 </tr>
@@ -222,7 +222,7 @@ const StationForm = ({ isEdit = false }: { isEdit?: boolean }) => {
                                 {slots.map((slot, index) => (
                                     <tr key={slot.slotId} className="hover:bg-gray-50">
                                         <td className="px-3 py-2">{slot.number ?? index + 1}</td>
-                                        <td className="px-3 py-2">
+                                        {/* <td className="px-3 py-2">
                                             <select
                                                 value={slot.connectorType}
                                                 onChange={(e) =>
@@ -233,7 +233,7 @@ const StationForm = ({ isEdit = false }: { isEdit?: boolean }) => {
                                                 <option value="AC">AC</option>
                                                 <option value="DC">DC</option>
                                             </select>
-                                        </td>
+                                        </td> */}
                                         <td className="px-3 py-2">
                                             <select
                                                 value={slot.status}
@@ -243,8 +243,8 @@ const StationForm = ({ isEdit = false }: { isEdit?: boolean }) => {
                                                 className="p-2 border rounded-md"
                                             >
                                                 <option value="Available">Available</option>
-                                                <option value="Not Available">Not Available</option>
-                                                <option value="Faulty">Faulty</option>
+                                                <option value="Under Maintenance">Under Maintenance</option>
+                                                <option value="Out Of Order">Out Of Order</option>
                                             </select>
                                         </td>
                                         <td className="px-3 py-2 text-center">
