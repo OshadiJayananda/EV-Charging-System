@@ -1,8 +1,12 @@
 package com.evcharging.mobile;
 
 import android.app.DatePickerDialog;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.*;
@@ -112,7 +116,6 @@ public class OwnerBookingActivity extends AppCompatActivity {
                     JSONArray arr = new JSONArray(finalRes.getData());
 
                     stations.clear();
-
                     for (int i = 0; i < arr.length(); i++) {
                         JSONObject obj = arr.getJSONObject(i);
                         Station s = new Station();
@@ -122,7 +125,6 @@ public class OwnerBookingActivity extends AppCompatActivity {
                         s.setLatitude(obj.optDouble("latitude"));
                         s.setLongitude(obj.optDouble("longitude"));
                         s.setType(obj.optString("type"));
-
                         stations.add(s);
                     }
 
@@ -145,12 +147,10 @@ public class OwnerBookingActivity extends AppCompatActivity {
                             clearSlots();
                             clearTimeSlots();
                         }
-
                         @Override public void onNothingSelected(AdapterView<?> parent) {}
                     });
 
                     toast(arr.length() + " stations found");
-
                 } catch (Exception e) {
                     Log.e("OwnerBooking", "JSON parse error", e);
                     toast("Error parsing station data");
@@ -197,18 +197,14 @@ public class OwnerBookingActivity extends AppCompatActivity {
         new AsyncTask<Void, Void, ApiResponse>() {
             @Override
             protected void onPreExecute() {
-                super.onPreExecute();
                 Toast.makeText(OwnerBookingActivity.this, "Fetching slots...", Toast.LENGTH_SHORT).show();
             }
 
             @Override
             protected ApiResponse doInBackground(Void... voids) {
                 try {
-                    // Try normal slot endpoint first
                     ApiResponse res = apiClient.getSlotsByStation(stationId);
                     if (res != null && res.isSuccess()) return res;
-
-                    // Fallback: get public station details (if Owner can’t access slot endpoint)
                     return apiClient.getStationPublic(stationId);
                 } catch (Exception e) {
                     Log.e("OwnerBooking", "Error fetching slots", e);
@@ -218,14 +214,9 @@ public class OwnerBookingActivity extends AppCompatActivity {
 
             @Override
             protected void onPostExecute(ApiResponse res) {
-                super.onPostExecute(res);
-                if (res == null) {
-                    toast("Failed to fetch slots");
-                    return;
-                }
+                if (res == null) { toast("Failed to fetch slots"); return; }
 
                 List<SlotItem> slotList = new ArrayList<>();
-
                 try {
                     JSONArray arr;
                     if (res.getData().trim().startsWith("[")) {
@@ -250,13 +241,9 @@ public class OwnerBookingActivity extends AppCompatActivity {
                         slotList.add(s);
                     }
 
-                    if (slotList.isEmpty()) {
-                        tvHints.setText("No slots found.");
-                        return;
-                    }
+                    if (slotList.isEmpty()) { tvHints.setText("No slots found."); return; }
 
                     slots = slotList;
-
                     ArrayAdapter<String> slotAdapter = new ArrayAdapter<>(
                             OwnerBookingActivity.this,
                             android.R.layout.simple_spinner_item,
@@ -271,11 +258,8 @@ public class OwnerBookingActivity extends AppCompatActivity {
                             selectedSlotId = slots.get(position).slotId;
                             loadTimeslotsFor(stationId, selectedSlotId, selectedDateStr);
                         }
-
-                        @Override
-                        public void onNothingSelected(AdapterView<?> parent) {}
+                        @Override public void onNothingSelected(AdapterView<?> parent) {}
                     });
-
                 } catch (Exception e) {
                     Log.e("OwnerBooking", "Parse slots failed", e);
                     tvHints.setText("Error parsing slot data.");
@@ -284,22 +268,19 @@ public class OwnerBookingActivity extends AppCompatActivity {
         }.execute();
     }
 
-
     private void loadTimeslotsFor(String stationId, String slotId, String dateYmd) {
         clearTimeSlots();
 
         new AsyncTask<Void, Void, ApiResponse>() {
             @Override
             protected void onPreExecute() {
-                super.onPreExecute();
                 Toast.makeText(OwnerBookingActivity.this, "Fetching time slots...", Toast.LENGTH_SHORT).show();
             }
 
             @Override
             protected ApiResponse doInBackground(Void... voids) {
                 try {
-                    String endpoint = String.format("/timeslot?stationId=%s&slotId=%s&date=%s",
-                            stationId, slotId, dateYmd);
+                    String endpoint = String.format("/timeslot?stationId=%s&slotId=%s&date=%s", stationId, slotId, dateYmd);
                     return apiClient.get(endpoint);
                 } catch (Exception e) {
                     Log.e("OwnerBooking", "Error fetching timeslots", e);
@@ -309,17 +290,9 @@ public class OwnerBookingActivity extends AppCompatActivity {
 
             @Override
             protected void onPostExecute(ApiResponse res) {
-                super.onPostExecute(res);
+                if (res == null) { toast("Failed to fetch timeslots"); return; }
 
-                if (res == null) {
-                    toast("Failed to fetch timeslots");
-                    return;
-                }
-
-                if (!res.isSuccess()) {
-                    toast("No timeslots available");
-                    return;
-                }
+                if (!res.isSuccess()) { toast("No timeslots available"); return; }
 
                 try {
                     Type t = new TypeToken<List<TimeSlotItem>>(){}.getType();
@@ -343,11 +316,8 @@ public class OwnerBookingActivity extends AppCompatActivity {
                         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                             selectedTimeSlotId = timeSlots.get(position).timeSlotId;
                         }
-
-                        @Override
-                        public void onNothingSelected(AdapterView<?> parent) {}
+                        @Override public void onNothingSelected(AdapterView<?> parent) {}
                     });
-
                 } catch (Exception e) {
                     Log.e("OwnerBooking", "Failed to parse timeslots", e);
                     toast("Timeslot parse error");
@@ -356,18 +326,16 @@ public class OwnerBookingActivity extends AppCompatActivity {
         }.execute();
     }
 
-
     private void setupConfirm() {
         btnConfirmBooking.setOnClickListener(v -> {
-            if (selectedStationId == null) { toast("Select station"); return; }
-            if (selectedDateStr == null) { toast("Select date"); return; }
-            if (selectedSlotId == null) { toast("Select slot"); return; }
-            if (selectedTimeSlotId == null) { toast("Select timeslot"); return; }
+            if (selectedStationId == null || selectedDateStr == null || selectedSlotId == null || selectedTimeSlotId == null) {
+                toast("Please complete all selections");
+                return;
+            }
 
             new AsyncTask<Void, Void, ApiResponse>() {
                 @Override
                 protected void onPreExecute() {
-                    super.onPreExecute();
                     Toast.makeText(OwnerBookingActivity.this, "Creating booking...", Toast.LENGTH_SHORT).show();
                 }
 
@@ -383,34 +351,28 @@ public class OwnerBookingActivity extends AppCompatActivity {
 
                 @Override
                 protected void onPostExecute(ApiResponse res) {
-                    super.onPostExecute(res);
-                    if (res == null) {
-                        toast("Network error while creating booking");
-                        return;
-                    }
+                    if (res == null) { toast("Network error while creating booking"); return; }
+                    if (!res.isSuccess()) { toast("Booking failed: " + res.getMessage()); return; }
 
-                    if (!res.isSuccess()) {
-                        toast("Booking failed: " + res.getMessage());
-                        return;
-                    }
+                    try {
+                        JSONObject bookingObj = new JSONObject(res.getData());
+                        String qrBase64 = bookingObj.optString("qrImageBase64");
 
-                    toast("✅ Booking created successfully! QR generated.");
-                    // Optional: navigate to confirmation / QR screen here
-                    // Intent intent = new Intent(OwnerBookingActivity.this, BookingConfirmationActivity.class);
-                    // intent.putExtra("bookingData", res.getData());
-                    // startActivity(intent);
+                        if (qrBase64 != null && !qrBase64.isEmpty()) {
+                            Intent intent = new Intent(OwnerBookingActivity.this, BookingConfirmationActivity.class);
+                            intent.putExtra("qrBitmap", qrBase64);
+                            startActivity(intent);
+                            toast("✅ Booking created successfully!");
+                        } else {
+                            toast("Booking created, but no QR found");
+                        }
+                    } catch (Exception e) {
+                        Log.e("BookingConfirm", "QR decode error", e);
+                        toast("Error showing QR code");
+                    }
                 }
             }.execute();
         });
-    }
-
-
-    private void clearStations() {
-        stations.clear();
-        spnStation.setAdapter(null);
-        clearSlots();
-        clearTimeSlots();
-        selectedStationId = null;
     }
 
     private void clearSlots() {

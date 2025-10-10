@@ -5,4 +5,5 @@
     <string name="hntPassword">Password</string>
     <string name="txtNoAccount">"Don't have an account? Register"</string>
     <string name="google_maps_key">google map</string>
+    <string name="booking_confirmed_message">Booking Confirmed! Scan this QR at the charging station.</string>
 </resources>
