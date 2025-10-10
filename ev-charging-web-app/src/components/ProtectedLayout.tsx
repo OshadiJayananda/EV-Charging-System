@@ -9,10 +9,30 @@ import {
 } from "lucide-react";
 import { roleNavigate, roleRoute } from "./common/RoleBasedAccess";
 import { useAuth } from "../context/AuthContext";
+import { useEffect, useState } from "react";
+import { getRequest } from "./common/api";
 
 export default function ProtectedLayout() {
   const { userRole } = useAuth();
+  const { userId } = useAuth();
   const navigate = useNavigate();
+  const [userData, setUserData] = useState<any>(null);
+
+  console.log("UserID in ProtectedLayout:", userId);
+
+  useEffect(() => {
+    if (userId) {
+      // Use getRequest to fetch user data based on userId
+      getRequest<{ stationId: string}>(`/operators/${userId}`)
+        .then((res) => {
+          if (res && res.data) {
+            setUserData(res.data);
+            console.log("Fetched user data:", res.data);
+          }
+        })
+        .catch((error) => console.error("Error fetching user data:", error));
+    }
+  }, [userId]);
 
   const handleRoleNavigate = () => {
     roleNavigate(userRole, navigate);
@@ -65,7 +85,7 @@ export default function ProtectedLayout() {
         {userRole === "operator" && (
           <nav className="flex flex-col space-y-2">
             <NavLink
-              to="/operator/stations/${stationMetrics.stationId}/slots"
+              to={`/operator/stations/${userData?.stationId}/slots`}
               className={({ isActive }) =>
                 `flex items-center gap-2 px-4 py-2 rounded-lg transition ${
                   isActive ? "bg-green-600 text-white" : "hover:bg-green-100"
@@ -76,7 +96,7 @@ export default function ProtectedLayout() {
               Update Slot Availability
             </NavLink>
             <NavLink
-              to="/operator/stations/${stationMetrics.stationId}/bookings"
+              to={`/operator/stations/${userData?.stationId}/bookings`}
               className={({ isActive }) =>
                 `flex items-center gap-2 px-4 py-2 rounded-lg transition ${
                   isActive ? "bg-green-600 text-white" : "hover:bg-green-100"

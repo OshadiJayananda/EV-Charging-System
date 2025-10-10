@@ -243,8 +243,8 @@ const StationForm = ({ isEdit = false }: { isEdit?: boolean }) => {
                                                 className="p-2 border rounded-md"
                                             >
                                                 <option value="Available">Available</option>
-                                                <option value="Not Available">Not Available</option>
-                                                <option value="Faulty">Faulty</option>
+                                                <option value="Under Maintenance">Under Maintenance</option>
+                                                <option value="Out Of Order">Out Of Order</option>
                                             </select>
                                         </td>
                                         <td className="px-3 py-2 text-center">

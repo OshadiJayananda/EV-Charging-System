@@ -424,6 +424,24 @@ namespace EvBackend.Services
             return true;
         }
 
+        public async Task<object> GetActiveInactiveStationCountAsync()
+        {
+            var activeCountFilter = Builders<Station>.Filter.Eq(s => s.IsActive, true);
+            var inactiveCountFilter = Builders<Station>.Filter.Eq(s => s.IsActive, false);
+
+            // Count active stations
+            var activeCount = await _stations.CountDocumentsAsync(activeCountFilter);
+
+            // Count inactive stations
+            var inactiveCount = await _stations.CountDocumentsAsync(inactiveCountFilter);
+
+            return new
+            {
+                ActiveStations = activeCount,
+                InactiveStations = inactiveCount
+            };
+        }
+
         public async Task<IEnumerable<StationNameDto>> GetStationNameSuggestionsAsync(string? type = null, string? location = null)
         {
             var filter = Builders<Station>.Filter.Empty;
