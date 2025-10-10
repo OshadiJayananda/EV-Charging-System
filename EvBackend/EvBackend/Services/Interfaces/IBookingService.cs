@@ -41,5 +41,8 @@ namespace EvBackend.Services.Interfaces
 
         Task<object> GetReservationOverviewAsync(DateTime? fromDate, DateTime? toDate);
 
+        Task<IEnumerable<BookingDto>> GetPendingBookingsAsync(int pageNumber, int pageSize);
+        Task<IEnumerable<BookingDto>> GetApprovedBookingsAsync(int pageNumber, int pageSize);
+        Task<IEnumerable<BookingDto>> GetCompletedBookingsAsync(int pageNumber, int pageSize);
     }
 }

@@ -16,16 +16,22 @@ using EvBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using QRCoder;
+using MongoDB.Bson;
 
 namespace EvBackend.Services
 {
     public class BookingService : IBookingService
     {
         private readonly IMongoDatabase _db;
+        private readonly IEVOwnerService _evOwnerService;
+        private readonly IStationService _stationService;
 
-        public BookingService(IMongoDatabase db)
+
+        public BookingService(IMongoDatabase db, IEVOwnerService evOwnerService, IStationService stationService)
         {
             _db = db;
+            _evOwnerService = evOwnerService;
+            _stationService = stationService;
         }
 
         // ------------------------------
@@ -319,8 +325,20 @@ namespace EvBackend.Services
         public async Task<BookingDto> GetBookingByIdAsync(string bookingId)
         {
             var bookingCol = _db.GetCollection<Booking>("Bookings");
+            var timeSlotCol = _db.GetCollection<TimeSlot>("TimeSlots");
+
             var b = await bookingCol.Find(x => x.BookingId == bookingId).FirstOrDefaultAsync();
             if (b == null) return null;
+
+            var stationDto = await _stationService.GetStationByIdAsync(b.StationId);
+
+            TimeSlot ts = null;
+            if (!string.IsNullOrEmpty(b.TimeSlotId))
+            {
+                ts = await timeSlotCol.Find(t => t.TimeSlotId == b.TimeSlotId).FirstOrDefaultAsync();
+            }
+
+            var ownerDto = await _evOwnerService.GetEVOwnerById(b.OwnerId);
 
             return new BookingDto
             {
@@ -340,7 +358,16 @@ namespace EvBackend.Services
                 QrImageBase64 = b.QrImageBase64,
                 FormattedStartTime = FormatSriLankaTime(b.StartTime),
                 FormattedEndTime = FormatSriLankaTime(b.EndTime),
-                FormattedDate = FormatSriLankaDate(b.StartTime)
+                FormattedDate = FormatSriLankaDate(b.StartTime),
+
+                StationName = stationDto?.Name,
+                StationLocation = stationDto?.Location,
+
+                SlotName = $"Slot {b.SlotNumber}",
+                TimeSlotRange = ts != null
+                    ? $"{FormatSriLankaTime(ts.StartTime).Split(", ")[1]} - {FormatSriLankaTime(ts.EndTime).Split(", ")[1]}"
+                    : null,
+                OwnerName = ownerDto?.FullName,
             };
         }
 
@@ -605,6 +632,103 @@ namespace EvBackend.Services
                 ChargingReservations = chargingCount,
                 CompletedReservations = completedCount
             };
+        }
+
+        public async Task<IEnumerable<BookingDto>> GetPendingBookingsAsync(int pageNumber, int pageSize)
+        {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+
+            var col = _db.GetCollection<Booking>("Bookings");
+            var list = await col.Find(b => b.Status == "Pending")
+                                .SortBy(b => b.CreatedAt)
+                                .Skip((pageNumber - 1) * pageSize)
+                                .Limit(pageSize)
+                                .ToListAsync();
+
+            return list.Select(b => new BookingDto
+            {
+                BookingId = b.BookingId,
+                StationId = b.StationId,
+                SlotId = b.SlotId,
+                SlotNumber = b.SlotNumber,
+                TimeSlotId = b.TimeSlotId,
+                OwnerId = b.OwnerId,
+                Status = b.Status,
+                StartTime = b.StartTime,
+                EndTime = b.EndTime,
+                CreatedAt = b.CreatedAt,
+                UpdatedAt = b.UpdatedAt,
+                FormattedStartTime = FormatSriLankaTime(b.StartTime),
+                FormattedEndTime = FormatSriLankaTime(b.EndTime),
+                FormattedDate = FormatSriLankaDate(b.StartTime)
+            });
+        }
+
+        //Task<IEnumerable<BookingDto>> GetPendingBookingsAsync(int pageNumber, int pageSize);
+        // Task<IEnumerable<BookingDto>> GetApprovedBookingsAsync(int pageNumber, int pageSize);
+        // Task<IEnumerable<BookingDto>> GetCompletedBookingsAsync(int pageNumber, int pageSize);
+
+        public async Task<IEnumerable<BookingDto>> GetApprovedBookingsAsync(int pageNumber, int pageSize)
+        {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+
+            var col = _db.GetCollection<Booking>("Bookings");
+            var list = await col.Find(b => b.Status == "Approved")
+                                .SortBy(b => b.CreatedAt)
+                                .Skip((pageNumber - 1) * pageSize)
+                                .Limit(pageSize)
+                                .ToListAsync();
+
+            return list.Select(b => new BookingDto
+            {
+                BookingId = b.BookingId,
+                StationId = b.StationId,
+                SlotId = b.SlotId,
+                SlotNumber = b.SlotNumber,
+                TimeSlotId = b.TimeSlotId,
+                OwnerId = b.OwnerId,
+                Status = b.Status,
+                StartTime = b.StartTime,
+                EndTime = b.EndTime,
+                CreatedAt = b.CreatedAt,
+                UpdatedAt = b.UpdatedAt,
+                FormattedStartTime = FormatSriLankaTime(b.StartTime),
+                FormattedEndTime = FormatSriLankaTime(b.EndTime),
+                FormattedDate = FormatSriLankaDate(b.StartTime)
+            });
+        }
+
+        public async Task<IEnumerable<BookingDto>> GetCompletedBookingsAsync(int pageNumber, int pageSize)
+        {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+
+            var col = _db.GetCollection<Booking>("Bookings");
+            var list = await col.Find(b => b.Status == "Finalized" || b.Status == "Completed")
+                                .SortBy(b => b.CreatedAt)
+                                .Skip((pageNumber - 1) * pageSize)
+                                .Limit(pageSize)
+                                .ToListAsync();
+
+            return list.Select(b => new BookingDto
+            {
+                BookingId = b.BookingId,
+                StationId = b.StationId,
+                SlotId = b.SlotId,
+                SlotNumber = b.SlotNumber,
+                TimeSlotId = b.TimeSlotId,
+                OwnerId = b.OwnerId,
+                Status = b.Status,
+                StartTime = b.StartTime,
+                EndTime = b.EndTime,
+                CreatedAt = b.CreatedAt,
+                UpdatedAt = b.UpdatedAt,
+                FormattedStartTime = FormatSriLankaTime(b.StartTime),
+                FormattedEndTime = FormatSriLankaTime(b.EndTime),
+                FormattedDate = FormatSriLankaDate(b.StartTime)
+            });
         }
 
     }

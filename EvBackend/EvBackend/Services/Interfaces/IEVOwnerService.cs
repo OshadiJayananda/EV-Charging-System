@@ -20,6 +20,7 @@ namespace EvBackend.Services.Interfaces
         Task<int> GetReactivationRequestCount();
         Task<IEnumerable<EVOwnerDto>> GetEVOwnersWithReactivationRequests();
         Task<bool> ClearReactivationRequest(string nic);
+        Task<EVOwnerDto> GetEVOwnerById(string ownerId);
 
 
     }

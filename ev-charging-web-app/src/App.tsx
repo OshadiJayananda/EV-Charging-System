@@ -22,6 +22,9 @@ import UserManagement from "./components/Admin/UserManagement";
 import OperatorStations from "./pages/operator/OperatorStations";
 import OperatorSlotManagement from "./pages/operator/OperatorSlotManagement";
 import OperatorBookings from "./pages/operator/OperatorBookings";
+import BookingManagementPage from "./pages/admin/BookingManagementPage";
+import PendingBookingsPage from "./pages/admin/PendingBookingsPage";
+import BookingDetailsPage from "./pages/admin/BookingDetailsPage";
 
 function App() {
   const location = useLocation();
@@ -74,6 +77,18 @@ function App() {
                 element={<StationSlots />}
               />
               <Route path="/admin/Users" element={<UserManagement />} />
+              <Route
+                path="/admin/bookings"
+                element={<BookingManagementPage />}
+              />
+              <Route
+                path="/admin/bookings/pending"
+                element={<PendingBookingsPage />}
+              />
+              <Route
+                path="/admin/bookings/:bookingId"
+                element={<BookingDetailsPage />}
+              />
             </Route>
           </Route>
 
@@ -83,10 +98,7 @@ function App() {
                 path="/operator/dashboard"
                 element={<CSOperatorDashboard />}
               />
-              <Route
-                path="/operator/stations"
-                element={<OperatorStations />}
-              />
+              <Route path="/operator/stations" element={<OperatorStations />} />
               <Route
                 path="/operator/stations/:stationId/slots"
                 element={<OperatorSlotManagement />}
