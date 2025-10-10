@@ -19,7 +19,6 @@ import com.evcharging.mobile.model.User;
  * Created: 2025-10-06
  */
 public class DatabaseHelper extends SQLiteOpenHelper {
-
     private static final String TAG = "DatabaseHelper";
 
     // Database configuration
@@ -42,19 +41,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_CREATED_AT = "created_at";
 
     // Create table SQL statement
-    private static final String CREATE_TABLE_USER =
-            "CREATE TABLE " + TABLE_USER + " (" +
-                    COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                    COLUMN_USER_ID + " TEXT NOT NULL UNIQUE, " +
-                    COLUMN_FULL_NAME + " TEXT NOT NULL, " +
-                    COLUMN_EMAIL + " TEXT NOT NULL, " +
-                    COLUMN_ROLE + " TEXT NOT NULL, " +
-                    COLUMN_STATION_ID + " TEXT, " + // Nullable field
-                    COLUMN_STATION_NAME + " TEXT, " + // Nullable field
-                    COLUMN_STATION_LOCATION + " TEXT, " + // Nullable field
-                    COLUMN_IS_ACTIVE + " INTEGER DEFAULT 1, " +
-                    COLUMN_CREATED_AT + " TEXT NOT NULL" +
-                    ")";
+    private static final String CREATE_TABLE_USER = "CREATE TABLE " + TABLE_USER + " (" +
+            COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            COLUMN_USER_ID + " TEXT NOT NULL UNIQUE, " +
+            COLUMN_FULL_NAME + " TEXT NOT NULL, " +
+            COLUMN_EMAIL + " TEXT NOT NULL, " +
+            COLUMN_ROLE + " TEXT NOT NULL, " +
+            COLUMN_STATION_ID + " TEXT, " + // Nullable field
+            COLUMN_STATION_NAME + " TEXT, " + // Nullable field
+            COLUMN_STATION_LOCATION + " TEXT, " + // Nullable field
+            COLUMN_IS_ACTIVE + " INTEGER DEFAULT 1, " +
+            COLUMN_CREATED_AT + " TEXT NOT NULL" +
+            ")";
 
     // Singleton instance
     private static DatabaseHelper instance;
@@ -122,7 +120,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         try {
             // First, try to delete existing user data (replace if exists)
-            db.delete(TABLE_USER, COLUMN_USER_ID + " = ?", new String[]{user.getUserId()});
+            db.delete(TABLE_USER, COLUMN_USER_ID + " = ?", new String[] { user.getUserId() });
 
             // Insert new user data
             long result = db.insert(TABLE_USER, null, values);
@@ -184,7 +182,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 user.setStationName(cursor.isNull(stationNameIndex) ? null : cursor.getString(stationNameIndex));
 
                 int stationLocationIndex = cursor.getColumnIndexOrThrow(COLUMN_STATION_LOCATION);
-                user.setStationLocation(cursor.isNull(stationLocationIndex) ? null : cursor.getString(stationLocationIndex));
+                user.setStationLocation(
+                        cursor.isNull(stationLocationIndex) ? null : cursor.getString(stationLocationIndex));
 
                 user.setActive(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_IS_ACTIVE)) == 1);
                 user.setCreatedAt(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CREATED_AT)));
@@ -241,9 +240,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     /**
      * Update user station information (when admin assigns station)
      *
-     * @param userId User ID (NIC)
-     * @param stationId Station ID
-     * @param stationName Station name
+     * @param userId          User ID (NIC)
+     * @param stationId       Station ID
+     * @param stationName     Station name
      * @param stationLocation Station location
      * @return true if successful, false otherwise
      */
@@ -260,8 +259,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     TABLE_USER,
                     values,
                     COLUMN_USER_ID + " = ?",
-                    new String[]{userId}
-            );
+                    new String[] { userId });
 
             if (rowsUpdated > 0) {
                 Log.d(TAG, "User station updated: " + stationName + " (ID: " + stationId + ")");
