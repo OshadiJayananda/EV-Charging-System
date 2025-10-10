@@ -74,6 +74,7 @@ public class OwnerHomeActivity extends AppCompatActivity
         private AutoCompleteTextView searchStations;
         private Spinner spinnerStationType;
         private String selectedStationType = "DC";
+        private Station selectedStation;
 
         private Button btnMyBookings, btnChargingHistory;
 
@@ -183,7 +184,7 @@ public class OwnerHomeActivity extends AppCompatActivity
                 });
 
                 searchStations.setOnItemClickListener((parent, view, position, id) -> {
-                        Station selectedStation = (Station) parent.getItemAtPosition(position);
+                        selectedStation = (Station) parent.getItemAtPosition(position);
                         showStationOnMap(selectedStation);
                 });
         }
@@ -290,8 +291,18 @@ public class OwnerHomeActivity extends AppCompatActivity
                 btnNotifications.setOnClickListener(v -> startActivity(new Intent(this, NotificationActivity.class)));
 
                 btnReserve.setOnClickListener(v -> {
-                        Intent intent = new Intent(this, com.evcharging.mobile.OwnerBookingActivity.class);
-                        startActivity(intent);
+                        if (selectedStation != null) {
+                                Intent intent = new Intent(this, OwnerBookingActivity.class);
+                                intent.putExtra("selected_station_id", selectedStation.getStationId());
+                                intent.putExtra("selected_station_name", selectedStation.getName());
+                                intent.putExtra("selected_station_lat", selectedStation.getLatitude());
+                                intent.putExtra("selected_station_lng", selectedStation.getLongitude());
+                                intent.putExtra("selected_station_location", selectedStation.getLocation());
+                                startActivity(intent);
+                        } else {
+                                Intent intent = new Intent(this, OwnerBookingActivity.class);
+                                startActivity(intent);
+                        }
                 });
 
 
