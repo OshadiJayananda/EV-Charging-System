@@ -1,3 +1,9 @@
+// --------------------------------------------------------------
+// File Name: UsageAnalyticsController.cs
+// Author: Denuwan Sathsara
+// Description: Controller for retrieving usage analytics data.
+// Created/Updated On: 27/09/2025
+// --------------------------------------------------------------
 using System;
 using Microsoft.AspNetCore.Mvc;
 using EvBackend.Services.Interfaces;
