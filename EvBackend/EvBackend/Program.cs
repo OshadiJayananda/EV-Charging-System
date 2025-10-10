@@ -74,6 +74,8 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
+builder.Services.AddScoped<IUsageAnalyticsService, UsageAnalyticsService>();
+
 
 builder.Services.Configure<Microsoft.AspNetCore.Routing.RouteOptions>(options =>
 {
@@ -91,7 +93,7 @@ builder.Services.AddSwaggerGen(c =>
         Title = "EV Backend API",
         Version = "v1"
     });
-      //  Enable Swagger Annotations
+    //  Enable Swagger Annotations
     c.EnableAnnotations();
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

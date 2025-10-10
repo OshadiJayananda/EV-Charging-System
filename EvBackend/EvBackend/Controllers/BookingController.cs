@@ -297,5 +297,48 @@ namespace EvBackend.Controllers
                 return StatusCode(500, new { message = "Unexpected error", details = ex.Message });
             }
         }
+
+        [HttpGet("pending")]
+        [Authorize(Roles = "Admin,Backoffice,Operator")]
+        public async Task<IActionResult> GetPendingBookings([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            if (pageNumber <= 0 || pageSize <= 0 || pageSize > 100)
+                return BadRequest(new { message = "Invalid pagination parameters" });
+            try
+            {
+                var list = await _booking.GetPendingBookingsAsync(pageNumber, pageSize);
+                return Ok(list);
+            }
+            catch (Exception ex) { Console.WriteLine(ex); return StatusCode(500, new { message = "Unexpected error" }); 
+            }
+        }
+
+        [HttpGet("approved")]
+        [Authorize(Roles = "Admin,Backoffice,Operator")]
+        public async Task<IActionResult> GetApprovedBookings([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            if (pageNumber <= 0 || pageSize <= 0 || pageSize > 100)
+                return BadRequest(new { message = "Invalid pagination parameters" });
+            try
+            {
+                var list = await _booking.GetApprovedBookingsAsync(pageNumber, pageSize);
+                return Ok(list);
+            }
+            catch (Exception ex) { Console.WriteLine(ex); return StatusCode(500, new { message = "Unexpected error" }); }
+        }
+
+        [HttpGet("completed")]
+        [Authorize(Roles = "Admin,Backoffice,Operator")]
+        public async Task<IActionResult> GetCompletedBookings([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            if (pageNumber <= 0 || pageSize <= 0 || pageSize > 100)
+                return BadRequest(new { message = "Invalid pagination parameters" });
+            try
+            {
+                var list = await _booking.GetCompletedBookingsAsync(pageNumber, pageSize);
+                return Ok(list);
+            }
+            catch (Exception ex) { Console.WriteLine(ex); return StatusCode(500, new { message = "Unexpected error" }); }
+        }
     }
 }
