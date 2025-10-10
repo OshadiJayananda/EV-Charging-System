@@ -21,6 +21,7 @@ public class UsageAnalyticsController : ControllerBase
         _usageAnalyticsService = usageAnalyticsService;
     }
 
+    // Get usage analytics (admin)
     [HttpGet("usage")]
     //[Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetUsageAnalytics()
