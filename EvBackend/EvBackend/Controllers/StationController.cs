@@ -28,10 +28,6 @@ namespace EvBackend.Controllers
             _stationService = stationService;
         }
 
-        // ---------------------------
-        // 🚗 Station Endpoints
-        // ---------------------------
-
         // Create station - Admin or Backoffice only
         [HttpPost]
         //[Authorize(Roles = "Admin")]
@@ -175,7 +171,7 @@ namespace EvBackend.Controllers
 
         // GET: /api/station/nearby-by-type?type=AC&latitude=6.9271&longitude=79.8612&radiusKm=10
         [HttpGet("nearby-by-type")]
-       [Authorize(Roles = "Admin,Operator,Owner")]
+        [Authorize(Roles = "Admin,Operator,Owner")]
         public async Task<IActionResult> GetNearbyStationsByType(
             [FromQuery] string type,
             [FromQuery] double latitude,

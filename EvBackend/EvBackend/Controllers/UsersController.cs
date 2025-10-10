@@ -27,6 +27,7 @@ namespace EvBackend.Controllers
             _logger = logger;
         }
 
+        //create user
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
@@ -55,9 +56,9 @@ namespace EvBackend.Controllers
             }
         }
 
+        //get user by id
         [HttpGet("{userId}")]
         [Authorize(Roles = "Admin,Operator")]
-        // --------------------------------------------------------------
         public async Task<IActionResult> GetUserById(string userId)
         {
             try
@@ -85,6 +86,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //get all users with pagination and optional role filter
         [HttpGet]
         [Authorize(Roles = "Admin, Operator")]
         public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? role = null)
@@ -123,6 +125,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //update user
         [HttpPut("{userId}")]
         [Authorize(Roles = "Admin,Operator")]
         public async Task<IActionResult> UpdateUser(string userId, [FromBody] UpdateUserDto dto)
@@ -170,6 +173,8 @@ namespace EvBackend.Controllers
                 return StatusCode(500, new { message = "Unexpected error occurred" });
             }
         }
+
+        //deactivate user (only by operator for self, admin for any)
         [HttpPatch("{userId}/deactivate")]
         [Authorize(Roles = "Operator")]
         public async Task<IActionResult> DeactivateUser(string userId)
@@ -220,6 +225,7 @@ namespace EvBackend.Controllers
             }
         }
 
+        //activate user (admin only)
         [HttpPatch("{userId}/activate")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ActivateUser(string userId)
