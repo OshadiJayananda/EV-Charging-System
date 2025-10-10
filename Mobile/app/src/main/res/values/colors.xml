@@ -29,4 +29,10 @@
     <color name="statusApproved">#4CAF50</color>
     <color name="statusCharging">#2196F3</color>
     <color name="logout_card_background">#FFEBEE</color>  <!-- Very light red/pink for logout card -->
+
+    <color name="primary">#1E88E5</color>
+    <color name="primary_darkest">#1565C0</color>
+    <color name="backgroundLight">#F9F9F9</color>
+
+
 </resources>
