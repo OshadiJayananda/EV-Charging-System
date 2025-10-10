@@ -6,6 +6,7 @@ import {
   Building,
   Wrench,
   Activity,
+  Clock,
 } from "lucide-react";
 import { roleNavigate, roleRoute } from "./common/RoleBasedAccess";
 import { useAuth } from "../context/AuthContext";
@@ -23,7 +24,7 @@ export default function ProtectedLayout() {
   useEffect(() => {
     if (userId) {
       // Use getRequest to fetch user data based on userId
-      getRequest<{ stationId: string}>(`/operators/${userId}`)
+      getRequest<{ stationId: string }>(`/operators/${userId}`)
         .then((res) => {
           if (res && res.data) {
             setUserData(res.data);
@@ -79,6 +80,19 @@ export default function ProtectedLayout() {
             >
               <Building className="w-5 h-5" />
               Station Management
+            </NavLink>
+          )}
+          {userRole === "admin" && (
+            <NavLink
+              to="/admin/bookings"
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                  isActive ? "bg-green-600 text-white" : "hover:bg-green-100"
+                }`
+              }
+            >
+              <Clock className="w-5 h-5" />
+              Booking Management
             </NavLink>
           )}
         </nav>

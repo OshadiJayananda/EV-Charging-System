@@ -74,6 +74,10 @@ public class OwnerHomeActivity extends AppCompatActivity
         private AutoCompleteTextView searchStations;
         private Spinner spinnerStationType;
         private String selectedStationType = "DC";
+        private Station selectedStation;
+
+        private Button btnMyBookings, btnChargingHistory;
+
         @Override
         protected void onCreate(Bundle savedInstanceState) {
                 super.onCreate(savedInstanceState);
@@ -116,6 +120,9 @@ public class OwnerHomeActivity extends AppCompatActivity
                 // --- SignalR ---
                 signalRService = new SignalRService(this);
                 signalRService.setNotificationListener(this);
+
+                btnMyBookings = findViewById(R.id.btnMyBookings);
+                btnChargingHistory = findViewById(R.id.btnChargingHistory);
 
                 // --- Notification channel ---
                 createNotificationChannel();
@@ -177,7 +184,7 @@ public class OwnerHomeActivity extends AppCompatActivity
                 });
 
                 searchStations.setOnItemClickListener((parent, view, position, id) -> {
-                        Station selectedStation = (Station) parent.getItemAtPosition(position);
+                        selectedStation = (Station) parent.getItemAtPosition(position);
                         showStationOnMap(selectedStation);
                 });
         }
@@ -283,14 +290,29 @@ public class OwnerHomeActivity extends AppCompatActivity
         private void setupButtonActions() {
                 btnNotifications.setOnClickListener(v -> startActivity(new Intent(this, NotificationActivity.class)));
 
-                btnReserve.setOnClickListener(
-                                v -> Toast.makeText(this, "Reserve Slot Clicked", Toast.LENGTH_SHORT).show());
+                btnReserve.setOnClickListener(v -> {
+                        if (selectedStation != null) {
+                                Intent intent = new Intent(this, OwnerBookingActivity.class);
+                                intent.putExtra("selected_station_id", selectedStation.getStationId());
+                                intent.putExtra("selected_station_name", selectedStation.getName());
+                                intent.putExtra("selected_station_lat", selectedStation.getLatitude());
+                                intent.putExtra("selected_station_lng", selectedStation.getLongitude());
+                                intent.putExtra("selected_station_location", selectedStation.getLocation());
+                                startActivity(intent);
+                        } else {
+                                Intent intent = new Intent(this, OwnerBookingActivity.class);
+                                startActivity(intent);
+                        }
+                });
 
-                btnBookings.setOnClickListener(
-                                v -> Toast.makeText(this, "My Bookings Clicked", Toast.LENGTH_SHORT).show());
 
-                btnHistory.setOnClickListener(
-                                v -> Toast.makeText(this, "Charging History Clicked", Toast.LENGTH_SHORT).show());
+                btnMyBookings.setOnClickListener(v ->
+                        startActivity(new Intent(this, OwnerBookingsActivity.class))
+                );
+
+                btnChargingHistory.setOnClickListener(v ->
+                        startActivity(new Intent(this, ChargingHistoryActivity.class))
+                );
 
                 ivProfile.setOnClickListener(v -> startActivity(new Intent(this, OwnerProfileActivity.class)));
 

@@ -11,6 +11,7 @@ import {
   Calendar,
   XCircle,
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 interface StationMetrics {
   stationId: string;
@@ -46,6 +47,7 @@ function CSOperatorDashboard() {
   );
   const [slots, setSlots] = useState<any[]>([]);
   const [operatorData, setOperatorData] = useState<OperatorData | null>(null);
+  const { userId } = useAuth();
 
   useEffect(() => {
     fetchOperatorData();
@@ -55,7 +57,7 @@ function CSOperatorDashboard() {
     setLoading(true);
     try {
       // Fetch operator details first
-      const operatorId = localStorage.getItem("userId"); // Or from your auth context
+      const operatorId = userId;
       if (!operatorId) {
         console.error("No operator ID found");
         setLoading(false);

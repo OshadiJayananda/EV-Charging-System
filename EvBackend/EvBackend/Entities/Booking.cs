@@ -37,5 +37,8 @@ namespace EvBackend.Entities
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        public string? CancellationReason { get; set; }   // e.g. "Slot set to Out Of Order"
+        public string? CancelledBy { get; set; }          // e.g. "System"
     }
 }

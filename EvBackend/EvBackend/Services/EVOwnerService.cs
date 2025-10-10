@@ -221,5 +221,24 @@ namespace EvBackend.Services
             return result.ModifiedCount > 0;
         }
 
+        public async Task<EVOwnerDto> GetEVOwnerById(string nic)
+        {
+            var owner = await _owners.Find(o => o.NIC == nic).FirstOrDefaultAsync();
+
+            if (owner == null)
+                throw new KeyNotFoundException("EV Owner not found");
+
+            return new EVOwnerDto
+            {
+                NIC = owner.NIC,
+                FullName = owner.FullName,
+                Email = owner.Email,
+                Phone = owner.Phone,
+                IsActive = owner.IsActive,
+                ReactivationRequested = owner.ReactivationRequested,
+                CreatedAt = owner.CreatedAt
+            };
+        }
+
     }
 }

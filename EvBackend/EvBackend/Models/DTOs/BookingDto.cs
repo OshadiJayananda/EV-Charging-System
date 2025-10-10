@@ -13,6 +13,7 @@ namespace EvBackend.Models.DTOs
     {
         public string BookingId { get; set; }
         public string StationId { get; set; }
+        public string StationName { get; set; }
 
         public string SlotId { get; set; }
         public int SlotNumber { get; set; }
@@ -36,6 +37,13 @@ namespace EvBackend.Models.DTOs
         public string? FormattedStartTime { get; set; } // "yyyy MMM dd, HH:mm"
         public string? FormattedEndTime { get; set; }   // "yyyy MMM dd, HH:mm"
         public string? FormattedDate { get; set; }      // "yyyy MMM dd"
+
+        public string? StationLocation { get; set; }
+        public string? SlotName { get; set; } // e.g. "Slot 1"
+        public string? TimeSlotRange { get; set; } // e.g. "08:00 - 10:00"
+        public string? OwnerName { get; set; }
+        public string? CancellationReason { get; set; }
+
     }
 
     // Create = StationId + TimeSlotId + SlotId
