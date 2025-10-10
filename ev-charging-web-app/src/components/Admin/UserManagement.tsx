@@ -342,14 +342,17 @@ function UserManagement() {
   const fetchStations = async (): Promise<void> => {
     try {
       const response = await api.get("/station");
-      if (response?.data) {
-        setStations(response.data);
+      if (response?.data?.items) {
+        setStations(response.data.items);
+      } else {
+        setStations([]);
       }
     } catch (err) {
       console.error("Error fetching stations:", err);
       toast.error("Failed to fetch stations");
     }
   };
+
   const handleUpdateStationClick = (operator: UserDetails): void => {
     setSelectedOperatorForStationUpdate(operator);
     setStationUpdateForm({

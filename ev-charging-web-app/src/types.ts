@@ -48,7 +48,7 @@ export interface Slot {
   stationId: string;
   connectorType: string;
   number: number;
-  status:string
+  status: string;
 }
 
 export type StationType = "AC" | "DC";
@@ -58,10 +58,10 @@ export interface Station {
   name: string;
   location: string;
   type: StationType;
-  capacity: number; 
-  availableSlots: number;   // total slots count
+  capacity: number;
+  availableSlots: number; // total slots count
   isActive: boolean;
-  slots?: Slot[];           // optional, only when fetching detailed view
+  slots?: Slot[]; // optional, only when fetching detailed view
 }
 
 // Payloads for requests
@@ -85,7 +85,6 @@ export interface PagedResult<T> {
   totalCount: number;
   items: T[];
 }
-
 
 // ==============================
 // Booking types
@@ -175,4 +174,10 @@ export interface UserResponse {
   status?: number;
 }
 
-
+export interface PaginatedResponse<T> {
+  currentPage: number;
+  items: T[];
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
