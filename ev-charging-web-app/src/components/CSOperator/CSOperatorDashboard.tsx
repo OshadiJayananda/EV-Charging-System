@@ -5,8 +5,8 @@ import Loading from "../common/Loading";
 import {
   Battery,
   Clock,
-  DollarSign,
-  TrendingUp,
+  // DollarSign,
+  // TrendingUp,
   Zap,
   CheckCircle,
   AlertCircle,

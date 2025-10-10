@@ -9,7 +9,7 @@ const StationList = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1); // Current page
   const [pageSize, setPageSize] = useState<number>(10); // Page size
-  const [totalCount, setTotalCount] = useState<number>(0); // Total stations count
+  // const [totalCount, setTotalCount] = useState<number>(0); // Total stations count
   const navigate = useNavigate();
 
   const fetchStations = async (page: number, pageSize: number) => {
@@ -23,7 +23,7 @@ const StationList = () => {
 
     if (res) {
       setStations(res.data.items); // Using items from paginated response
-      setTotalCount(res.data.totalCount); // Total count for pagination
+      // setTotalCount(res.data.totalCount); // Total count for pagination
     }
 
     setLoading(false);
