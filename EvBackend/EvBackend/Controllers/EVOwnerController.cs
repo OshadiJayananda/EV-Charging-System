@@ -217,26 +217,6 @@ namespace EvBackend.Controllers
             }
         }
 
-
-        // [HttpGet("reactivation-requests")]
-        // [Authorize(Roles = "Admin")]
-        // public async Task<IActionResult> GetReactivationRequests()
-        // {
-        //     try
-        //     {
-        //         // Get EV Owners with reactivation requests
-        //         var ownersWithRequests = await _evOwnerService.GetEVOwnersWithReactivationRequests();
-
-        //         _logger.LogInformation("GetReactivationRequests: Fetched {Count} reactivation requests.", ownersWithRequests.Count());
-        //         return Ok(ownersWithRequests);
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         _logger.LogError(ex, "GetReactivationRequests: Unexpected error occurred.");
-        //         return StatusCode(500, new { message = "Unexpected error occurred" });
-        //     }
-        // }
-
         // Clear reactivation request by admin
         [HttpPatch("{nic}/clear-reactivation")]
         [Authorize(Roles = "Admin")]
