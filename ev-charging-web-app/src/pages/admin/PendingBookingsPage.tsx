@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getRequest } from "../../components/common/api";
+import { getRequest, patchRequest } from "../../components/common/api";
 import { useNavigate } from "react-router-dom";
 
 function PendingBookingsPage() {
@@ -28,10 +28,14 @@ function PendingBookingsPage() {
   // Approve booking
   const handleApproveBooking = async (bookingId: string) => {
     try {
-      const response = await fetch(`/api/bookings/${bookingId}/approve`, {
-        method: "PATCH",
-      });
-      if (response.ok) fetchPendingBookings();
+      const response = await patchRequest(`/bookings/${bookingId}/approve`, {});
+
+      if (!response || response.status !== 200) {
+        console.error("Failed to approve booking:", response);
+        throw new Error("Failed to approve booking");
+      }
+
+      fetchPendingBookings();
     } catch (error) {
       console.error("Error approving booking:", error);
     }
@@ -40,10 +44,14 @@ function PendingBookingsPage() {
   // Cancel booking
   const handleCancelBooking = async (bookingId: string) => {
     try {
-      const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
-        method: "PATCH",
-      });
-      if (response.ok) fetchPendingBookings();
+      const response = await patchRequest(`/bookings/${bookingId}/cancel`, {});
+
+      if (!response || response.status !== 200) {
+        console.error("Failed to approve booking:", response);
+        throw new Error("Failed to approve booking");
+      }
+
+      fetchPendingBookings();
     } catch (error) {
       console.error("Error cancelling booking:", error);
     }
