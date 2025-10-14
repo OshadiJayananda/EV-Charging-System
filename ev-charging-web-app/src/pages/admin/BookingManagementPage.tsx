@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getRequest, patchRequest } from "../../components/common/api";
 import { useNavigate } from "react-router-dom";
 
@@ -10,6 +10,7 @@ interface Booking {
   bookingDate?: string;
   status?: string;
   amount?: number;
+  createdAt: Date | string;
 }
 
 function BookingManagementPage() {
@@ -46,6 +47,19 @@ function BookingManagementPage() {
   useEffect(() => {
     fetchBookings();
   }, []);
+
+  const activeBookings = useMemo(() => {
+    switch (activeTab) {
+      case "pending":
+        return pendingBookings;
+      case "approved":
+        return approvedBookings;
+      case "completed":
+        return completedBookings;
+      default:
+        return pendingBookings;
+    }
+  }, [activeTab, pendingBookings, approvedBookings, completedBookings]);
 
   const handleApproveBooking = async (bookingId: string) => {
     try {
@@ -105,7 +119,7 @@ function BookingManagementPage() {
     );
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | Date) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -157,7 +171,7 @@ function BookingManagementPage() {
         <div>
           <p className="text-gray-500">Date</p>
           <p className="font-medium text-gray-900">
-            {booking.bookingDate ? formatDate(booking.bookingDate) : "N/A"}
+            {formatDate(booking.createdAt)}
           </p>
         </div>
         {booking.amount && (
@@ -287,19 +301,6 @@ function BookingManagementPage() {
       </div>
     </div>
   );
-
-  const getActiveBookings = () => {
-    switch (activeTab) {
-      case "pending":
-        return pendingBookings;
-      case "approved":
-        return approvedBookings;
-      case "completed":
-        return completedBookings;
-      default:
-        return pendingBookings;
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50/30 p-6">
@@ -432,7 +433,7 @@ function BookingManagementPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {getActiveBookings().length === 0 ? (
+              {activeBookings.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                     <svg
@@ -459,7 +460,7 @@ function BookingManagementPage() {
                   </p>
                 </div>
               ) : (
-                getActiveBookings().map((booking) => (
+                activeBookings.map((booking) => (
                   <BookingCard
                     key={booking.bookingId}
                     booking={booking}
