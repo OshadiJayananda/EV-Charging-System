@@ -32,7 +32,6 @@ import com.evcharging.mobile.model.Notification;
 import com.evcharging.mobile.model.User;
 import com.evcharging.mobile.network.ApiClient;
 import com.evcharging.mobile.network.ApiResponse;
-import com.evcharging.mobile.service.SignalRService;
 import com.evcharging.mobile.session.SessionManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -53,7 +52,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.card.MaterialCardView;
 
 public class OwnerHomeActivity extends AppCompatActivity
-                implements OnMapReadyCallback, SignalRService.NotificationListener {
+                implements OnMapReadyCallback {
 
         private static final String MAP_VIEW_BUNDLE_KEY = "MapViewBundleKey";
         private static final String CHANNEL_ID = "ev_notifications";
@@ -66,7 +65,6 @@ public class OwnerHomeActivity extends AppCompatActivity
         private ImageView ivProfile;
         private TextView tvWelcomeOwner, tvOwnerId;
 
-        private SignalRService signalRService;
         private ApiClient apiClient;
         private TextView tvNotificationCount;
         private int notificationCount = 0;
@@ -88,6 +86,14 @@ public class OwnerHomeActivity extends AppCompatActivity
                 stationService = new StationService(apiClient);
 
                 setContentView(R.layout.activity_owner_home);
+
+                MyApp app = (MyApp) getApplication();
+                app.getNotificationCountLiveData().observe(this, count -> {
+                        if (count != null) {
+                                notificationCount = count;
+                                updateNotificationCount();
+                        }
+                });
 
                 // --- Initialize UI components ---
                 mapView = findViewById(R.id.mapView);
@@ -117,10 +123,6 @@ public class OwnerHomeActivity extends AppCompatActivity
                 }
                 mapView.onCreate(mapViewBundle);
                 mapView.getMapAsync(this);
-
-                // --- SignalR ---
-                signalRService = new SignalRService(this);
-                signalRService.setNotificationListener(this);
 
                 btnMyBookings = findViewById(R.id.btnMyBookings);
                 btnChargingHistory = findViewById(R.id.btnChargingHistory);
@@ -364,7 +366,11 @@ public class OwnerHomeActivity extends AppCompatActivity
         }
 
         private void setupButtonActions() {
-                btnNotifications.setOnClickListener(v -> startActivity(new Intent(this, NotificationActivity.class)));
+                btnNotifications.setOnClickListener(v -> {
+                        startActivity(new Intent(this, NotificationActivity.class));
+                        MyApp app = (MyApp) getApplication();
+                        app.resetNotificationCount();
+                });
 
                 btnReserve.setOnClickListener(v -> {
                         Intent intent = new Intent(this, OwnerBookingActivity.class);
@@ -458,11 +464,6 @@ public class OwnerHomeActivity extends AppCompatActivity
         protected void onResume() {
                 super.onResume();
                 mapView.onResume();
-
-                // Connect to SignalR when activity resumes
-                if (signalRService != null) {
-                        signalRService.connect();
-                }
         }
 
         @Override
@@ -470,11 +471,6 @@ public class OwnerHomeActivity extends AppCompatActivity
                 // Pause MapView before calling super
                 mapView.onPause();
                 super.onPause();
-
-                // Disconnect from SignalR when activity pauses
-                if (signalRService != null) {
-                        signalRService.disconnect();
-                }
         }
 
         @Override
@@ -527,19 +523,6 @@ public class OwnerHomeActivity extends AppCompatActivity
                                 .show();
         }
 
-        @Override
-        public void onNotificationReceived(Notification notification) {
-                runOnUiThread(() -> {
-                        // Show toast
-                        notificationCount++;
-                        updateNotificationCount();
-                        Toast.makeText(this, notification.getMessage(), Toast.LENGTH_LONG).show();
-
-                        // Show system notification
-                        showSystemNotification(notification);
-                });
-        }
-
         private void createNotificationChannel() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         CharSequence name = "EV Charging Notifications";
@@ -553,20 +536,6 @@ public class OwnerHomeActivity extends AppCompatActivity
                         if (notificationManager != null) {
                                 notificationManager.createNotificationChannel(channel);
                         }
-                }
-        }
-
-        private void showSystemNotification(Notification notification) {
-                NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                                .setSmallIcon(R.drawable.ic_notifications)
-                                .setContentTitle("EV Charging System")
-                                .setContentText(notification.getMessage())
-                                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                                .setAutoCancel(true);
-
-                NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                if (notificationManager != null) {
-                        notificationManager.notify((int) System.currentTimeMillis(), builder.build());
                 }
         }
 

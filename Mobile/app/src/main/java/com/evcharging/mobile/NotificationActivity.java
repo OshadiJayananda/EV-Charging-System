@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.evcharging.mobile.MyApp;
 import com.evcharging.mobile.adapter.NotificationAdapter;
 import com.evcharging.mobile.model.Notification;
 import com.evcharging.mobile.network.ApiClient;
@@ -47,6 +48,15 @@ public class NotificationActivity extends AppCompatActivity
 
         apiClient = new ApiClient(new SessionManager(this));
 
+        // Observe global notifications published by MyApp
+        MyApp app = (MyApp) getApplication();
+        app.getNotificationLiveData().observe(this, notification -> {
+            if (notification != null) {
+                // Insert newest notifications at top
+                addNotificationToList(notification);
+            }
+        });
+
         loadNotifications();
     }
 
@@ -70,7 +80,8 @@ public class NotificationActivity extends AppCompatActivity
                     }
                 } else {
                     // Show error message
-                    String errorMessage = response.getMessage() != null ? response.getMessage() : "Failed to load notifications";
+                    String errorMessage = response.getMessage() != null ? response.getMessage()
+                            : "Failed to load notifications";
                     Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
                 }
 
@@ -90,6 +101,14 @@ public class NotificationActivity extends AppCompatActivity
         }
     }
 
+    private void addNotificationToList(Notification n) {
+        // Add at top so newest appear first
+        notifications.add(0, n);
+        adapter.notifyItemInserted(0);
+        recyclerView.scrollToPosition(0);
+        updateEmptyState();
+    }
+
     @Override
     public void onMarkAsRead(String notificationId) {
         // Call API to mark notification as read in background thread
@@ -99,10 +118,13 @@ public class NotificationActivity extends AppCompatActivity
             runOnUiThread(() -> {
                 if (response.isSuccess()) {
                     Toast.makeText(this, "Marked as read", Toast.LENGTH_SHORT).show();
+                    MyApp app = (MyApp) getApplication();
+                    app.markNotificationAsRead(notificationId);
                     // Refresh notifications to get updated status
                     loadNotifications();
                 } else {
-                    String errorMessage = response.getMessage() != null ? response.getMessage() : "Failed to mark as read";
+                    String errorMessage = response.getMessage() != null ? response.getMessage()
+                            : "Failed to mark as read";
                     Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
                 }
             });
@@ -120,7 +142,8 @@ public class NotificationActivity extends AppCompatActivity
                     Toast.makeText(this, "Notification deleted", Toast.LENGTH_SHORT).show();
                     // No need to refresh - adapter already removes item
                 } else {
-                    String errorMessage = response.getMessage() != null ? response.getMessage() : "Failed to delete notification";
+                    String errorMessage = response.getMessage() != null ? response.getMessage()
+                            : "Failed to delete notification";
                     Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
                     // Refresh to restore deleted item on failure
                     loadNotifications();
