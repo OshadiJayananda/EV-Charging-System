@@ -134,7 +134,7 @@
                                 android:textStyle="bold"
                                 android:translationX="-4dp"
                                 android:translationY="4dp"
-                                android:visibility="visible" />
+                                android:visibility="gone" />
                         </RelativeLayout>
 
 
