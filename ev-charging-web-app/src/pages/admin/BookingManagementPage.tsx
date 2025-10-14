@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getRequest } from "../../components/common/api";
+import { getRequest, patchRequest } from "../../components/common/api";
 import { useNavigate } from "react-router-dom";
 
 // Types for better type safety
@@ -48,14 +48,17 @@ function BookingManagementPage() {
   }, []);
 
   const handleApproveBooking = async (bookingId: string) => {
-    setActionLoading(bookingId);
     try {
-      const response = await fetch(`/api/bookings/${bookingId}/approve`, {
-        method: "PATCH",
-      });
-      if (response.ok) {
-        await fetchBookings();
+      setActionLoading(bookingId);
+
+      const response = await patchRequest(`/bookings/${bookingId}/approve`, {});
+
+      if (!response || response.status !== 200) {
+        console.error("Failed to approve booking:", response);
+        throw new Error("Failed to approve booking");
       }
+
+      await fetchBookings();
     } catch (error) {
       console.error("Error approving booking:", error);
     } finally {
@@ -66,12 +69,14 @@ function BookingManagementPage() {
   const handleCancelBooking = async (bookingId: string) => {
     setActionLoading(bookingId);
     try {
-      const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
-        method: "PATCH",
-      });
-      if (response.ok) {
-        await fetchBookings();
+      const response = await patchRequest(`/bookings/${bookingId}/cancel`, {});
+
+      if (!response || response.status !== 200) {
+        console.error("Failed to approve booking:", response);
+        throw new Error("Failed to approve booking");
       }
+
+      await fetchBookings();
     } catch (error) {
       console.error("Error cancelling booking:", error);
     } finally {
