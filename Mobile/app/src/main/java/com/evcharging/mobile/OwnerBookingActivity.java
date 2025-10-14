@@ -60,7 +60,8 @@ public class OwnerBookingActivity extends AppCompatActivity {
     private double preselectedLat;
     private double preselectedLng;
     private String preselectedLocation;
-
+    private double currentLat = 0.0;
+    private double currentLng = 0.0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,14 +78,19 @@ public class OwnerBookingActivity extends AppCompatActivity {
         apiClient = new ApiClient(sessionManager);
 
         Intent intent = getIntent();
-        if (intent != null && intent.hasExtra("selected_station_id")) {
-            preselectedStationId = intent.getStringExtra("selected_station_id");
-            preselectedStationName = intent.getStringExtra("selected_station_name");
-            preselectedLat = intent.getDoubleExtra("selected_station_lat", 0);
-            preselectedLng = intent.getDoubleExtra("selected_station_lng", 0);
-            preselectedLocation = intent.getStringExtra("selected_station_location");
+        if (intent != null) {
+            if (intent.hasExtra("current_lat") && intent.hasExtra("current_lng")) {
+                currentLat = intent.getDoubleExtra("current_lat", DEFAULT_LAT);
+                currentLng = intent.getDoubleExtra("current_lng", DEFAULT_LON);
+            }
 
-            Log.d("OwnerBookingsActivity", "Selected station: " + preselectedStationName + " (" + preselectedLocation + ")");
+            if (intent.hasExtra("selected_station_id")) {
+                preselectedStationId = intent.getStringExtra("selected_station_id");
+                preselectedStationName = intent.getStringExtra("selected_station_name");
+                preselectedLat = intent.getDoubleExtra("selected_station_lat", 0);
+                preselectedLng = intent.getDoubleExtra("selected_station_lng", 0);
+                preselectedLocation = intent.getStringExtra("selected_station_location");
+            }
         }
 
         bindViews();
@@ -181,15 +187,19 @@ public class OwnerBookingActivity extends AppCompatActivity {
 
     private void setupTypeSpinner() {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                this, android.R.layout.simple_spinner_item, new String[]{"AC", "DC"});
+                this, android.R.layout.simple_spinner_item, new String[] { "AC", "DC" });
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spnType.setAdapter(adapter);
         spnType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
                 selectedType = (String) parent.getItemAtPosition(pos);
                 loadStationsByType(selectedType);
             }
-            @Override public void onNothingSelected(AdapterView<?> parent) {}
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
         });
     }
 
@@ -199,7 +209,9 @@ public class OwnerBookingActivity extends AppCompatActivity {
         Executors.newSingleThreadExecutor().execute(() -> {
             ApiResponse res = null;
             try {
-                res = apiClient.getNearbyStationsByType(selectedType, DEFAULT_LAT, DEFAULT_LON, DEFAULT_RADIUS);
+                double lat = currentLat != 0.0 ? currentLat : DEFAULT_LAT;
+                double lng = currentLng != 0.0 ? currentLng : DEFAULT_LON;
+                res = apiClient.getNearbyStationsByType(selectedType, lat, lng, DEFAULT_RADIUS);
             } catch (Exception e) {
                 Log.e("OwnerBooking", "Error fetching stations", e);
             }
@@ -256,8 +268,7 @@ public class OwnerBookingActivity extends AppCompatActivity {
                     ArrayAdapter<String> stnAdapter = new ArrayAdapter<>(
                             this,
                             android.R.layout.simple_spinner_item,
-                            stations.stream().map(Station::getName).toArray(String[]::new)
-                    );
+                            stations.stream().map(Station::getName).toArray(String[]::new));
                     stnAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                     spnStation.setAdapter(stnAdapter);
 
@@ -280,7 +291,10 @@ public class OwnerBookingActivity extends AppCompatActivity {
                             clearSlots();
                             clearTimeSlots();
                         }
-                        @Override public void onNothingSelected(AdapterView<?> parent) {}
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> parent) {
+                        }
                     });
 
                     toast(arr.length() + " stations found");
@@ -313,8 +327,7 @@ public class OwnerBookingActivity extends AppCompatActivity {
                     },
                     now.get(Calendar.YEAR),
                     now.get(Calendar.MONTH),
-                    now.get(Calendar.DAY_OF_MONTH)
-            );
+                    now.get(Calendar.DAY_OF_MONTH));
 
             Calendar min = Calendar.getInstance();
             Calendar max = Calendar.getInstance();
@@ -338,7 +351,8 @@ public class OwnerBookingActivity extends AppCompatActivity {
             protected ApiResponse doInBackground(Void... voids) {
                 try {
                     ApiResponse res = apiClient.getSlotsByStation(stationId);
-                    if (res != null && res.isSuccess()) return res;
+                    if (res != null && res.isSuccess())
+                        return res;
                     return apiClient.getStationPublic(stationId);
                 } catch (Exception e) {
                     Log.e("OwnerBooking", "Error fetching slots", e);
@@ -348,7 +362,10 @@ public class OwnerBookingActivity extends AppCompatActivity {
 
             @Override
             protected void onPostExecute(ApiResponse res) {
-                if (res == null) { toast("Failed to fetch slots"); return; }
+                if (res == null) {
+                    toast("Failed to fetch slots");
+                    return;
+                }
 
                 List<SlotItem> slotList = new ArrayList<>();
                 try {
@@ -375,14 +392,16 @@ public class OwnerBookingActivity extends AppCompatActivity {
                         slotList.add(s);
                     }
 
-                    if (slotList.isEmpty()) { tvHints.setText("No slots found."); return; }
+                    if (slotList.isEmpty()) {
+                        tvHints.setText("No slots found.");
+                        return;
+                    }
 
                     slots = slotList;
                     ArrayAdapter<String> slotAdapter = new ArrayAdapter<>(
                             OwnerBookingActivity.this,
                             android.R.layout.simple_spinner_item,
-                            slots.stream().map(SlotItem::toString).toArray(String[]::new)
-                    );
+                            slots.stream().map(SlotItem::toString).toArray(String[]::new));
                     slotAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                     spnSlot.setAdapter(slotAdapter);
 
@@ -392,7 +411,10 @@ public class OwnerBookingActivity extends AppCompatActivity {
                             selectedSlotId = slots.get(position).slotId;
                             loadTimeslotsFor(stationId, selectedSlotId, selectedDateStr);
                         }
-                        @Override public void onNothingSelected(AdapterView<?> parent) {}
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> parent) {
+                        }
                     });
                 } catch (Exception e) {
                     Log.e("OwnerBooking", "Parse slots failed", e);
@@ -414,7 +436,8 @@ public class OwnerBookingActivity extends AppCompatActivity {
             @Override
             protected ApiResponse doInBackground(Void... voids) {
                 try {
-                    String endpoint = String.format("/timeslot?stationId=%s&slotId=%s&date=%s", stationId, slotId, dateYmd);
+                    String endpoint = String.format("/timeslot?stationId=%s&slotId=%s&date=%s", stationId, slotId,
+                            dateYmd);
                     return apiClient.get(endpoint);
                 } catch (Exception e) {
                     Log.e("OwnerBooking", "Error fetching timeslots", e);
@@ -424,12 +447,19 @@ public class OwnerBookingActivity extends AppCompatActivity {
 
             @Override
             protected void onPostExecute(ApiResponse res) {
-                if (res == null) { toast("Failed to fetch timeslots"); return; }
+                if (res == null) {
+                    toast("Failed to fetch timeslots");
+                    return;
+                }
 
-                if (!res.isSuccess()) { toast("No timeslots available"); return; }
+                if (!res.isSuccess()) {
+                    toast("No timeslots available");
+                    return;
+                }
 
                 try {
-                    Type t = new TypeToken<List<TimeSlotItem>>(){}.getType();
+                    Type t = new TypeToken<List<TimeSlotItem>>() {
+                    }.getType();
                     List<TimeSlotItem> fetched = gson.fromJson(res.getData(), t);
                     if (fetched == null || fetched.isEmpty()) {
                         toast("No available time slots for this date");
@@ -440,8 +470,7 @@ public class OwnerBookingActivity extends AppCompatActivity {
                     ArrayAdapter<String> tsAdapter = new ArrayAdapter<>(
                             OwnerBookingActivity.this,
                             android.R.layout.simple_spinner_item,
-                            timeSlots.stream().map(TimeSlotItem::toString).toArray(String[]::new)
-                    );
+                            timeSlots.stream().map(TimeSlotItem::toString).toArray(String[]::new));
                     tsAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                     spnTimeSlot.setAdapter(tsAdapter);
 
@@ -450,7 +479,10 @@ public class OwnerBookingActivity extends AppCompatActivity {
                         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                             selectedTimeSlotId = timeSlots.get(position).timeSlotId;
                         }
-                        @Override public void onNothingSelected(AdapterView<?> parent) {}
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> parent) {
+                        }
                     });
                 } catch (Exception e) {
                     Log.e("OwnerBooking", "Failed to parse timeslots", e);
@@ -462,7 +494,8 @@ public class OwnerBookingActivity extends AppCompatActivity {
 
     private void setupConfirm() {
         btnConfirmBooking.setOnClickListener(v -> {
-            if (selectedStationId == null || selectedDateStr == null || selectedSlotId == null || selectedTimeSlotId == null) {
+            if (selectedStationId == null || selectedDateStr == null || selectedSlotId == null
+                    || selectedTimeSlotId == null) {
                 toast("Please complete all selections");
                 return;
             }
@@ -485,8 +518,14 @@ public class OwnerBookingActivity extends AppCompatActivity {
 
                 @Override
                 protected void onPostExecute(ApiResponse res) {
-                    if (res == null) { toast("Network error while creating booking"); return; }
-                    if (!res.isSuccess()) { toast("Booking failed: " + res.getMessage()); return; }
+                    if (res == null) {
+                        toast("Network error while creating booking");
+                        return;
+                    }
+                    if (!res.isSuccess()) {
+                        toast("Booking failed: " + res.getMessage());
+                        return;
+                    }
 
                     try {
                         JSONObject bookingObj = new JSONObject(res.getData());
@@ -521,5 +560,7 @@ public class OwnerBookingActivity extends AppCompatActivity {
         selectedTimeSlotId = null;
     }
 
-    private void toast(String m) { Toast.makeText(this, m, Toast.LENGTH_SHORT).show(); }
+    private void toast(String m) {
+        Toast.makeText(this, m, Toast.LENGTH_SHORT).show();
+    }
 }

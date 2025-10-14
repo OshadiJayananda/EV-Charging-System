@@ -79,8 +79,6 @@ public class OwnerHomeActivity extends AppCompatActivity
         private String selectedStationType = "DC";
         private Station selectedStation;
 
-
-
         @Override
         protected void onCreate(Bundle savedInstanceState) {
                 super.onCreate(savedInstanceState);
@@ -137,9 +135,8 @@ public class OwnerHomeActivity extends AppCompatActivity
                 setupFooterNavigation();
                 highlightActiveTab("home");
 
-
-
         }
+
         // ---------------- Footer Navigation Setup ----------------
         private void setupFooterNavigation() {
                 LinearLayout navHome = findViewById(R.id.navHome);
@@ -213,17 +210,15 @@ public class OwnerHomeActivity extends AppCompatActivity
 
         // ----------------------------------------------------------
 
-
         private void setupTypeSelection() {
                 // Define the types of stations
-                String[] stationTypes = new String[]{"DC", "AC"};
+                String[] stationTypes = new String[] { "DC", "AC" };
 
                 // Create ArrayAdapter for the spinner
                 ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(
-                        this,
-                        android.R.layout.simple_spinner_item,
-                        stationTypes
-                );
+                                this,
+                                android.R.layout.simple_spinner_item,
+                                stationTypes);
                 typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
                 // Attach adapter to spinner
@@ -245,14 +240,15 @@ public class OwnerHomeActivity extends AppCompatActivity
                 });
         }
 
-
         private void setupStationSearch() {
                 searchStations.addTextChangedListener(new TextWatcher() {
                         @Override
-                        public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+                        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                        }
 
                         @Override
-                        public void onTextChanged(CharSequence s, int start, int before, int count) { }
+                        public void onTextChanged(CharSequence s, int start, int before, int count) {
+                        }
 
                         @Override
                         public void afterTextChanged(Editable s) {
@@ -269,20 +265,19 @@ public class OwnerHomeActivity extends AppCompatActivity
                 });
         }
 
-
         private void fetchStationSuggestions(String query) {
                 new Thread(() -> {
                         String type = spinnerStationType.getSelectedItem() != null
-                                ? spinnerStationType.getSelectedItem().toString() : "";
+                                        ? spinnerStationType.getSelectedItem().toString()
+                                        : "";
                         List<Station> stations = stationService.searchStations(type, query);
 
                         if (stations != null && !stations.isEmpty()) {
                                 runOnUiThread(() -> {
                                         ArrayAdapter<Station> adapter = new ArrayAdapter<>(
-                                                this,
-                                                android.R.layout.simple_dropdown_item_1line,
-                                                stations
-                                        );
+                                                        this,
+                                                        android.R.layout.simple_dropdown_item_1line,
+                                                        stations);
 
                                         searchStations.setAdapter(adapter);
                                         adapter.notifyDataSetChanged();
@@ -294,7 +289,6 @@ public class OwnerHomeActivity extends AppCompatActivity
                 }).start();
         }
 
-
         private void showStationOnMap(Station station) {
                 if (googleMap != null) {
                         googleMap.clear(); // Clear previous markers
@@ -302,9 +296,9 @@ public class OwnerHomeActivity extends AppCompatActivity
 
                         // Add marker for the selected station
                         googleMap.addMarker(new MarkerOptions()
-                                .position(stationLatLng)
-                                .title(station.getName())
-                                .snippet(station.getLocation()));
+                                        .position(stationLatLng)
+                                        .title(station.getName())
+                                        .snippet(station.getLocation()));
 
                         // Move camera to the station
                         googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(stationLatLng, 15));
@@ -316,8 +310,9 @@ public class OwnerHomeActivity extends AppCompatActivity
                                 if (cachedLocation != null) {
                                         // Build Google Maps navigation URL
                                         String uri = "http://maps.google.com/maps?saddr=" +
-                                                cachedLocation.getLatitude() + "," + cachedLocation.getLongitude() +
-                                                "&daddr=" + dest.latitude + "," + dest.longitude;
+                                                        cachedLocation.getLatitude() + ","
+                                                        + cachedLocation.getLongitude() +
+                                                        "&daddr=" + dest.latitude + "," + dest.longitude;
 
                                         // Launch Google Maps
                                         Intent intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri));
@@ -325,17 +320,18 @@ public class OwnerHomeActivity extends AppCompatActivity
                                         if (intent.resolveActivity(getPackageManager()) != null) {
                                                 startActivity(intent);
                                         } else {
-                                                Toast.makeText(this, "Google Maps app not found", Toast.LENGTH_SHORT).show();
+                                                Toast.makeText(this, "Google Maps app not found", Toast.LENGTH_SHORT)
+                                                                .show();
                                         }
                                 } else {
-                                        Toast.makeText(this, "Current location not available", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(this, "Current location not available", Toast.LENGTH_SHORT)
+                                                        .show();
                                 }
 
                                 return true; // Consume the click
                         });
                 }
         }
-
 
         private String getOwnerName() {
                 SessionManager sessionManager = new SessionManager(this);
@@ -371,28 +367,28 @@ public class OwnerHomeActivity extends AppCompatActivity
                 btnNotifications.setOnClickListener(v -> startActivity(new Intent(this, NotificationActivity.class)));
 
                 btnReserve.setOnClickListener(v -> {
+                        Intent intent = new Intent(this, OwnerBookingActivity.class);
+
                         if (selectedStation != null) {
-                                Intent intent = new Intent(this, OwnerBookingActivity.class);
                                 intent.putExtra("selected_station_id", selectedStation.getStationId());
                                 intent.putExtra("selected_station_name", selectedStation.getName());
                                 intent.putExtra("selected_station_lat", selectedStation.getLatitude());
                                 intent.putExtra("selected_station_lng", selectedStation.getLongitude());
                                 intent.putExtra("selected_station_location", selectedStation.getLocation());
-                                startActivity(intent);
-                        } else {
-                                Intent intent = new Intent(this, OwnerBookingActivity.class);
-                                startActivity(intent);
                         }
+
+                        if (cachedLocation != null) {
+                                intent.putExtra("current_lat", cachedLocation.getLatitude());
+                                intent.putExtra("current_lng", cachedLocation.getLongitude());
+                        }
+
+                        startActivity(intent);
                 });
 
+                btnMyBookings.setOnClickListener(v -> startActivity(new Intent(this, OwnerBookingsActivity.class)));
 
-                btnMyBookings.setOnClickListener(v ->
-                        startActivity(new Intent(this, OwnerBookingsActivity.class))
-                );
-
-                btnChargingHistory.setOnClickListener(v ->
-                        startActivity(new Intent(this, ChargingHistoryActivity.class))
-                );
+                btnChargingHistory.setOnClickListener(
+                                v -> startActivity(new Intent(this, ChargingHistoryActivity.class)));
 
                 ivProfile.setOnClickListener(v -> startActivity(new Intent(this, OwnerProfileActivity.class)));
 

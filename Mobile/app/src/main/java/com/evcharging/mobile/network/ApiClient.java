@@ -38,7 +38,7 @@ import okhttp3.Response;
  */
 public class ApiClient {
     private static final String TAG = "ApiClient";
-    private static final String BASE = "https://d3804fc0b821.ngrok-free.app";
+    private static final String BASE = "https://9104230bd82a.ngrok-free.app";
     private static final String BASE_URL = BASE + "/api";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
@@ -65,7 +65,7 @@ public class ApiClient {
     // ---------------------------------------------------------------------
     private SSLContext getUnsafeSslContext() {
         try {
-            TrustManager[] trustAllCerts = new TrustManager[]{getTrustAllCertsManager()};
+            TrustManager[] trustAllCerts = new TrustManager[] { getTrustAllCertsManager() };
             SSLContext sslContext = SSLContext.getInstance("SSL");
             sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
             return sslContext;
@@ -76,14 +76,28 @@ public class ApiClient {
 
     private X509TrustManager getTrustAllCertsManager() {
         return new X509TrustManager() {
-            @Override public void checkClientTrusted(X509Certificate[] chain, String authType) {}
-            @Override public void checkServerTrusted(X509Certificate[] chain, String authType) {}
-            @Override public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[]{}; }
+            @Override
+            public void checkClientTrusted(X509Certificate[] chain, String authType) {
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] chain, String authType) {
+            }
+
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[] {};
+            }
         };
     }
 
-    public static String getBaseUrl() { return BASE; }
-    public static String getApiBaseUrl() { return BASE_URL; }
+    public static String getBaseUrl() {
+        return BASE;
+    }
+
+    public static String getApiBaseUrl() {
+        return BASE_URL;
+    }
 
     // ---------------------------------------------------------------------
     // AUTHENTICATION & USER MANAGEMENT
@@ -249,7 +263,8 @@ public class ApiClient {
     // STATION MANAGEMENT (Operator & Shared)
     // ---------------------------------------------------------------------
     public ApiResponse getAllStations(boolean onlyActive) {
-        String endpoint = onlyActive ? "/station/nearby?latitude=6.931960&longitude=79.857750&radiusKm=100&onlyActive=true"
+        String endpoint = onlyActive
+                ? "/station/nearby?latitude=6.931960&longitude=79.857750&radiusKm=100&onlyActive=true"
                 : "/station/nearby?latitude=6.931960&longitude=79.857750&radiusKm=100";
         return get(endpoint);
     }
@@ -273,8 +288,10 @@ public class ApiClient {
         String endpoint = "/station/names";
         if (type != null || location != null) {
             endpoint += "?";
-            if (type != null) endpoint += "type=" + type + "&";
-            if (location != null) endpoint += "location=" + location;
+            if (type != null)
+                endpoint += "type=" + type + "&";
+            if (location != null)
+                endpoint += "location=" + location;
         }
         return get(endpoint);
     }
@@ -405,7 +422,8 @@ public class ApiClient {
 
     public List<Notification> parseNotifications(String json) {
         try {
-            Type listType = new TypeToken<List<Notification>>() {}.getType();
+            Type listType = new TypeToken<List<Notification>>() {
+            }.getType();
             return gson.fromJson(json, listType);
         } catch (Exception e) {
             Log.e(TAG, "Error parsing notifications", e);
@@ -430,7 +448,8 @@ public class ApiClient {
     public ApiResponse logout() {
         try {
             post("/auth/logout", new JSONObject());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         sessionManager.clearToken();
         return new ApiResponse(true, "Logged out", null);
     }
@@ -438,7 +457,8 @@ public class ApiClient {
     public ApiResponse logoutAndForget() {
         try {
             post("/auth/logout", new JSONObject());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         sessionManager.clearAll();
         return new ApiResponse(true, "Logged out & credentials cleared", null);
     }
@@ -569,7 +589,8 @@ public class ApiClient {
 
     public ApiResponse patch(String endpoint, JSONObject data) {
         try {
-            if (data != null) logRequest("PATCH", endpoint, data);
+            if (data != null)
+                logRequest("PATCH", endpoint, data);
             RequestBody body = data != null
                     ? RequestBody.create(data.toString(), JSON)
                     : RequestBody.create("", JSON);
@@ -587,7 +608,8 @@ public class ApiClient {
             if (response.isSuccessful())
                 return new ApiResponse(true, "Success", responseBody);
             else {
-                if (responseBody.isEmpty()) return new ApiResponse(false, "Empty error body", null);
+                if (responseBody.isEmpty())
+                    return new ApiResponse(false, "Empty error body", null);
                 JSONObject err = new JSONObject(responseBody);
                 return new ApiResponse(false, err.optString("message", "Failed"), null);
             }
@@ -654,23 +676,25 @@ public class ApiClient {
     public ApiResponse getNearbyStationsByType(String type, double latitude, double longitude, double radiusKm) {
         String endpoint = String.format("/station/nearby-by-type?type=%s&latitude=%f&longitude=%f&radiusKm=%f",
                 type, latitude, longitude, radiusKm);
+
         return get(endpoint);
     }
 
     // OPTIONAL fallback if Owner cannot call /station/{id} yet.
-    // This will try slots endpoint first; if server denies, the caller can decide UX.
+    // This will try slots endpoint first; if server denies, the caller can decide
+    // UX.
     public ApiResponse getStationPublic(String stationId) {
         // If you added /station/public/{stationId} in backend, map here.
         return get("/station/" + stationId); // current admin/operator-only; we'll handle 401/403 gracefully in UI
     }
-
 
     // ---------------------------------------------------------------------
     // 🔹 HELPERS: AUTH + LOGGING
     // ---------------------------------------------------------------------
     private void addAuth(Request.Builder builder) {
         String token = sessionManager.getToken();
-        if (token != null) builder.addHeader("Authorization", "Bearer " + token);
+        if (token != null)
+            builder.addHeader("Authorization", "Bearer " + token);
     }
 
     private void logRequest(String method, String endpoint, JSONObject data) {
@@ -701,7 +725,8 @@ public class ApiClient {
                 return new JSONObject(raw).toString(2);
             else if (raw.trim().startsWith("["))
                 return new org.json.JSONArray(raw).toString(2);
-            else return raw;
+            else
+                return raw;
         } catch (Exception e) {
             return raw;
         }
