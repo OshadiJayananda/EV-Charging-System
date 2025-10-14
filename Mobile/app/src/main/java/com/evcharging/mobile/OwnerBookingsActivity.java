@@ -146,7 +146,7 @@ public class OwnerBookingsActivity extends AppCompatActivity {
             protected ApiResponse doInBackground(Void... voids) {
                 try {
                     User loggedUser = session.getLoggedInUser();
-                    String ownerId = (loggedUser != null) ? loggedUser.getUserId() : null; // Make sure this matches OwnerId in DB
+                    String ownerId = (loggedUser != null) ? loggedUser.getUserId() : null;
                     return apiClient.get("/bookings/owner/" + ownerId);
                 } catch (Exception e) {
                     Log.e("OwnerBookings", "Error fetching bookings", e);
@@ -163,7 +163,8 @@ public class OwnerBookingsActivity extends AppCompatActivity {
                 }
 
                 try {
-                    Type listType = new TypeToken<List<BookingItem>>() {}.getType();
+                    Type listType = new TypeToken<List<BookingItem>>() {
+                    }.getType();
                     List<BookingItem> fetched = gson.fromJson(res.getData(), listType);
 
                     // Show only Pending / Approved / Charging
@@ -177,6 +178,7 @@ public class OwnerBookingsActivity extends AppCompatActivity {
                     }
 
                     adapter.notifyDataSetChanged();
+
                 } catch (Exception e) {
                     Log.e("OwnerBookings", "Parse error", e);
                     Toast.makeText(OwnerBookingsActivity.this, "Error parsing bookings", Toast.LENGTH_SHORT).show();
