@@ -38,12 +38,19 @@ const Layout: React.FC = () => {
         }
       );
 
+      const baseUrl = import.meta.env.VITE_APP_API_BASE_URL.replace("/api", "");
+
       connection = new HubConnectionBuilder()
-        .withUrl("/EV-Charging-System/notificationHub", {
+        .withUrl(`${baseUrl}/notificationHub`, {
           accessTokenFactory: () => localStorage.getItem("token") || "",
         })
         .withAutomaticReconnect()
         .build();
+
+      connection
+        .start()
+        .then(() => console.log("✅ SignalR Connected"))
+        .catch((err) => console.error("❌ SignalR Connection Failed:", err));
 
       connection.on("ReceiveNotification", (notification: any) => {
         setNotifications((prev) => [notification, ...prev]);
