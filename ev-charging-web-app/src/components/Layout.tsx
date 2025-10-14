@@ -13,7 +13,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { postRequest, getRequest } from "./common/api";
+import { postRequest, getRequest, patchRequest } from "./common/api";
 import toast from "react-hot-toast";
 import { HubConnectionBuilder } from "@microsoft/signalr";
 import type { Notification } from "../types";
@@ -284,7 +284,7 @@ const Layout: React.FC = () => {
                       <button
                         className="mt-2 text-xs text-green-600 hover:underline"
                         onClick={async () => {
-                          await postRequest(`/notifications/${n.id}/read`);
+                          await patchRequest(`/notifications/${n.id}/read`);
                           setNotifications((prev) =>
                             prev.map((x) =>
                               x.id === n.id ? { ...x, isRead: true } : x

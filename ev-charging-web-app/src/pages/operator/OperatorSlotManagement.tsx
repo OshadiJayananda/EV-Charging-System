@@ -4,7 +4,16 @@ import type { Slot, Station } from "../../types";
 import { useParams, useNavigate } from "react-router-dom";
 import Loading from "../../components/common/Loading";
 import toast from "react-hot-toast";
-import { Battery, Zap, Clock, AlertCircle, CheckCircle, XCircle, ArrowLeft, RefreshCw } from "lucide-react";
+import {
+  Battery,
+  Zap,
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  ArrowLeft,
+  RefreshCw,
+} from "lucide-react";
 
 const OperatorSlotManagement = () => {
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -28,7 +37,9 @@ const OperatorSlotManagement = () => {
 
   const handleUpdateSlotStatus = async (slotId: string, newStatus: string) => {
     setUpdatingSlot(slotId);
-    const res = await patchRequest(`/slots/${slotId}/status`, { status: newStatus });
+    const res = await patchRequest(`/slots/${slotId}/status`, {
+      status: newStatus,
+    });
     if (res) {
       toast.success(`Slot status updated to ${newStatus}`);
       await fetchStationAndSlots();
@@ -46,46 +57,49 @@ const OperatorSlotManagement = () => {
         return {
           icon: <CheckCircle className="w-5 h-5" />,
           color: "text-green-600 bg-green-50 border-green-300",
-          badgeColor: "bg-green-100 text-green-700"
+          badgeColor: "bg-green-100 text-green-700",
         };
       case "charging":
         return {
           icon: <Zap className="w-5 h-5" />,
           color: "text-purple-600 bg-purple-50 border-purple-300",
-          badgeColor: "bg-purple-100 text-purple-700"
+          badgeColor: "bg-purple-100 text-purple-700",
         };
       case "booked":
         return {
           icon: <Clock className="w-5 h-5" />,
           color: "text-blue-600 bg-blue-50 border-blue-300",
-          badgeColor: "bg-blue-100 text-blue-700"
+          badgeColor: "bg-blue-100 text-blue-700",
         };
       case "under maintenance":
         return {
           icon: <AlertCircle className="w-5 h-5" />,
           color: "text-yellow-600 bg-yellow-50 border-yellow-300",
-          badgeColor: "bg-yellow-100 text-yellow-700"
+          badgeColor: "bg-yellow-100 text-yellow-700",
         };
       case "out of order":
       case "inactive":
         return {
           icon: <XCircle className="w-5 h-5" />,
           color: "text-red-600 bg-red-50 border-red-300",
-          badgeColor: "bg-red-100 text-red-700"
+          badgeColor: "bg-red-100 text-red-700",
         };
       default:
         return {
           icon: <AlertCircle className="w-5 h-5" />,
           color: "text-gray-600 bg-gray-50 border-gray-300",
-          badgeColor: "bg-gray-100 text-gray-700"
+          badgeColor: "bg-gray-100 text-gray-700",
         };
     }
   };
 
-  const availableSlots = slots.filter(s => s.status === "Available").length;
-  const chargingSlots = slots.filter(s => s.status === "Charging").length;
-  const bookedSlots = slots.filter(s => s.status === "Booked").length;
-  const maintenanceSlots = slots.filter(s => s.status === "Under Maintenance").length;
+  const availableSlots = slots.filter((s) => s.status === "Available").length;
+  const outOfOrderSlots = slots.filter(
+    (s) => s.status === "Out Of Order"
+  ).length;
+  const maintenanceSlots = slots.filter(
+    (s) => s.status === "Under Maintenance"
+  ).length;
 
   if (loading && !station) {
     return (
@@ -109,15 +123,21 @@ const OperatorSlotManagement = () => {
 
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Slot Management</h1>
-              <p className="text-gray-600 mt-1">Manage your charging station operations</p>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Slot Management
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Manage your charging station operations
+              </p>
             </div>
             <button
               onClick={() => fetchStationAndSlots()}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               disabled={loading}
             >
-              <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`w-5 h-5 ${loading ? "animate-spin" : ""}`}
+              />
               Refresh
             </button>
           </div>
@@ -130,7 +150,9 @@ const OperatorSlotManagement = () => {
                 <div className="p-2 bg-white bg-opacity-20 rounded-lg">
                   <Battery className="w-6 h-6" />
                 </div>
-                <h2 className="text-2xl font-bold">{station?.name || "Loading..."}</h2>
+                <h2 className="text-2xl font-bold">
+                  {station?.name || "Loading..."}
+                </h2>
               </div>
               <p className="text-blue-100">{station?.location}</p>
             </div>
@@ -141,11 +163,13 @@ const OperatorSlotManagement = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-green-500">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold text-gray-900">{availableSlots}</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {availableSlots}
+                </div>
                 <div className="text-sm text-gray-600">Available</div>
               </div>
               <div className="p-3 bg-green-100 rounded-lg">
@@ -154,26 +178,16 @@ const OperatorSlotManagement = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-purple-500">
+          <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-red-500">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold text-gray-900">{chargingSlots}</div>
-                <div className="text-sm text-gray-600">Charging</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {outOfOrderSlots}
+                </div>
+                <div className="text-sm text-gray-600">Out of Order</div>
               </div>
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <Zap className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold text-gray-900">{bookedSlots}</div>
-                <div className="text-sm text-gray-600">Booked</div>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Clock className="w-6 h-6 text-blue-600" />
+              <div className="p-3 bg-red-100 rounded-lg">
+                <XCircle className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </div>
@@ -181,7 +195,9 @@ const OperatorSlotManagement = () => {
           <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-yellow-500">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold text-gray-900">{maintenanceSlots}</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {maintenanceSlots}
+                </div>
                 <div className="text-sm text-gray-600">Maintenance</div>
               </div>
               <div className="p-3 bg-yellow-100 rounded-lg">
@@ -208,7 +224,8 @@ const OperatorSlotManagement = () => {
               {slots.map((slot) => {
                 const statusInfo = getStatusInfo(slot.status);
                 const isUpdating = updatingSlot === slot.slotId;
-                const canUpdate = slot.status !== "Charging" && slot.status !== "Booked";
+                const canUpdate =
+                  slot.status !== "Charging" && slot.status !== "Booked";
 
                 return (
                   <div
@@ -221,11 +238,17 @@ const OperatorSlotManagement = () => {
                           {slot.number}
                         </div>
                         <div>
-                          <div className="font-semibold text-gray-900">Slot {slot.number}</div>
-                          <div className="text-sm text-gray-600">{slot.connectorType}</div>
+                          <div className="font-semibold text-gray-900">
+                            Slot {slot.number}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {slot.connectorType}
+                          </div>
                         </div>
                       </div>
-                      <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${statusInfo.badgeColor} text-sm font-medium`}>
+                      <div
+                        className={`flex items-center gap-2 px-3 py-1 rounded-full ${statusInfo.badgeColor} text-sm font-medium`}
+                      >
                         {statusInfo.icon}
                       </div>
                     </div>
@@ -237,14 +260,20 @@ const OperatorSlotManagement = () => {
                         </label>
                         <select
                           value={slot.status}
-                          onChange={(e) => handleUpdateSlotStatus(slot.slotId, e.target.value)}
+                          onChange={(e) =>
+                            handleUpdateSlotStatus(slot.slotId, e.target.value)
+                          }
                           disabled={!canUpdate || isUpdating}
                           className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                            !canUpdate || isUpdating ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                            !canUpdate || isUpdating
+                              ? "bg-gray-100 cursor-not-allowed"
+                              : "bg-white"
                           }`}
                         >
                           <option value="Available">Available</option>
-                          <option value="Under Maintenance">Under Maintenance</option>
+                          <option value="Under Maintenance">
+                            Under Maintenance
+                          </option>
                           <option value="Out Of Order">Out Of Order</option>
                         </select>
                       </div>
@@ -274,7 +303,9 @@ const OperatorSlotManagement = () => {
               {slots.length === 0 && (
                 <div className="col-span-full text-center py-12">
                   <Battery className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500">No slots found for this station.</p>
+                  <p className="text-gray-500">
+                    No slots found for this station.
+                  </p>
                 </div>
               )}
             </div>
@@ -304,7 +335,9 @@ const OperatorSlotManagement = () => {
             <div className="flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
               <div>
-                <strong className="block text-yellow-700">Under Maintenance</strong>
+                <strong className="block text-yellow-700">
+                  Under Maintenance
+                </strong>
                 <span className="text-gray-600">Temporarily unavailable</span>
               </div>
             </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getRequest, getRequestWithPagination } from "../common/api";
+import { getRequest } from "../common/api";
 import Loading from "../common/Loading";
 import {
   Battery,
@@ -20,10 +20,9 @@ interface StationMetrics {
   status: string;
   totalSlots: number;
   availableSlots: number;
-  chargingSlots: number;
-  bookedSlots: number;
   inactiveSlots: number;
   activeBookings: number;
+  upcomingBookings: number;
   todayRevenue: number;
   utilizationRate: number;
 }
@@ -48,6 +47,8 @@ function CSOperatorDashboard() {
   const [slots, setSlots] = useState<any[]>([]);
   const [operatorData, setOperatorData] = useState<OperatorData | null>(null);
   const { userId } = useAuth();
+  const [chargingCount, setChargingCount] = useState(0);
+  const [bookedCount, setBookedCount] = useState(0);
 
   useEffect(() => {
     fetchOperatorData();
@@ -70,6 +71,7 @@ function CSOperatorDashboard() {
         setOperatorData(operator);
 
         // Now fetch the operator's specific station
+        fetchBookingAndChargingCount(operator?.stationId || "");
         await fetchStationData(operator.stationId);
       }
     } catch (error) {
@@ -89,12 +91,6 @@ function CSOperatorDashboard() {
         const available = slotsData.filter(
           (s: any) => s.status === "Available"
         ).length;
-        const charging = slotsData.filter(
-          (s: any) => s.status === "Charging"
-        ).length;
-        const booked = slotsData.filter(
-          (s: any) => s.status === "Booked"
-        ).length;
         const inactive = slotsData.filter(
           (s: any) =>
             s.status === "Under Maintenance" ||
@@ -105,7 +101,11 @@ function CSOperatorDashboard() {
         const bookingsRes = await getRequest<any[]>(
           `/bookings/station/${stationId}/today`
         );
+        const upcomingBookingsRes = await getRequest<any[]>(
+          `/bookings/station/${stationId}/upcoming`
+        );
         const activeBookingsList = bookingsRes?.data || [];
+        const upcomingBookingsList = upcomingBookingsRes?.data || [];
 
         const metrics: StationMetrics = {
           stationId: stationId,
@@ -114,14 +114,13 @@ function CSOperatorDashboard() {
           status: "Online",
           totalSlots: slotsData.length,
           availableSlots: available,
-          chargingSlots: charging,
-          bookedSlots: booked,
           inactiveSlots: inactive,
           activeBookings: activeBookingsList.length,
+          upcomingBookings: upcomingBookingsList.length,
           todayRevenue: activeBookingsList.length * 24.55,
           utilizationRate:
             slotsData.length > 0
-              ? Math.round(((charging + booked) / slotsData.length) * 100)
+              ? Math.round((available / slotsData.length) * 100)
               : 0,
         };
 
@@ -166,6 +165,24 @@ function CSOperatorDashboard() {
         return <XCircle className="w-4 h-4" />;
       default:
         return <AlertCircle className="w-4 h-4" />;
+    }
+  };
+
+  const fetchBookingAndChargingCount = async (stationId: string) => {
+    try {
+      const bookingsRes = await getRequest<any[]>(
+        `/bookings/station/${stationId}`
+      );
+      const activeBookingsList = bookingsRes?.data || [];
+      setChargingCount(
+        activeBookingsList.filter((b) => b.status === "Charging").length
+      );
+      setBookedCount(
+        activeBookingsList.filter((b) => b.status === "Approved").length
+      );
+    } catch (error) {
+      console.error("Error fetching booking and charging count:", error);
+      return 0;
     }
   };
 
@@ -342,7 +359,7 @@ function CSOperatorDashboard() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800">
-                    Active Bookings
+                    Today Bookings
                   </h3>
                   <p className="text-sm text-gray-500">
                     Real-time charging status
@@ -359,13 +376,7 @@ function CSOperatorDashboard() {
               {stationMetrics.activeBookings}
             </div>
             <div className="text-sm text-gray-500 mb-3">
-              Currently charging vehicles
-            </div>
-
-            <div className="flex items-center justify-between text-sm font-medium text-blue-600">
-              <span>{stationMetrics.chargingSlots} active</span>
-              <span className="text-blue-500">•</span>
-              <span>{stationMetrics.bookedSlots} booked</span>
+              Bookings scheduled for today
             </div>
           </div>
         </div>
@@ -391,28 +402,6 @@ function CSOperatorDashboard() {
                 <div className="text-sm text-green-700 font-medium">
                   Available
                 </div>
-              </div>
-
-              <div className="p-4 bg-purple-50 rounded-lg text-center border border-purple-200">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Zap className="w-5 h-5 text-purple-600" />
-                  <span className="text-2xl font-bold text-purple-600">
-                    {stationMetrics.chargingSlots}
-                  </span>
-                </div>
-                <div className="text-sm text-purple-700 font-medium">
-                  Charging
-                </div>
-              </div>
-
-              <div className="p-4 bg-blue-50 rounded-lg text-center border border-blue-200">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Clock className="w-5 h-5 text-blue-600" />
-                  <span className="text-2xl font-bold text-blue-600">
-                    {stationMetrics.bookedSlots}
-                  </span>
-                </div>
-                <div className="text-sm text-blue-700 font-medium">Booked</div>
               </div>
 
               <div className="p-4 bg-gray-50 rounded-lg text-center border border-gray-200">
@@ -443,13 +432,38 @@ function CSOperatorDashboard() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-gray-200">
+            <div className="pt-4 border-t border-gray-200 space-y-4">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <span className="text-gray-600">Station Online</span>
                 </div>
                 <span className="text-green-600 font-semibold">Healthy</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-purple-50 rounded-lg text-center border border-purple-200">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Zap className="w-5 h-5 text-purple-600" />
+                    <span className="text-2xl font-bold text-purple-600">
+                      {chargingCount}
+                    </span>
+                  </div>
+                  <div className="text-sm text-purple-700 font-medium">
+                    Charging
+                  </div>
+                </div>
+
+                <div className="p-4 bg-blue-50 rounded-lg text-center border border-blue-200">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Clock className="w-5 h-5 text-blue-600" />
+                    <span className="text-2xl font-bold text-blue-600">
+                      {bookedCount}
+                    </span>
+                  </div>
+                  <div className="text-sm text-blue-700 font-medium">
+                    Booked
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -539,26 +553,28 @@ function CSOperatorDashboard() {
               </div>
             </div>
           </button>
-
           <button
             onClick={() =>
               navigate(
                 `/operator/stations/${stationMetrics.stationId}/bookings`
               )
             }
-            className="p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition-all border-2 border-transparent hover:border-green-500 group"
+            className="relative p-6 w-full text-left bg-white rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 hover:border-green-500 transition-all duration-300 group focus:outline-none focus:ring-2 focus:ring-green-300"
           >
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-semibold text-gray-900 text-lg mb-1">
-                  Bookings
+                <h4 className="font-semibold text-gray-900 text-lg mb-1 group-hover:text-green-700 transition-colors">
+                  Next Bookings
                 </h4>
-                <p className="text-gray-600 text-sm">View reservations</p>
-                <div className="mt-2 inline-flex items-center px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                  {stationMetrics.activeBookings} active
+                <p className="text-gray-600 text-sm group-hover:text-gray-800 transition-colors">
+                  Tap to see what’s coming up soon
+                </p>
+                <div className="mt-3 inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                  {stationMetrics.upcomingBookings} active now
                 </div>
               </div>
-              <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
+              <div className="p-3 bg-green-100 rounded-xl group-hover:bg-green-200 transition-colors duration-300">
                 <Calendar className="w-6 h-6 text-green-600" />
               </div>
             </div>
