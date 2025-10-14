@@ -1,12 +1,20 @@
 import { useState, useEffect } from "react";
 import { getRequest, patchRequest } from "../../components/common/api";
 import { useNavigate } from "react-router-dom";
+import ConfirmModal from "../../components/common/ConfirmModal";
 
 function PendingBookingsPage() {
   const navigate = useNavigate();
 
   const [pendingBookings, setPendingBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [currentAction, setCurrentAction] = useState<
+    "approve" | "cancel" | null
+  >(null);
+  const [actionBookingId, setActionBookingId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Fetch pending bookings
   const fetchPendingBookings = async () => {
@@ -25,36 +33,50 @@ function PendingBookingsPage() {
     fetchPendingBookings();
   }, []);
 
-  // Approve booking
-  const handleApproveBooking = async (bookingId: string) => {
+  const handleApproveBooking = (bookingId: string) => {
+    setActionBookingId(bookingId);
+    setCurrentAction("approve");
+    setShowConfirmModal(true);
+  };
+
+  const handleCancelBooking = (bookingId: string) => {
+    setActionBookingId(bookingId);
+    setCurrentAction("cancel");
+    setShowConfirmModal(true);
+  };
+
+  const confirmAction = async () => {
+    if (!actionBookingId || !currentAction) return;
+
+    setActionLoading(actionBookingId);
+
     try {
-      const response = await patchRequest(`/bookings/${bookingId}/approve`, {});
+      const endpoint =
+        currentAction === "approve"
+          ? `/bookings/${actionBookingId}/approve`
+          : `/bookings/${actionBookingId}/cancel`;
+
+      const response = await patchRequest(endpoint, {});
 
       if (!response || response.status !== 200) {
-        console.error("Failed to approve booking:", response);
-        throw new Error("Failed to approve booking");
+        throw new Error(`Failed to ${currentAction} booking`);
       }
 
-      fetchPendingBookings();
+      await fetchPendingBookings();
     } catch (error) {
-      console.error("Error approving booking:", error);
+      console.error(`Error ${currentAction} booking:`, error);
+    } finally {
+      setShowConfirmModal(false);
+      setActionLoading(null);
+      setCurrentAction(null);
+      setActionBookingId(null);
     }
   };
 
-  // Cancel booking
-  const handleCancelBooking = async (bookingId: string) => {
-    try {
-      const response = await patchRequest(`/bookings/${bookingId}/cancel`, {});
-
-      if (!response || response.status !== 200) {
-        console.error("Failed to approve booking:", response);
-        throw new Error("Failed to approve booking");
-      }
-
-      fetchPendingBookings();
-    } catch (error) {
-      console.error("Error cancelling booking:", error);
-    }
+  const cancelAction = () => {
+    setShowConfirmModal(false);
+    setCurrentAction(null);
+    setActionBookingId(null);
   };
 
   // Loading Spinner
@@ -146,6 +168,28 @@ function PendingBookingsPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {showConfirmModal && (
+        <ConfirmModal
+          title={
+            currentAction === "approve"
+              ? "Confirm Approval"
+              : "Confirm Cancellation"
+          }
+          message={
+            currentAction === "approve"
+              ? "Are you sure you want to approve this booking?"
+              : "Are you sure you want to cancel this booking?"
+          }
+          confirmText={
+            currentAction === "approve" ? "Yes, Approve" : "Yes, Cancel"
+          }
+          confirmColor={currentAction === "approve" ? "green" : "red"}
+          onConfirm={confirmAction}
+          onCancel={cancelAction}
+          loading={actionLoading === actionBookingId}
+        />
       )}
     </div>
   );
