@@ -50,6 +50,7 @@ import java.util.List;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.card.MaterialCardView;
 
 public class OwnerHomeActivity extends AppCompatActivity
                 implements OnMapReadyCallback, SignalRService.NotificationListener {
@@ -59,7 +60,8 @@ public class OwnerHomeActivity extends AppCompatActivity
         private FusedLocationProviderClient fusedLocationClient;
 
         private MapView mapView;
-        private Button btnReserve, btnBookings, btnHistory;
+        private MaterialCardView btnReserve, btnBookings, btnHistory;
+        private MaterialCardView btnMyBookings, btnChargingHistory;
         private ImageButton btnLogout, btnNotifications;
         private ImageView ivProfile;
         private TextView tvWelcomeOwner, tvOwnerId;
@@ -77,7 +79,7 @@ public class OwnerHomeActivity extends AppCompatActivity
         private String selectedStationType = "DC";
         private Station selectedStation;
 
-        private Button btnMyBookings, btnChargingHistory;
+
 
         @Override
         protected void onCreate(Bundle savedInstanceState) {

@@ -8,5 +8,9 @@
     <item name="tvStationLoc" type="id"></item>
     <item name="tvActive" type="id"></item>
     <item name="vStatusIndicator" type="id"></item>
+    <item name="ivToggleConfirmPassword" type="id"></item>
+    <item name="btnReserveSlot" type="id" />
+    <item name="btnMyBookings" type="id" />
+    <item name="btnChargingHistory" type="id" />
 
 </resources>

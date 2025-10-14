@@ -12,19 +12,19 @@
     <color name="blue">#2196F3</color>
     
     <!-- Primary and Secondary Colors for EV Charging App -->
-    <color name="primary_color">#4CAF50</color>      <!-- Green - represents eco-friendly/electric -->
+        <!-- Green - represents eco-friendly/electric -->
     <color name="secondary_color">#FFC107</color>    <!-- Amber/Yellow - represents energy/power -->
     
     <!-- Basic Colors -->
     <color name="black">#000000</color>
-    <color name="white">#FFFFFF</color>
+
     
     <!-- Additional recommended colors for EV charging theme -->
-    <color name="primary_dark">#388E3C</color>       <!-- Darker green for status bar -->
+         <!-- Darker green for status bar -->
     <color name="accent_color">#FF5722</color>       <!-- Orange for highlights/warnings -->
     <color name="light_green">#C8E6C9</color>        <!-- Light green for backgrounds -->
-    <color name="text_primary">#212121</color>       <!-- Dark text -->
-    <color name="text_secondary">#757575</color>     <!-- Secondary text -->
+      <!-- Dark text -->
+        <!-- Secondary text -->
     <color name="statusPending">#FFA000</color>
     <color name="statusApproved">#4CAF50</color>
     <color name="statusCharging">#2196F3</color>
@@ -33,6 +33,22 @@
     <color name="primary">#1E88E5</color>
     <color name="primary_darkest">#1565C0</color>
     <color name="backgroundLight">#F9F9F9</color>
+
+    <color name="primary_color">#0066FF</color>
+    <color name="primary_dark">#0052CC</color>
+    <color name="primary_light">#4D94FF</color>
+
+    <color name="text_primary">#1A1A1A</color>
+    <color name="text_secondary">#666666</color>
+    <color name="text_secondary_30">#4D666666</color>
+
+    <color name="white">#FFFFFF</color>
+    <color name="white_70">#B3FFFFFF</color>
+    <color name="black_10">#1A000000</color>
+
+    <color name="success_green">#00C853</color>
+    <color name="warning_orange">#FF6D00</color>
+    <color name="error_red">#FF3B30</color>
 
 
 </resources>
