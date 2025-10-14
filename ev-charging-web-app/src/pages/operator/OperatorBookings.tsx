@@ -14,6 +14,7 @@ import {
   RefreshCw,
   AlertCircle,
   Hash,
+  IdCard,
 } from "lucide-react";
 import type { Booking } from "../../types";
 
@@ -339,9 +340,18 @@ const OperatorBookings = () => {
                         <div className="space-y-3 mb-4">
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             <User className="w-4 h-4" />
-                            <span className="font-medium">Owner NIC:</span>
+                            <span className="font-medium">Owner Name:</span>
                             <span>
                               {booking.ownerName ||
+                                booking.ownerId.substring(0, 8)}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <IdCard className="w-4 h-4" />
+                            <span className="font-medium">Owner NIC:</span>
+                            <span>
+                              {booking.ownerId ||
                                 booking.ownerId.substring(0, 8)}
                             </span>
                           </div>

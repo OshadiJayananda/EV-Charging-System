@@ -475,27 +475,36 @@ namespace EvBackend.Services
 
             var list = await bookingCol.Find(filter).SortBy(b => b.StartTime).ToListAsync();
 
-            return list.Select(b => new BookingDto
+            var bookingDtos = new List<BookingDto>();
+
+            foreach (var b in list)
             {
-                BookingId = b.BookingId,
-                StationId = b.StationId,
-                SlotId = b.SlotId,
-                SlotNumber = b.SlotNumber,
-                TimeSlotId = b.TimeSlotId,
-                OwnerId = b.OwnerId,
-                Status = b.Status,
-                StartTime = b.StartTime,
-                EndTime = b.EndTime,
-                CreatedAt = b.CreatedAt,
-                UpdatedAt = b.UpdatedAt,
-                QrCode = b.QrCode,
-                QrExpiresAt = b.QrExpiresAt,
-                QrImageBase64 = b.QrImageBase64,
-                FormattedStartTime = FormatSriLankaTime(b.StartTime),
-                FormattedEndTime = FormatSriLankaTime(b.EndTime),
-                FormattedDate = FormatSriLankaDate(b.StartTime),
-                CancellationReason = b.CancellationReason
-            });
+                var ownerDto = await _evOwnerService.GetEVOwnerById(b.OwnerId);
+
+                bookingDtos.Add(new BookingDto
+                {
+                    BookingId = b.BookingId,
+                    StationId = b.StationId,
+                    SlotId = b.SlotId,
+                    SlotNumber = b.SlotNumber,
+                    TimeSlotId = b.TimeSlotId,
+                    OwnerId = b.OwnerId,
+                    Status = b.Status,
+                    StartTime = b.StartTime,
+                    EndTime = b.EndTime,
+                    CreatedAt = b.CreatedAt,
+                    UpdatedAt = b.UpdatedAt,
+                    QrCode = b.QrCode,
+                    QrExpiresAt = b.QrExpiresAt,
+                    QrImageBase64 = b.QrImageBase64,
+                    FormattedStartTime = FormatSriLankaTime(b.StartTime),
+                    FormattedEndTime = FormatSriLankaTime(b.EndTime),
+                    FormattedDate = FormatSriLankaDate(b.StartTime),
+                    CancellationReason = b.CancellationReason,
+                    OwnerName = ownerDto?.FullName,
+                });
+            }
+            return bookingDtos;
         }
 
         public async Task<IEnumerable<BookingDto>> GetUpcomingApprovedBookingsAsync(string stationId)
@@ -517,27 +526,37 @@ namespace EvBackend.Services
 
             var list = await bookingCol.Find(filter).SortBy(b => b.StartTime).ToListAsync();
 
-            return list.Select(b => new BookingDto
+            var bookingDtos = new List<BookingDto>();
+
+            foreach (var b in list)
             {
-                BookingId = b.BookingId,
-                StationId = b.StationId,
-                SlotId = b.SlotId,
-                SlotNumber = b.SlotNumber,
-                TimeSlotId = b.TimeSlotId,
-                OwnerId = b.OwnerId,
-                Status = b.Status,
-                StartTime = b.StartTime,
-                EndTime = b.EndTime,
-                CreatedAt = b.CreatedAt,
-                UpdatedAt = b.UpdatedAt,
-                QrCode = b.QrCode,
-                QrExpiresAt = b.QrExpiresAt,
-                QrImageBase64 = b.QrImageBase64,
-                FormattedStartTime = FormatSriLankaTime(b.StartTime),
-                FormattedEndTime = FormatSriLankaTime(b.EndTime),
-                FormattedDate = FormatSriLankaDate(b.StartTime),
-                CancellationReason = b.CancellationReason
-            });
+                var ownerDto = await _evOwnerService.GetEVOwnerById(b.OwnerId);
+
+                bookingDtos.Add(new BookingDto
+                {
+                    BookingId = b.BookingId,
+                    StationId = b.StationId,
+                    SlotId = b.SlotId,
+                    SlotNumber = b.SlotNumber,
+                    TimeSlotId = b.TimeSlotId,
+                    OwnerId = b.OwnerId,
+                    Status = b.Status,
+                    StartTime = b.StartTime,
+                    EndTime = b.EndTime,
+                    CreatedAt = b.CreatedAt,
+                    UpdatedAt = b.UpdatedAt,
+                    QrCode = b.QrCode,
+                    QrExpiresAt = b.QrExpiresAt,
+                    QrImageBase64 = b.QrImageBase64,
+                    FormattedStartTime = FormatSriLankaTime(b.StartTime),
+                    FormattedEndTime = FormatSriLankaTime(b.EndTime),
+                    FormattedDate = FormatSriLankaDate(b.StartTime),
+                    CancellationReason = b.CancellationReason,
+                    OwnerName = ownerDto?.FullName,
+                });
+            }
+
+            return bookingDtos;
         }
 
         // ------------------------------
