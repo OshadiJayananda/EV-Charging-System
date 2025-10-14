@@ -163,7 +163,7 @@ function BookingManagementPage() {
         {getStatusBadge(booking.status?.toLowerCase() || "pending")}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+      <div className="grid grid-cols-2 gap-10 mb-4 text-sm">
         <div>
           <p className="text-gray-500">Booking ID</p>
           <p className="font-medium text-gray-900">{booking.bookingId}</p>
@@ -409,27 +409,27 @@ function BookingManagementPage() {
               <h2 className="text-xl font-semibold text-gray-900 capitalize">
                 {activeTab} Bookings
               </h2>
-              <button
-                onClick={() => navigate(`/admin/bookings/${activeTab}`)}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-all font-medium flex items-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              {activeTab === "pending" && (
+                <button
+                  onClick={() => navigate(`/admin/bookings/${activeTab}`)}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-all font-medium flex items-center gap-2"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                  />
-                </svg>
-                View All{" "}
-                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}{" "}
-                Bookings
-              </button>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                    />
+                  </svg>
+                  View All Pending Bookings
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
