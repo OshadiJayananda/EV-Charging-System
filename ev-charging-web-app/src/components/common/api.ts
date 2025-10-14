@@ -56,7 +56,6 @@ export const getRequest = async <T>(
 ): Promise<{ data: T; status: number } | null> => {
   try {
     const response = await api.get<T>(url, { params });
-    console.log("GET", url, "Params:", params, "Response:", response.data);
     return { data: response.data, status: response.status };
   } catch (error) {
     return handleError(error, "Error fetching data");

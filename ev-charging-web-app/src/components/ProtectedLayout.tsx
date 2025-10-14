@@ -19,8 +19,6 @@ export default function ProtectedLayout() {
   const navigate = useNavigate();
   const [userData, setUserData] = useState<any>(null);
 
-  console.log("UserID in ProtectedLayout:", userId);
-
   useEffect(() => {
     if (userId) {
       // Use getRequest to fetch user data based on userId
@@ -28,7 +26,6 @@ export default function ProtectedLayout() {
         .then((res) => {
           if (res && res.data) {
             setUserData(res.data);
-            console.log("Fetched user data:", res.data);
           }
         })
         .catch((error) => console.error("Error fetching user data:", error));
