@@ -13,8 +13,7 @@ import {
   ArrowLeft,
   RefreshCw,
   AlertCircle,
-  Play,
-  Square,
+  Hash,
 } from "lucide-react";
 import type { Booking } from "../../types";
 
@@ -340,11 +339,17 @@ const OperatorBookings = () => {
                         <div className="space-y-3 mb-4">
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             <User className="w-4 h-4" />
-                            <span className="font-medium">ID:</span>
+                            <span className="font-medium">Owner NIC:</span>
                             <span>
                               {booking.ownerName ||
                                 booking.ownerId.substring(0, 8)}
                             </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Hash className="w-4 h-4" />
+                            <span className="font-medium">Booking ID:</span>
+                            <span>{booking.bookingId.substring(0, 12)}...</span>
                           </div>
 
                           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -369,13 +374,6 @@ const OperatorBookings = () => {
                               {getDuration(booking.startTime, booking.endTime)}
                             </span>
                           </div>
-
-                          <div className="pt-2 border-t border-gray-200">
-                            <div className="text-xs text-gray-500">
-                              Booking ID: {booking.bookingId.substring(0, 12)}
-                              ...
-                            </div>
-                          </div>
                         </div>
 
                         <div className="flex gap-2">
@@ -394,48 +392,6 @@ const OperatorBookings = () => {
                                 <>
                                   <CheckCircle className="w-4 h-4" />
                                   Approve
-                                </>
-                              )}
-                            </button>
-                          )}
-
-                          {booking.status.toLowerCase() === "approved" && (
-                            <button
-                              onClick={() =>
-                                handleStartCharging(booking.bookingId)
-                              }
-                              disabled={isProcessing}
-                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                            >
-                              {isProcessing ? (
-                                <>
-                                  <RefreshCw className="w-4 h-4 animate-spin" />
-                                  Starting...
-                                </>
-                              ) : (
-                                <>
-                                  <Play className="w-4 h-4" />
-                                  Start Charging
-                                </>
-                              )}
-                            </button>
-                          )}
-
-                          {booking.status.toLowerCase() === "charging" && (
-                            <button
-                              onClick={() => handleFinalize(booking.bookingId)}
-                              disabled={isProcessing}
-                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                            >
-                              {isProcessing ? (
-                                <>
-                                  <RefreshCw className="w-4 h-4 animate-spin" />
-                                  Finalizing...
-                                </>
-                              ) : (
-                                <>
-                                  <Square className="w-4 h-4" />
-                                  Finalize
                                 </>
                               )}
                             </button>
