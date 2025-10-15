@@ -1,16 +1,22 @@
 package com.evcharging.mobile;
 
+import android.animation.ObjectAnimator;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Base64;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.ScaleAnimation;
+import android.view.animation.TranslateAnimation;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -39,7 +45,7 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
     private Button btnShareQr;
     private LinearLayout qrContainer, statusContainer;
     private CardView cardDetails;
-
+    private ImageButton btnBack;
     private SessionManager session;
     private ApiClient api;
 
@@ -52,6 +58,9 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
     private com.evcharging.mobile.model.BookingItem currentBooking;
     private com.evcharging.mobile.network.ApiClient apiClient;
     private TextView tvReason;
+    private LinearLayout qrSection, cancelReasonSection, timelineContainer;
+    private ImageView ivStatusIndicator;
+    private CardView cardHeader, cardTimeline;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,7 +72,12 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
         apiClient = new ApiClient(session);
 
         initializeViews();
-        setupAnimations();
+        initializeEnhancedViews();
+        setupEnhancedAnimations();
+
+        // Set up back button click listener
+        btnBack.setOnClickListener(v -> finish());
+
 
         // --- Handle both JSON and individual extras ---
         String bookingJson = getIntent().getStringExtra("booking");
@@ -115,12 +129,33 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
         qrContainer = findViewById(R.id.qrContainer);
         statusContainer = findViewById(R.id.statusContainer);
         cardDetails = findViewById(R.id.cardDetails);
+        btnBack = findViewById(R.id.btnBack);
     }
 
-    private void setupAnimations() {
+    private void initializeEnhancedViews() {
+        // New enhanced views - FIXED: Correct casting
+        qrSection = findViewById(R.id.qrSection);
+        cancelReasonSection = findViewById(R.id.cancelReasonSection);
+//        cardTimeline = findViewById(R.id.cardTimeline); // This is a CardView
+//        timelineContainer = findViewById(R.id.timelineContainer); // This is a LinearLayout
+        ivStatusIndicator = findViewById(R.id.ivStatusIndicator);
+        cardHeader = findViewById(R.id.cardHeader);
+    }
+
+    private void setupEnhancedAnimations() {
+        // Enhanced animations
         AlphaAnimation fadeIn = new AlphaAnimation(0.0f, 1.0f);
-        fadeIn.setDuration(600);
-        cardDetails.startAnimation(fadeIn);
+        fadeIn.setDuration(800);
+        if (cardHeader != null) {
+            cardHeader.startAnimation(fadeIn);
+        }
+
+        ScaleAnimation scaleIn = new ScaleAnimation(0.8f, 1.0f, 0.8f, 1.0f,
+                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+        scaleIn.setDuration(600);
+        if (cardDetails != null) {
+            cardDetails.startAnimation(scaleIn);
+        }
     }
 
     private void displayBookingData() {
@@ -129,20 +164,6 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
 
             // Set status with enhanced styling
             updateStatusUI(bookingStatus);
-
-            // Handle cancellation reason
-            if (bookingStatus.equalsIgnoreCase("Cancelled")) {
-                String reason = currentBooking.getCancellationReason();
-                if (reason != null && !reason.isEmpty()) {
-                    tvReason.setVisibility(View.VISIBLE);
-                    tvReason.setText("Reason: " + reason);
-                } else {
-                    tvReason.setVisibility(View.VISIBLE);
-                    tvReason.setText("Reason: Slot is under Maintenance");
-                }
-            } else {
-                tvReason.setVisibility(View.GONE);
-            }
 
             // Set other booking details
             tvStation.setText(currentBooking.getStationName() != null ? currentBooking.getStationName() : "-");
@@ -169,120 +190,210 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
     private void updateStatusUI(String status) {
         int statusColor;
         int statusIcon;
+        int statusIndicator;
         String statusText = status;
 
         switch (status.toLowerCase()) {
             case "approved":
-                statusColor = Color.parseColor("#4CAF50"); // Green
-                statusIcon = android.R.drawable.presence_online; // Green check icon
-                statusText = "✓ " + status;
+                statusColor = Color.parseColor("#4CAF50");
+                statusIcon = android.R.drawable.presence_online;
+                statusIndicator = android.R.drawable.ic_menu_upload;
+                statusText = "✓ Approved";
                 break;
             case "charging":
-                statusColor = Color.parseColor("#2196F3"); // Blue for active charging
-                statusIcon = android.R.drawable.stat_sys_download; // Download/charging icon
-                statusText = "⚡ " + status;
+                statusColor = Color.parseColor("#2196F3");
+                statusIcon = android.R.drawable.stat_sys_download;
+                statusIndicator = android.R.drawable.star_big_on;
+                statusText = "⚡ Charging";
                 break;
             case "pending":
-                statusColor = Color.parseColor("#FF9800"); // Orange
-                statusIcon = android.R.drawable.ic_popup_sync; // Sync/loading icon
-                statusText = "⏳ " + status;
+                statusColor = Color.parseColor("#FF9800");
+                statusIcon = android.R.drawable.ic_popup_sync;
+                statusIndicator = android.R.drawable.ic_menu_rotate;
+                statusText = "⏳ Pending";
                 break;
             case "finalized":
-                statusColor = Color.parseColor("#2196F3"); // Blue
-                statusIcon = android.R.drawable.ic_menu_edit; // Edit/complete icon
-                statusText = "✅ " + status;
+                statusColor = Color.parseColor("#2196F3");
+                statusIcon = android.R.drawable.ic_menu_edit;
+                statusIndicator = android.R.drawable.ic_menu_upload;
+                statusText = "✅ Completed";
                 break;
             case "cancelled":
-                statusColor = Color.parseColor("#F44336"); // Red
-                statusIcon = android.R.drawable.ic_delete; // Delete/cancel icon
-                statusText = "❌ " + status;
+                statusColor = Color.parseColor("#F44336");
+                statusIcon = android.R.drawable.ic_delete;
+                statusIndicator = android.R.drawable.ic_menu_close_clear_cancel;
+                statusText = "❌ Cancelled";
                 break;
             case "expired":
-                statusColor = Color.parseColor("#9E9E9E"); // Gray
-                statusIcon = android.R.drawable.ic_lock_idle_alarm; // Alarm/clock icon
-                statusText = "⏰ " + status;
+                statusColor = Color.parseColor("#9E9E9E");
+                statusIcon = android.R.drawable.ic_lock_idle_alarm;
+                statusIndicator = android.R.drawable.ic_lock_idle_alarm;
+                statusText = "⏰ Expired";
                 break;
             default:
                 statusColor = Color.parseColor("#757575");
-                statusIcon = android.R.drawable.ic_dialog_info; // Info icon
+                statusIcon = android.R.drawable.ic_dialog_info;
+                statusIndicator = android.R.drawable.ic_dialog_info;
         }
 
-        tvStatus.setText(statusText);
-        tvStatus.setTextColor(statusColor);
+        // Update status container background with gradient
+        if (statusContainer != null) {
+            GradientDrawable gradient = new GradientDrawable(
+                    GradientDrawable.Orientation.LEFT_RIGHT,
+                    new int[] {statusColor, darkenColor(statusColor)}
+            );
+            gradient.setCornerRadius(32);
+            statusContainer.setBackground(gradient);
+        }
 
-        // Update status container background
-        statusContainer.setBackgroundColor(statusColor);
-
-        // Set status icon if available
+        // Update icons
         if (ivStatusIcon != null) {
             ivStatusIcon.setImageResource(statusIcon);
-            ivStatusIcon.setColorFilter(Color.WHITE);
+        }
+        if (ivStatusIndicator != null) {
+            ivStatusIndicator.setImageResource(statusIndicator);
         }
 
-        // Add pulse animation for pending and charging status
-        if (status.equalsIgnoreCase("pending") || status.equalsIgnoreCase("charging")) {
-            tvStatus.setAlpha(0.7f);
-            tvStatus.animate().alpha(1.0f).setDuration(1000).start();
+        if (tvStatus != null) {
+            tvStatus.setText(statusText);
+        }
+
+        // Add status-specific animations
+        if ((status.equalsIgnoreCase("pending") || status.equalsIgnoreCase("charging")) && ivStatusIndicator != null) {
+            // Pulsing animation for active statuses
+            ObjectAnimator pulse = ObjectAnimator.ofFloat(ivStatusIndicator, "alpha", 0.5f, 1.0f);
+            pulse.setDuration(1000);
+            pulse.setRepeatCount(ObjectAnimator.INFINITE);
+            pulse.setRepeatMode(ObjectAnimator.REVERSE);
+            pulse.start();
         }
     }
 
+    private int darkenColor(int color) {
+        float[] hsv = new float[3];
+        Color.colorToHSV(color, hsv);
+        hsv[2] *= 0.8f; // value component
+        return Color.HSVToColor(hsv);
+    }
+
     private void handleQrDisplay(String status) {
+        // Hide all sections first
+        if (qrSection != null) qrSection.setVisibility(View.GONE);
+        if (cancelReasonSection != null) cancelReasonSection.setVisibility(View.GONE);
+        if (cardTimeline != null) cardTimeline.setVisibility(View.GONE);
+
         switch (status.toLowerCase()) {
             case "approved":
-                // Show QR for approved bookings
-                if (currentBooking.getQrImageBase64() != null && !currentBooking.getQrImageBase64().isEmpty()) {
-                    renderQr(currentBooking.getQrImageBase64());
-                    tvQrNote.setText("Show this QR code to the station operator for charging access");
-                    tvQrNote.setTextColor(Color.parseColor("#4CAF50"));
-                    btnShareQr.setVisibility(View.VISIBLE);
-                    qrContainer.setVisibility(View.VISIBLE);
-                } else {
-                    // If approved but no QR, show loading state
-                    tvQrNote.setText("QR code loading...");
-                    tvQrNote.setTextColor(Color.parseColor("#FF9800"));
-                    btnShareQr.setVisibility(View.GONE);
-                    qrContainer.setVisibility(View.VISIBLE);
-                    ivQr.setImageResource(android.R.drawable.ic_menu_gallery); // Placeholder icon
-                }
+                setupApprovedState();
                 break;
-
             case "charging":
-                // Show currently charging message
-                tvQrNote.setText("You are Currently Charging");
-                tvQrNote.setTextColor(Color.parseColor("#2196F3"));
-                btnShareQr.setVisibility(View.GONE);
-                qrContainer.setVisibility(View.GONE);
+                setupChargingState();
                 break;
-
             case "pending":
-                // Show note for pending bookings
-                tvQrNote.setText("You will receive the QR code once your booking is approved by the station owner");
-                tvQrNote.setTextColor(Color.parseColor("#FF9800"));
-                btnShareQr.setVisibility(View.GONE);
-                qrContainer.setVisibility(View.GONE);
+                setupPendingState();
                 break;
-
-            case "finalized":
             case "cancelled":
-            case "expired":
-                // Show inactive message for other statuses
-                tvQrNote.setText("Your booking QR code is no longer active");
-                tvQrNote.setTextColor(Color.parseColor("#F44336"));
-                btnShareQr.setVisibility(View.GONE);
-                qrContainer.setVisibility(View.GONE);
+                setupCancelledState();
                 break;
-
+            case "finalized":
+            case "expired":
+                setupCompletedState();
+                break;
             default:
-                tvQrNote.setText("QR code status unavailable");
-                tvQrNote.setTextColor(Color.parseColor("#757575"));
-                btnShareQr.setVisibility(View.GONE);
-                qrContainer.setVisibility(View.GONE);
+                setupDefaultState();
         }
+    }
 
-        // Add fade animation for QR note
-        AlphaAnimation fadeIn = new AlphaAnimation(0.0f, 1.0f);
-        fadeIn.setDuration(500);
-        tvQrNote.startAnimation(fadeIn);
+    private void setupApprovedState() {
+        if (qrSection != null) {
+            qrSection.setVisibility(View.VISIBLE);
+            if (currentBooking.getQrImageBase64() != null && !currentBooking.getQrImageBase64().isEmpty()) {
+                renderQr(currentBooking.getQrImageBase64());
+                tvQrNote.setText("Show this QR code to the station operator for charging access");
+                tvQrNote.setTextColor(getResources().getColor(R.color.success_green));
+                btnShareQr.setVisibility(View.VISIBLE);
+                if (qrContainer != null) qrContainer.setVisibility(View.VISIBLE);
+            } else {
+                tvQrNote.setText("QR code is being generated...");
+                tvQrNote.setTextColor(getResources().getColor(R.color.warning_orange));
+                btnShareQr.setVisibility(View.GONE);
+                if (qrContainer != null) {
+                    qrContainer.setVisibility(View.VISIBLE);
+                    ivQr.setImageResource(android.R.drawable.ic_menu_gallery);
+                }
+            }
+            animateSection(qrSection);
+        }
+    }
+
+    private void setupChargingState() {
+        if (qrSection != null) {
+            qrSection.setVisibility(View.VISIBLE);
+            tvQrNote.setText("⚡ You are currently charging\nQR code is active");
+            tvQrNote.setTextColor(getResources().getColor(R.color.primary));
+            btnShareQr.setVisibility(View.GONE);
+            if (qrContainer != null) qrContainer.setVisibility(View.GONE);
+            animateSection(qrSection);
+        }
+    }
+
+    private void setupPendingState() {
+        if (qrSection != null) {
+            qrSection.setVisibility(View.VISIBLE);
+            tvQrNote.setText("⏳ Your booking is pending approval\nQR code will appear once approved");
+            tvQrNote.setTextColor(getResources().getColor(R.color.warning_orange));
+            btnShareQr.setVisibility(View.GONE);
+            if (qrContainer != null) qrContainer.setVisibility(View.GONE);
+            animateSection(qrSection);
+        }
+    }
+
+    private void setupCancelledState() {
+        if (cancelReasonSection != null) {
+            cancelReasonSection.setVisibility(View.VISIBLE);
+            String reason = currentBooking.getCancellationReason();
+            if (reason != null && !reason.isEmpty()) {
+                tvReason.setText("Reason: " + reason);
+            } else {
+                tvReason.setText("Reason: Slot is under Maintenance");
+            }
+            animateSection(cancelReasonSection);
+        }
+    }
+
+    private void setupCompletedState() {
+        if (qrSection != null) {
+            qrSection.setVisibility(View.VISIBLE);
+            tvQrNote.setText("✅ This booking has been completed\nQR code is no longer active");
+            tvQrNote.setTextColor(getResources().getColor(R.color.text_secondary));
+            btnShareQr.setVisibility(View.GONE);
+            if (qrContainer != null) qrContainer.setVisibility(View.GONE);
+            animateSection(qrSection);
+        }
+    }
+
+    private void setupDefaultState() {
+        if (qrSection != null) {
+            qrSection.setVisibility(View.VISIBLE);
+            tvQrNote.setText("QR code status unavailable");
+            tvQrNote.setTextColor(getResources().getColor(R.color.text_secondary));
+            btnShareQr.setVisibility(View.GONE);
+            if (qrContainer != null) qrContainer.setVisibility(View.GONE);
+            animateSection(qrSection);
+        }
+    }
+
+    private void animateSection(View section) {
+        if (section != null) {
+            TranslateAnimation slideUp = new TranslateAnimation(
+                    Animation.RELATIVE_TO_SELF, 0f,
+                    Animation.RELATIVE_TO_SELF, 0f,
+                    Animation.RELATIVE_TO_SELF, 0.5f,
+                    Animation.RELATIVE_TO_SELF, 0f
+            );
+            slideUp.setDuration(500);
+            section.startAnimation(slideUp);
+        }
     }
 
     // ---------------- Footer Navigation Setup ----------------
