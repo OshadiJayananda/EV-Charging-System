@@ -105,4 +105,56 @@
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textSize">14sp</item>
     </style>
+
+    <!-- Add these styles to your existing styles.xml -->
+    <style name="ModernIconButton" parent="Widget.MaterialComponents.Button.Icon">
+        <item name="backgroundTint">@color/primary_light</item>
+        <item name="iconTint">@color/white</item>
+        <item name="cornerRadius">20dp</item>
+        <item name="iconPadding">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+
+    <!-- Add/update these styles in your styles.xml -->
+    <style name="FilterChip" parent="Widget.MaterialComponents.Chip.Choice">
+        <item name="chipMinTouchTargetSize">0dp</item>
+        <item name="chipStartPadding">16dp</item>
+        <item name="chipEndPadding">16dp</item>
+        <item name="android:textColor">@color/chip_text_selector</item>
+        <item name="cornerRadius">20dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+
+    <style name="ModernTextButton" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:textColor">@color/primary</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="iconTint">@color/primary</item>
+        <item name="iconSize">16dp</item>
+        <item name="iconPadding">4dp</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+    </style>
+
+    <style name="FilterChipText">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/chip_text_selector</item>
+    </style>
+
+    <style name="ModernOutlinedButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">@color/primary</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="android:textColor">@color/primary</item>
+        <item name="android:textSize">13sp</item>
+        <item name="iconTint">@color/primary</item>
+        <item name="iconSize">16dp</item>
+        <item name="android:letterSpacing">0.02</item>
+    </style>
+
 </resources>
