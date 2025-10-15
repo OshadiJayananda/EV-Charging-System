@@ -97,7 +97,8 @@ public class OwnerBookingActivity extends AppCompatActivity {
                 preselectedLng = intent.getDoubleExtra("selected_station_lng", 0);
                 preselectedLocation = intent.getStringExtra("selected_station_location");
 
-                Log.d("OwnerBookingActivity", "Selected station: " + preselectedStationName + " (" + preselectedLocation + ")");
+                Log.d("OwnerBookingActivity",
+                        "Selected station: " + preselectedStationName + " (" + preselectedLocation + ")");
             }
         }
 
@@ -205,7 +206,10 @@ public class OwnerBookingActivity extends AppCompatActivity {
                 loadStationsByType(selectedType);
                 updateConfirmButtonState();
             }
-            @Override public void onNothingSelected(AdapterView<?> parent) {}
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
         });
 
         spnStation.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -224,7 +228,10 @@ public class OwnerBookingActivity extends AppCompatActivity {
                     }
                 }
             }
-            @Override public void onNothingSelected(AdapterView<?> parent) {}
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
         });
 
         spnSlot.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -238,7 +245,10 @@ public class OwnerBookingActivity extends AppCompatActivity {
                     updateConfirmButtonState();
                 }
             }
-            @Override public void onNothingSelected(AdapterView<?> parent) {}
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
         });
 
         spnTimeSlot.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -249,7 +259,10 @@ public class OwnerBookingActivity extends AppCompatActivity {
                     updateConfirmButtonState();
                 }
             }
-            @Override public void onNothingSelected(AdapterView<?> parent) {}
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
         });
     }
 
@@ -263,7 +276,8 @@ public class OwnerBookingActivity extends AppCompatActivity {
         btnConfirmBooking.setAlpha(isComplete ? 1.0f : 0.6f);
 
         if (isComplete) {
-            btnConfirmBooking.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.primary_color)));
+            btnConfirmBooking
+                    .setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.primary_color)));
         } else {
             btnConfirmBooking.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.gray)));
         }
@@ -424,8 +438,7 @@ public class OwnerBookingActivity extends AppCompatActivity {
                                     .setStart(today.getTimeInMillis()) // today as start date
                                     .setEnd(maxDate.getTimeInMillis()) // 6 days from today as max
                                     .setValidator(new DateValidatorWeekAhead())
-                                    .build()
-                    )
+                                    .build())
                     .build();
 
             // Enable/Disable Dates and ensure the dates are visible
@@ -450,7 +463,6 @@ public class OwnerBookingActivity extends AppCompatActivity {
         });
     }
 
-
     private static class DateValidatorWeekAhead implements CalendarConstraints.DateValidator {
 
         @Override
@@ -465,10 +477,10 @@ public class OwnerBookingActivity extends AppCompatActivity {
             today.set(Calendar.MILLISECOND, 0);
 
             Calendar maxDate = Calendar.getInstance();
-            maxDate.set(Calendar.HOUR_OF_DAY, 0);
-            maxDate.set(Calendar.MINUTE, 0);
-            maxDate.set(Calendar.SECOND, 0);
-            maxDate.set(Calendar.MILLISECOND, 0);
+            maxDate.set(Calendar.HOUR_OF_DAY, 23);
+            maxDate.set(Calendar.MINUTE, 59);
+            maxDate.set(Calendar.SECOND, 59);
+            maxDate.set(Calendar.MILLISECOND, 999);
             maxDate.add(Calendar.DAY_OF_MONTH, 6); // 6 days from today
 
             return !selected.before(today) && !selected.after(maxDate);
@@ -497,7 +509,6 @@ public class OwnerBookingActivity extends AppCompatActivity {
         };
     }
 
-
     private void loadSlotsForStation(String stationId) {
         clearSlots();
 
@@ -512,7 +523,8 @@ public class OwnerBookingActivity extends AppCompatActivity {
             protected ApiResponse doInBackground(Void... voids) {
                 try {
                     ApiResponse res = apiClient.getSlotsByStation(stationId);
-                    if (res != null && res.isSuccess()) return res;
+                    if (res != null && res.isSuccess())
+                        return res;
                     return apiClient.getStationPublic(stationId);
                 } catch (Exception e) {
                     Log.e("OwnerBooking", "Error fetching slots", e);
@@ -591,7 +603,8 @@ public class OwnerBookingActivity extends AppCompatActivity {
             @Override
             protected ApiResponse doInBackground(Void... voids) {
                 try {
-                    String endpoint = String.format("/timeslot?stationId=%s&slotId=%s&date=%s", stationId, slotId, dateYmd);
+                    String endpoint = String.format("/timeslot?stationId=%s&slotId=%s&date=%s", stationId, slotId,
+                            dateYmd);
                     return apiClient.get(endpoint);
                 } catch (Exception e) {
                     Log.e("OwnerBooking", "Error fetching timeslots", e);
@@ -614,7 +627,8 @@ public class OwnerBookingActivity extends AppCompatActivity {
                 }
 
                 try {
-                    Type t = new TypeToken<List<TimeSlotItem>>(){}.getType();
+                    Type t = new TypeToken<List<TimeSlotItem>>() {
+                    }.getType();
                     List<TimeSlotItem> fetched = gson.fromJson(res.getData(), t);
                     if (fetched == null || fetched.isEmpty()) {
                         toast("No available time slots for this date");
@@ -645,7 +659,8 @@ public class OwnerBookingActivity extends AppCompatActivity {
 
     private void setupConfirm() {
         btnConfirmBooking.setOnClickListener(v -> {
-            if (selectedStationId == null || selectedDateStr == null || selectedSlotId == null || selectedTimeSlotId == null) {
+            if (selectedStationId == null || selectedDateStr == null || selectedSlotId == null
+                    || selectedTimeSlotId == null) {
                 toast("Please complete all selections");
                 return;
             }
