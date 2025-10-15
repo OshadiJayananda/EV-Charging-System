@@ -1,6 +1,6 @@
 <resources>
     <!-- Application theme -->
-    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <!-- Customize your theme colors -->
         <item name="colorPrimary">@color/primary_color</item>
         <item name="colorOnPrimary">@color/white</item>
@@ -8,7 +8,15 @@
         <item name="colorOnSecondary">@color/black</item>
     </style>
 
-    <!-- Your existing button styles -->
+    <!-- NoActionBar theme for activities using Toolbar -->
+    <style name="AppTheme.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary_color</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/secondary_color</item>
+        <item name="colorOnSecondary">@color/black</item>
+    </style>
+
+    <!-- Your existing button styles remain unchanged -->
     <style name="PrimaryButton" parent="Widget.MaterialComponents.Button">
         <item name="android:backgroundTint">@color/primary_color</item>
         <item name="android:textColor">@color/white</item>
@@ -19,6 +27,7 @@
         <item name="android:textColor">@color/black</item>
     </style>
 
+    <!-- Rest of your existing styles remain the same -->
     <style name="ModernTextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
         <item name="boxStrokeColor">@color/text_secondary_30</item>
         <item name="boxStrokeWidth">1dp</item>
@@ -53,5 +62,19 @@
         <item name="android:letterSpacing">0.05</item>
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">48dp</item>
+    </style>
+
+    <style name="GridSpinnerStyle" parent="Widget.AppCompat.Spinner">
+        <item name="android:paddingStart">0dp</item>
+        <item name="android:paddingEnd">0dp</item>
+        <item name="android:dropDownWidth">150dp</item>
+        <item name="android:popupBackground">@color/white</item>
+    </style>
+
+    <style name="CustomDatePicker" parent="ThemeOverlay.MaterialComponents.MaterialCalendar">
+        <item name="colorPrimary">@color/primary_color</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="android:windowBackground">@color/white</item>
     </style>
 </resources>
