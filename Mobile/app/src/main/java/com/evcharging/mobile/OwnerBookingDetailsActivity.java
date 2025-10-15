@@ -3,16 +3,19 @@ package com.evcharging.mobile;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Base64;
 import android.view.View;
+import android.view.animation.AlphaAnimation;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.content.FileProvider;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
@@ -26,15 +29,16 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Locale;
 
 public class OwnerBookingDetailsActivity extends AppCompatActivity {
 
     private SwipeRefreshLayout swipeRefresh;
-    private TextView tvStatus, tvStation, tvSlot, tvTime, tvBookingId;
-    private ImageView ivQr;
+    private TextView tvStatus, tvStation, tvSlot, tvTime, tvBookingId, tvQrNote;
+    private ImageView ivQr, ivStatusIcon;
     private Button btnShareQr;
+    private LinearLayout qrContainer, statusContainer;
+    private CardView cardDetails;
 
     private SessionManager session;
     private ApiClient api;
@@ -49,25 +53,17 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
     private com.evcharging.mobile.network.ApiClient apiClient;
     private TextView tvReason;
 
-
     @Override
-    protected void onCreate(Bundle b) {
-        super.onCreate(b);
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_owner_booking_details);
 
         session = new SessionManager(this);
         api = new ApiClient(session);
+        apiClient = new ApiClient(session);
 
-        swipeRefresh = findViewById(R.id.swipeRefresh);
-        tvStatus = findViewById(R.id.tvStatus);
-        tvStation = findViewById(R.id.tvStation);
-        tvSlot = findViewById(R.id.tvSlot);
-        tvTime = findViewById(R.id.tvTime);
-        tvBookingId = findViewById(R.id.tvBookingId);
-        ivQr = findViewById(R.id.ivQr);
-        btnShareQr = findViewById(R.id.btnShareQr);
-        tvReason = findViewById(R.id.tvReason);
-
+        initializeViews();
+        setupAnimations();
 
         // --- Handle both JSON and individual extras ---
         String bookingJson = getIntent().getStringExtra("booking");
@@ -86,39 +82,13 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
             currentBooking.setQrImageBase64(getIntent().getStringExtra("qrBase64"));
         }
 
-        // --- Display Data ---
+        // Set bookingId for later use
         if (currentBooking != null) {
-            tvStatus.setText("Status: " + currentBooking.getStatus());
-            if (currentBooking.getStatus().equalsIgnoreCase("Cancelled")) {
-                String reason = currentBooking.getCancellationReason();
-                if (reason != null && !reason.isEmpty()) {
-                    tvReason.setVisibility(View.VISIBLE);
-                    tvReason.setText("Reason: " + reason);
-                } else {
-                    tvReason.setVisibility(View.VISIBLE);
-                    tvReason.setText("Reason: Slot is under Maintenance recorded");
-                }
-            } else {
-                tvReason.setVisibility(View.GONE);
-            }
-
-
-
-            tvStation.setText("Station: " + (currentBooking.getStationName() != null ? currentBooking.getStationName() : "-"));
-            tvSlot.setText("Slot:" + (currentBooking.getSlotNumber() != null ? currentBooking.getSlotNumber() : "-"));
-            tvBookingId.setText("Booking ID: " + (currentBooking.getBookingId() != null ? currentBooking.getBookingId() : "-"));
-
-            try {
-                tvTime.setText(currentBooking.getStartTimeFormatted() + " – " + currentBooking.getEndTimeFormatted());
-            } catch (Exception e) {
-                tvTime.setText("Time: -");
-            }
-
-            if (currentBooking.getQrImageBase64() != null && !currentBooking.getQrImageBase64().isEmpty()) {
-                renderQr(currentBooking.getQrImageBase64());
-            }
+            bookingId = currentBooking.getBookingId();
         }
 
+        // --- Display Data with enhanced UI ---
+        displayBookingData();
 
         // Swipe refresh
         swipeRefresh.setOnRefreshListener(this::refreshFromServer);
@@ -129,6 +99,192 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
         setupFooterNavigation();
         highlightActiveTab("bookings");
     }
+
+    private void initializeViews() {
+        swipeRefresh = findViewById(R.id.swipeRefresh);
+        tvStatus = findViewById(R.id.tvStatus);
+        tvStation = findViewById(R.id.tvStation);
+        tvSlot = findViewById(R.id.tvSlot);
+        tvTime = findViewById(R.id.tvTime);
+        tvBookingId = findViewById(R.id.tvBookingId);
+        ivQr = findViewById(R.id.ivQr);
+        btnShareQr = findViewById(R.id.btnShareQr);
+        tvReason = findViewById(R.id.tvReason);
+        tvQrNote = findViewById(R.id.tvQrNote);
+        ivStatusIcon = findViewById(R.id.ivStatusIcon);
+        qrContainer = findViewById(R.id.qrContainer);
+        statusContainer = findViewById(R.id.statusContainer);
+        cardDetails = findViewById(R.id.cardDetails);
+    }
+
+    private void setupAnimations() {
+        AlphaAnimation fadeIn = new AlphaAnimation(0.0f, 1.0f);
+        fadeIn.setDuration(600);
+        cardDetails.startAnimation(fadeIn);
+    }
+
+    private void displayBookingData() {
+        if (currentBooking != null) {
+            String bookingStatus = currentBooking.getStatus() != null ? currentBooking.getStatus() : "Pending";
+
+            // Set status with enhanced styling
+            updateStatusUI(bookingStatus);
+
+            // Handle cancellation reason
+            if (bookingStatus.equalsIgnoreCase("Cancelled")) {
+                String reason = currentBooking.getCancellationReason();
+                if (reason != null && !reason.isEmpty()) {
+                    tvReason.setVisibility(View.VISIBLE);
+                    tvReason.setText("Reason: " + reason);
+                } else {
+                    tvReason.setVisibility(View.VISIBLE);
+                    tvReason.setText("Reason: Slot is under Maintenance");
+                }
+            } else {
+                tvReason.setVisibility(View.GONE);
+            }
+
+            // Set other booking details
+            tvStation.setText(currentBooking.getStationName() != null ? currentBooking.getStationName() : "-");
+            tvSlot.setText(currentBooking.getSlotNumber() != null ? "Slot " + currentBooking.getSlotNumber() : "-");
+            tvBookingId.setText(currentBooking.getBookingId() != null ? currentBooking.getBookingId() : "-");
+
+            try {
+                String startTime = currentBooking.getStartTimeFormatted();
+                String endTime = currentBooking.getEndTimeFormatted();
+                if (startTime != null && endTime != null) {
+                    tvTime.setText(startTime + " – " + endTime);
+                } else {
+                    tvTime.setText("Time information not available");
+                }
+            } catch (Exception e) {
+                tvTime.setText("Time: -");
+            }
+
+            // Handle QR display based on status
+            handleQrDisplay(bookingStatus);
+        }
+    }
+
+    private void updateStatusUI(String status) {
+        int statusColor;
+        int statusIcon;
+        String statusText = status;
+
+        switch (status.toLowerCase()) {
+            case "approved":
+                statusColor = Color.parseColor("#4CAF50"); // Green
+                statusIcon = android.R.drawable.presence_online; // Green check icon
+                statusText = "✓ " + status;
+                break;
+            case "charging":
+                statusColor = Color.parseColor("#2196F3"); // Blue for active charging
+                statusIcon = android.R.drawable.stat_sys_download; // Download/charging icon
+                statusText = "⚡ " + status;
+                break;
+            case "pending":
+                statusColor = Color.parseColor("#FF9800"); // Orange
+                statusIcon = android.R.drawable.ic_popup_sync; // Sync/loading icon
+                statusText = "⏳ " + status;
+                break;
+            case "finalized":
+                statusColor = Color.parseColor("#2196F3"); // Blue
+                statusIcon = android.R.drawable.ic_menu_edit; // Edit/complete icon
+                statusText = "✅ " + status;
+                break;
+            case "cancelled":
+                statusColor = Color.parseColor("#F44336"); // Red
+                statusIcon = android.R.drawable.ic_delete; // Delete/cancel icon
+                statusText = "❌ " + status;
+                break;
+            case "expired":
+                statusColor = Color.parseColor("#9E9E9E"); // Gray
+                statusIcon = android.R.drawable.ic_lock_idle_alarm; // Alarm/clock icon
+                statusText = "⏰ " + status;
+                break;
+            default:
+                statusColor = Color.parseColor("#757575");
+                statusIcon = android.R.drawable.ic_dialog_info; // Info icon
+        }
+
+        tvStatus.setText(statusText);
+        tvStatus.setTextColor(statusColor);
+
+        // Update status container background
+        statusContainer.setBackgroundColor(statusColor);
+
+        // Set status icon if available
+        if (ivStatusIcon != null) {
+            ivStatusIcon.setImageResource(statusIcon);
+            ivStatusIcon.setColorFilter(Color.WHITE);
+        }
+
+        // Add pulse animation for pending and charging status
+        if (status.equalsIgnoreCase("pending") || status.equalsIgnoreCase("charging")) {
+            tvStatus.setAlpha(0.7f);
+            tvStatus.animate().alpha(1.0f).setDuration(1000).start();
+        }
+    }
+
+    private void handleQrDisplay(String status) {
+        switch (status.toLowerCase()) {
+            case "approved":
+                // Show QR for approved bookings
+                if (currentBooking.getQrImageBase64() != null && !currentBooking.getQrImageBase64().isEmpty()) {
+                    renderQr(currentBooking.getQrImageBase64());
+                    tvQrNote.setText("Show this QR code to the station operator for charging access");
+                    tvQrNote.setTextColor(Color.parseColor("#4CAF50"));
+                    btnShareQr.setVisibility(View.VISIBLE);
+                    qrContainer.setVisibility(View.VISIBLE);
+                } else {
+                    // If approved but no QR, show loading state
+                    tvQrNote.setText("QR code loading...");
+                    tvQrNote.setTextColor(Color.parseColor("#FF9800"));
+                    btnShareQr.setVisibility(View.GONE);
+                    qrContainer.setVisibility(View.VISIBLE);
+                    ivQr.setImageResource(android.R.drawable.ic_menu_gallery); // Placeholder icon
+                }
+                break;
+
+            case "charging":
+                // Show currently charging message
+                tvQrNote.setText("You are Currently Charging");
+                tvQrNote.setTextColor(Color.parseColor("#2196F3"));
+                btnShareQr.setVisibility(View.GONE);
+                qrContainer.setVisibility(View.GONE);
+                break;
+
+            case "pending":
+                // Show note for pending bookings
+                tvQrNote.setText("You will receive the QR code once your booking is approved by the station owner");
+                tvQrNote.setTextColor(Color.parseColor("#FF9800"));
+                btnShareQr.setVisibility(View.GONE);
+                qrContainer.setVisibility(View.GONE);
+                break;
+
+            case "finalized":
+            case "cancelled":
+            case "expired":
+                // Show inactive message for other statuses
+                tvQrNote.setText("Your booking QR code is no longer active");
+                tvQrNote.setTextColor(Color.parseColor("#F44336"));
+                btnShareQr.setVisibility(View.GONE);
+                qrContainer.setVisibility(View.GONE);
+                break;
+
+            default:
+                tvQrNote.setText("QR code status unavailable");
+                tvQrNote.setTextColor(Color.parseColor("#757575"));
+                btnShareQr.setVisibility(View.GONE);
+                qrContainer.setVisibility(View.GONE);
+        }
+
+        // Add fade animation for QR note
+        AlphaAnimation fadeIn = new AlphaAnimation(0.0f, 1.0f);
+        fadeIn.setDuration(500);
+        tvQrNote.startAnimation(fadeIn);
+    }
+
     // ---------------- Footer Navigation Setup ----------------
     private void setupFooterNavigation() {
         LinearLayout navHome = findViewById(R.id.navHome);
@@ -199,9 +355,7 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
                 break;
         }
     }
-
     // ----------------------------------------------------------
-
 
     @Override
     protected void onResume() {
@@ -209,11 +363,11 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
         refreshBookingDetails();
     }
 
-
     private void refreshFromServer() {
         swipeRefresh.setRefreshing(true);
         new AsyncTask<Void, Void, JSONObject>() {
-            @Override protected JSONObject doInBackground(Void... voids) {
+            @Override
+            protected JSONObject doInBackground(Void... voids) {
                 String ownerId = session.getLoggedInUser() != null ? session.getLoggedInUser().getUserId() : null;
                 ApiResponse res = api.getBookingsByOwner(ownerId);
                 if (res == null || !res.isSuccess()) return null;
@@ -228,18 +382,28 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
                 return null;
             }
 
-            @Override protected void onPostExecute(JSONObject o) {
+            @Override
+            protected void onPostExecute(JSONObject o) {
                 swipeRefresh.setRefreshing(false);
                 if (o == null) return;
-                status = o.optString("status", status);
-                tvStatus.setText("Status: " + status);
+
+                String newStatus = o.optString("status", status);
+                updateStatusUI(newStatus);
+
                 String b64 = o.optString("qrImageBase64", null);
-                if (b64 != null && !b64.isEmpty()) renderQr(b64);
+                if (b64 != null && !b64.isEmpty()) {
+                    renderQr(b64);
+                }
+                handleQrDisplay(newStatus);
             }
         }.execute();
     }
 
     private void refreshBookingDetails() {
+        if (currentBooking == null || currentBooking.getBookingId() == null) {
+            return;
+        }
+
         new android.os.AsyncTask<Void, Void, com.evcharging.mobile.network.ApiResponse>() {
             @Override
             protected com.evcharging.mobile.network.ApiResponse doInBackground(Void... voids) {
@@ -259,7 +423,14 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
                 try {
                     org.json.JSONObject obj = new org.json.JSONObject(res.getData());
                     String newStatus = obj.optString("status", "Pending");
-                    tvStatus.setText("Status: " + newStatus);
+                    updateStatusUI(newStatus);
+                    handleQrDisplay(newStatus);
+
+                    // Update QR code if available
+                    String newQrBase64 = obj.optString("qrImageBase64", null);
+                    if (newQrBase64 != null && !newQrBase64.isEmpty()) {
+                        renderQr(newQrBase64);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -267,17 +438,29 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
         }.execute();
     }
 
-
     private void renderQr(String base64) {
         try {
             byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
             qrBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
             ivQr.setImageBitmap(qrBitmap);
-        } catch (Exception ignored) {}
+
+            // Add fade-in animation for QR
+            AlphaAnimation fadeIn = new AlphaAnimation(0.0f, 1.0f);
+            fadeIn.setDuration(800);
+            ivQr.startAnimation(fadeIn);
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Show placeholder if QR rendering fails
+            ivQr.setImageResource(android.R.drawable.ic_menu_gallery); // Use system gallery icon as placeholder
+        }
     }
 
     private void shareQr() {
-        if (qrBitmap == null) return;
+        if (qrBitmap == null) {
+            // Show message if no QR available
+            android.widget.Toast.makeText(this, "QR code not available for sharing", android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         try {
             File cachePath = new File(getCacheDir(), "images");
@@ -293,12 +476,23 @@ public class OwnerBookingDetailsActivity extends AppCompatActivity {
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
             shareIntent.setType("image/png");
             shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
-            shareIntent.putExtra(Intent.EXTRA_TEXT, "Booking ID: " + bookingId);
+            shareIntent.putExtra(Intent.EXTRA_TEXT, "EV Charging Booking QR Code\nBooking ID: " + bookingId + "\nStation: " + currentBooking.getStationName());
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivity(Intent.createChooser(shareIntent, "Share QR Code via"));
 
         } catch (Exception e) {
             e.printStackTrace();
+            android.widget.Toast.makeText(this, "Failed to share QR code", android.widget.Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Clean up bitmap to avoid memory leaks
+        if (qrBitmap != null && !qrBitmap.isRecycled()) {
+            qrBitmap.recycle();
+            qrBitmap = null;
         }
     }
 }

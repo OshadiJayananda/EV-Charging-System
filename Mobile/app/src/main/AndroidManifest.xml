@@ -18,8 +18,8 @@
     <application
         android:name=".MyApp"
         android:icon="@mipmap/ic_launcher"
-        android:label="EvMobile"
-        android:theme="@style/AppTheme"
+        android:label="EVApp"
+        android:theme="@style/AppTheme.NoActionBar"
         android:usesCleartextTraffic="true"
         tools:replace="android:label">
 
