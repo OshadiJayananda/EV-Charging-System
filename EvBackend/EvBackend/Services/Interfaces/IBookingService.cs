@@ -22,6 +22,7 @@ namespace EvBackend.Services.Interfaces
         Task<IEnumerable<BookingDto>> GetBookingsByOwnerAsync(string ownerId);
         Task<IEnumerable<BookingDto>> GetBookingsByStationAsync(string stationId);
         Task<IEnumerable<BookingDto>> GetTodayApprovedBookingsAsync(string stationId);
+        Task<int> GetApprovedBookingCountByStationAsync(string stationId, bool todayOnly = false);
         Task<IEnumerable<BookingDto>> GetUpcomingApprovedBookingsAsync(string stationId);
 
         // Operator/Admin
