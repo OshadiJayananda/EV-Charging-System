@@ -89,8 +89,8 @@
     <!-- Add/update these styles in your styles.xml -->
     <style name="FilterChip" parent="Widget.MaterialComponents.Chip.Choice">
         <item name="chipMinTouchTargetSize">0dp</item>
-        <item name="chipStartPadding">16dp</item>
-        <item name="chipEndPadding">16dp</item>
+        <item name="chipStartPadding">8dp</item>
+        <item name="chipEndPadding">8dp</item>
         <item name="android:textColor">@color/chip_text_selector</item>
         <item name="cornerRadius">20dp</item>
         <item name="android:clickable">true</item>
