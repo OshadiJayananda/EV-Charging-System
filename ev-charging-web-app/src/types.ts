@@ -181,3 +181,8 @@ export interface PaginatedResponse<T> {
   totalCount: number;
   totalPages: number;
 }
+
+export interface BookingCountResponse {
+  todayCount: number;
+  futureCount: number;
+}
