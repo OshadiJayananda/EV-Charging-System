@@ -16,7 +16,7 @@ import {
   Hash,
   IdCard,
 } from "lucide-react";
-import type { Booking } from "../../types";
+import type { Booking, BookingCountResponse } from "../../types";
 
 const OperatorBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -25,8 +25,32 @@ const OperatorBookings = () => {
   const [processingBooking, setProcessingBooking] = useState<string | null>(
     null
   );
+  const [todayCount, setTodayCount] = useState<number>(0);
+  const [futureCount, setFutureCount] = useState<number>(0);
   const { stationId } = useParams();
   const navigate = useNavigate();
+
+  const fetchBookingCount = async () => {
+    if (!stationId) return;
+
+    try {
+      const res = await getRequest<BookingCountResponse>(
+        `/bookings/station/${stationId}/count`
+      );
+
+      if (res && res.data) {
+        setTodayCount(res.data.todayCount);
+        setFutureCount(res.data.futureCount);
+      } else {
+        setTodayCount(0);
+        setFutureCount(0);
+      }
+    } catch (error) {
+      console.error("Error fetching booking count:", error);
+      setTodayCount(0);
+      setFutureCount(0);
+    }
+  };
 
   const fetchBookings = async () => {
     if (!stationId) return;
@@ -64,38 +88,6 @@ const OperatorBookings = () => {
     } catch (error) {
       console.error("Error approving booking:", error);
       toast.error("Failed to approve booking");
-    } finally {
-      setProcessingBooking(null);
-    }
-  };
-
-  const handleStartCharging = async (bookingId: string) => {
-    setProcessingBooking(bookingId);
-    try {
-      const res = await patchRequest(`/bookings/${bookingId}/start`, {});
-      if (res) {
-        toast.success("Charging started");
-        await fetchBookings();
-      }
-    } catch (error) {
-      console.error("Error starting charging:", error);
-      toast.error("Failed to start charging");
-    } finally {
-      setProcessingBooking(null);
-    }
-  };
-
-  const handleFinalize = async (bookingId: string) => {
-    setProcessingBooking(bookingId);
-    try {
-      const res = await patchRequest(`/bookings/${bookingId}/finalize`, {});
-      if (res) {
-        toast.success("Booking finalized successfully");
-        await fetchBookings();
-      }
-    } catch (error) {
-      console.error("Error finalizing booking:", error);
-      toast.error("Failed to finalize booking");
     } finally {
       setProcessingBooking(null);
     }
@@ -181,6 +173,7 @@ const OperatorBookings = () => {
 
   useEffect(() => {
     fetchBookings();
+    fetchBookingCount();
   }, [stationId, view]);
 
   return (
@@ -205,7 +198,10 @@ const OperatorBookings = () => {
               </p>
             </div>
             <button
-              onClick={() => fetchBookings()}
+              onClick={() => {
+                fetchBookings();
+                fetchBookingCount();
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               disabled={loading}
             >
@@ -239,21 +235,9 @@ const OperatorBookings = () => {
               >
                 <Clock className="w-4 h-4" />
                 Today's Bookings
-                {bookings.filter((b) => {
-                  const today = new Date().toDateString();
-                  const bookingDate = new Date(b.startTime).toDateString();
-                  return today === bookingDate;
-                }).length > 0 && (
+                {todayCount > 0 && (
                   <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
-                    {
-                      bookings.filter((b) => {
-                        const today = new Date().toDateString();
-                        const bookingDate = new Date(
-                          b.startTime
-                        ).toDateString();
-                        return today === bookingDate;
-                      }).length
-                    }
+                    {todayCount}
                   </span>
                 )}
               </button>
@@ -268,19 +252,9 @@ const OperatorBookings = () => {
               >
                 <Calendar className="w-4 h-4" />
                 Upcoming
-                {bookings.filter((b) => {
-                  const today = new Date();
-                  const bookingDate = new Date(b.startTime);
-                  return bookingDate > today;
-                }).length > 0 && (
+                {futureCount > 0 && (
                   <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold">
-                    {
-                      bookings.filter((b) => {
-                        const today = new Date();
-                        const bookingDate = new Date(b.startTime);
-                        return bookingDate > today;
-                      }).length
-                    }
+                    {futureCount}
                   </span>
                 )}
               </button>

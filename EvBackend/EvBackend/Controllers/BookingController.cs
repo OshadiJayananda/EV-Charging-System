@@ -175,6 +175,23 @@ namespace EvBackend.Controllers
             catch (Exception ex) { Console.WriteLine(ex); return StatusCode(500, new { message = "Unexpected error" }); }
         }
 
+        [HttpGet("station/{stationId}/count")]
+        [Authorize(Roles = "Operator,Admin,Backoffice")]
+        public async Task<IActionResult> GetApprovedBookingCountByStation(string stationId)
+        {
+            try
+            {
+                var todayCount = await _booking.GetApprovedBookingCountByStationAsync(stationId, true);
+                var futureCount = await _booking.GetApprovedBookingCountByStationAsync(stationId, false);
+                return Ok(new { todayCount, futureCount });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500, new { message = "Unexpected error" });
+            }
+        }
+
         [HttpGet("station/{stationId}/upcoming")]
         [Authorize(Roles = "Operator,Admin,Backoffice")]
         public async Task<IActionResult> GetUpcomingBookingsByStation(string stationId)
@@ -309,7 +326,9 @@ namespace EvBackend.Controllers
                 var list = await _booking.GetPendingBookingsAsync(pageNumber, pageSize);
                 return Ok(list);
             }
-            catch (Exception ex) { Console.WriteLine(ex); return StatusCode(500, new { message = "Unexpected error" }); 
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex); return StatusCode(500, new { message = "Unexpected error" });
             }
         }
 

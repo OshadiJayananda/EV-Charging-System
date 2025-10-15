@@ -507,6 +507,48 @@ namespace EvBackend.Services
             return bookingDtos;
         }
 
+        public async Task<int> GetApprovedBookingCountByStationAsync(string stationId, bool todayOnly = false)
+        {
+            var bookingCol = _db.GetCollection<Booking>("Bookings");
+            var tz = GetSriLankaTz();
+
+            var nowSL = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+
+            FilterDefinition<Booking> filter;
+
+            if (todayOnly)
+            {
+                // --- TODAY range in Sri Lanka Time ---
+                var startSL = new DateTime(nowSL.Year, nowSL.Month, nowSL.Day, 0, 0, 0);
+                var endSL = startSL.AddDays(1).AddTicks(-1);
+
+                var startUtc = TimeZoneInfo.ConvertTimeToUtc(startSL, tz);
+                var endUtc = TimeZoneInfo.ConvertTimeToUtc(endSL, tz);
+
+                filter = Builders<Booking>.Filter.And(
+                    Builders<Booking>.Filter.Eq(b => b.StationId, stationId),
+                    Builders<Booking>.Filter.In(b => b.Status, new[] { "Approved", "Charging" }),
+                    Builders<Booking>.Filter.Gte(b => b.StartTime, startUtc),
+                    Builders<Booking>.Filter.Lte(b => b.StartTime, endUtc)
+                );
+            }
+            else
+            {
+                // --- FUTURE range (from tomorrow onwards) ---
+                var startSL = nowSL.AddDays(1).Date;
+                var startUtc = TimeZoneInfo.ConvertTimeToUtc(startSL, tz);
+
+                filter = Builders<Booking>.Filter.And(
+                    Builders<Booking>.Filter.Eq(b => b.StationId, stationId),
+                    Builders<Booking>.Filter.Eq(b => b.Status, "Approved"),
+                    Builders<Booking>.Filter.Gte(b => b.StartTime, startUtc)
+                );
+            }
+
+            var count = await bookingCol.CountDocumentsAsync(filter);
+            return (int)count;
+        }
+
         public async Task<IEnumerable<BookingDto>> GetUpcomingApprovedBookingsAsync(string stationId)
         {
             var bookingCol = _db.GetCollection<Booking>("Bookings");
