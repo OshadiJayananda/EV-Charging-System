@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +21,8 @@ import com.evcharging.mobile.network.ApiClient;
 import com.evcharging.mobile.network.ApiResponse;
 import com.evcharging.mobile.session.SessionManager;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.datepicker.CalendarConstraints;
+import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -29,7 +33,6 @@ import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.Executors;
-import com.google.android.material.datepicker.MaterialDatePicker;
 
 public class OwnerBookingActivity extends AppCompatActivity {
 
@@ -278,27 +281,27 @@ public class OwnerBookingActivity extends AppCompatActivity {
 
     private void setupTypeSpinner() {
         List<String> types = Arrays.asList("AC", "DC");
+        ArrayAdapter<String> adapter = createEnhancedSpinnerAdapter(types);
+        adapter.setDropDownViewResource(R.layout.grid_spinner_dropdown_item);
+        spnType.setAdapter(adapter);
+    }
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
-                this,
-                R.layout.spinner_item,
-                types
-        ) {
+    private ArrayAdapter<String> createEnhancedSpinnerAdapter(List<String> items) {
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.spinner_item, items) {
+            @NonNull
             @Override
-            public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-                View view = super.getDropDownView(position, convertView, parent);
+            public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
                 if (view instanceof TextView) {
                     TextView textView = (TextView) view;
-                    textView.setMinWidth(150);
-                    textView.setMaxWidth(150);
-                    textView.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                    textView.setTextColor(getResources().getColor(R.color.text_primary));
+                    textView.setTextSize(14);
                 }
                 return view;
             }
         };
-
         adapter.setDropDownViewResource(R.layout.grid_spinner_dropdown_item);
-        spnType.setAdapter(adapter);
+        return adapter;
     }
 
     private void loadStationsByType(String selectedType) {
@@ -369,23 +372,7 @@ public class OwnerBookingActivity extends AppCompatActivity {
                         stationNames.add(station.getName());
                     }
 
-                    ArrayAdapter<String> stnAdapter = new ArrayAdapter<String>(
-                            OwnerBookingActivity.this,
-                            R.layout.spinner_item,
-                            stationNames
-                    ) {
-                        @Override
-                        public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-                            View view = super.getDropDownView(position, convertView, parent);
-                            if (view instanceof TextView) {
-                                TextView textView = (TextView) view;
-                                textView.setMinWidth(150);
-                                textView.setMaxWidth(150);
-                                textView.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                            }
-                            return view;
-                        }
-                    };
+                    ArrayAdapter<String> stnAdapter = createEnhancedSpinnerAdapter(stationNames);
                     stnAdapter.setDropDownViewResource(R.layout.grid_spinner_dropdown_item);
                     spnStation.setAdapter(stnAdapter);
 
@@ -412,12 +399,36 @@ public class OwnerBookingActivity extends AppCompatActivity {
 
     private void setupDatePicker() {
         btnSelectDate.setOnClickListener(v -> {
+            // Calculate date range (today to today + 6 days)
+            Calendar today = Calendar.getInstance();
+            Calendar maxDate = Calendar.getInstance();
+            maxDate.add(Calendar.DAY_OF_MONTH, 6); // 7 days total (today + 6 next days)
+
+            // Set time to beginning of day
+            today.set(Calendar.HOUR_OF_DAY, 0);
+            today.set(Calendar.MINUTE, 0);
+            today.set(Calendar.SECOND, 0);
+            today.set(Calendar.MILLISECOND, 0);
+
+            maxDate.set(Calendar.HOUR_OF_DAY, 23);
+            maxDate.set(Calendar.MINUTE, 59);
+            maxDate.set(Calendar.SECOND, 59);
+            maxDate.set(Calendar.MILLISECOND, 999);
+
             MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
                     .setTitleText("Select Reservation Date")
                     .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
                     .setTheme(R.style.CustomDatePicker)
+                    .setCalendarConstraints(
+                            new CalendarConstraints.Builder()
+                                    .setStart(today.getTimeInMillis()) // today as start date
+                                    .setEnd(maxDate.getTimeInMillis()) // 6 days from today as max
+                                    .setValidator(new DateValidatorWeekAhead())
+                                    .build()
+                    )
                     .build();
 
+            // Enable/Disable Dates and ensure the dates are visible
             datePicker.addOnPositiveButtonClickListener(selection -> {
                 selectedDate = new Date(selection);
                 selectedDateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(selectedDate);
@@ -438,6 +449,54 @@ public class OwnerBookingActivity extends AppCompatActivity {
             datePicker.show(getSupportFragmentManager(), "DATE_PICKER");
         });
     }
+
+
+    private static class DateValidatorWeekAhead implements CalendarConstraints.DateValidator {
+
+        @Override
+        public boolean isValid(long date) {
+            Calendar selected = Calendar.getInstance();
+            selected.setTimeInMillis(date);
+
+            Calendar today = Calendar.getInstance();
+            today.set(Calendar.HOUR_OF_DAY, 0);
+            today.set(Calendar.MINUTE, 0);
+            today.set(Calendar.SECOND, 0);
+            today.set(Calendar.MILLISECOND, 0);
+
+            Calendar maxDate = Calendar.getInstance();
+            maxDate.set(Calendar.HOUR_OF_DAY, 0);
+            maxDate.set(Calendar.MINUTE, 0);
+            maxDate.set(Calendar.SECOND, 0);
+            maxDate.set(Calendar.MILLISECOND, 0);
+            maxDate.add(Calendar.DAY_OF_MONTH, 6); // 6 days from today
+
+            return !selected.before(today) && !selected.after(maxDate);
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            // Required for parcelable
+        }
+
+        public static final Creator<DateValidatorWeekAhead> CREATOR = new Creator<DateValidatorWeekAhead>() {
+            @Override
+            public DateValidatorWeekAhead createFromParcel(Parcel in) {
+                return new DateValidatorWeekAhead();
+            }
+
+            @Override
+            public DateValidatorWeekAhead[] newArray(int size) {
+                return new DateValidatorWeekAhead[size];
+            }
+        };
+    }
+
 
     private void loadSlotsForStation(String stationId) {
         clearSlots();
@@ -506,23 +565,7 @@ public class OwnerBookingActivity extends AppCompatActivity {
                         slotStrings.add(slot.toString());
                     }
 
-                    ArrayAdapter<String> slotAdapter = new ArrayAdapter<String>(
-                            OwnerBookingActivity.this,
-                            R.layout.spinner_item,
-                            slotStrings
-                    ) {
-                        @Override
-                        public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-                            View view = super.getDropDownView(position, convertView, parent);
-                            if (view instanceof TextView) {
-                                TextView textView = (TextView) view;
-                                textView.setMinWidth(150);
-                                textView.setMaxWidth(150);
-                                textView.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                            }
-                            return view;
-                        }
-                    };
+                    ArrayAdapter<String> slotAdapter = createEnhancedSpinnerAdapter(slotStrings);
                     slotAdapter.setDropDownViewResource(R.layout.grid_spinner_dropdown_item);
                     spnSlot.setAdapter(slotAdapter);
 
@@ -586,23 +629,7 @@ public class OwnerBookingActivity extends AppCompatActivity {
                         timeSlotStrings.add(timeSlot.toString());
                     }
 
-                    ArrayAdapter<String> tsAdapter = new ArrayAdapter<String>(
-                            OwnerBookingActivity.this,
-                            R.layout.spinner_item,
-                            timeSlotStrings
-                    ) {
-                        @Override
-                        public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-                            View view = super.getDropDownView(position, convertView, parent);
-                            if (view instanceof TextView) {
-                                TextView textView = (TextView) view;
-                                textView.setMinWidth(150);
-                                textView.setMaxWidth(150);
-                                textView.setGravity(View.TEXT_ALIGNMENT_CENTER);
-                            }
-                            return view;
-                        }
-                    };
+                    ArrayAdapter<String> tsAdapter = createEnhancedSpinnerAdapter(timeSlotStrings);
                     tsAdapter.setDropDownViewResource(R.layout.grid_spinner_dropdown_item);
                     spnTimeSlot.setAdapter(tsAdapter);
 

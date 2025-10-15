@@ -16,7 +16,37 @@
         <item name="colorOnSecondary">@color/black</item>
     </style>
 
-    <!-- Your existing button styles remain unchanged -->
+    <!-- Simplified DatePicker theme with compatible attributes -->
+    <style name="CustomDatePicker" parent="ThemeOverlay.MaterialComponents.MaterialCalendar">
+        <item name="colorPrimary">@color/primary_color</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="android:windowBackground">@color/gray</item>
+
+        <!-- Use only compatible attributes -->
+        <item name="materialCalendarStyle">@style/CustomMaterialCalendarStyle</item>
+        <item name="materialCalendarDay">@style/CustomCalendarDayStyle</item>
+    </style>
+
+    <!-- Custom calendar style -->
+    <style name="CustomMaterialCalendarStyle" parent="Widget.MaterialComponents.MaterialCalendar">
+        <item name="android:background">@color/gray</item>
+    </style>
+
+    <!-- Custom calendar day style with compatible attributes -->
+    <style name="CustomCalendarDayStyle" parent="Widget.MaterialComponents.MaterialCalendar.Day">
+        <!-- Regular day text color -->
+        <item name="android:textColor">@color/primary_dark</item>
+
+        <!-- Selected day styling -->
+        <item name="itemFillColor">@color/primary_color</item>
+        <item name="itemStrokeColor">@color/primary_color</item>
+        <item name="itemStrokeWidth">1dp</item>
+
+        <!-- For text color in different states, we'll handle it programmatically if needed -->
+    </style>
+
+    <!-- Your existing button styles -->
     <style name="PrimaryButton" parent="Widget.MaterialComponents.Button">
         <item name="android:backgroundTint">@color/primary_color</item>
         <item name="android:textColor">@color/white</item>
@@ -27,8 +57,8 @@
         <item name="android:textColor">@color/black</item>
     </style>
 
-    <!-- Rest of your existing styles remain the same -->
-    <style name="ModernTextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+    <!-- Update these to use MaterialComponents instead of Material3 for consistency -->
+    <style name="ModernTextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
         <item name="boxStrokeColor">@color/text_secondary_30</item>
         <item name="boxStrokeWidth">1dp</item>
         <item name="boxCornerRadiusBottomStart">12dp</item>
@@ -39,7 +69,7 @@
         <item name="startIconTint">@color/text_secondary</item>
     </style>
 
-    <style name="ModernPrimaryButton" parent="Widget.Material3.Button">
+    <style name="ModernPrimaryButton" parent="Widget.MaterialComponents.Button">
         <item name="backgroundTint">@color/primary_color</item>
         <item name="cornerRadius">16dp</item>
         <item name="android:textColor">@color/white</item>
@@ -52,7 +82,7 @@
         <item name="iconPadding">8dp</item>
     </style>
 
-    <style name="ModernSecondaryButton" parent="Widget.Material3.Button.OutlinedButton">
+    <style name="ModernSecondaryButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
         <item name="strokeColor">@color/text_secondary_30</item>
         <item name="strokeWidth">1dp</item>
         <item name="cornerRadius">16dp</item>
@@ -65,16 +95,14 @@
     </style>
 
     <style name="GridSpinnerStyle" parent="Widget.AppCompat.Spinner">
-        <item name="android:paddingStart">0dp</item>
-        <item name="android:paddingEnd">0dp</item>
-        <item name="android:dropDownWidth">150dp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:dropDownWidth">match_parent</item>
         <item name="android:popupBackground">@color/white</item>
-    </style>
-
-    <style name="CustomDatePicker" parent="ThemeOverlay.MaterialComponents.MaterialCalendar">
-        <item name="colorPrimary">@color/primary_color</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSurface">@color/white</item>
-        <item name="android:windowBackground">@color/white</item>
+        <item name="android:dropDownVerticalOffset">4dp</item>
+        <item name="android:dropDownHorizontalOffset">0dp</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">14sp</item>
     </style>
 </resources>
