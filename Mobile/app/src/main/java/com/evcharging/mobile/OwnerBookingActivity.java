@@ -13,6 +13,7 @@ import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.evcharging.mobile.model.Station;
 import com.evcharging.mobile.model.SlotItem;
@@ -418,7 +419,6 @@ public class OwnerBookingActivity extends AppCompatActivity {
             MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
                     .setTitleText("Select Reservation Date")
                     .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
-                    .setTheme(R.style.CustomDatePicker)
                     .setCalendarConstraints(
                             new CalendarConstraints.Builder()
                                     .setStart(today.getTimeInMillis()) // today as start date
@@ -435,7 +435,7 @@ public class OwnerBookingActivity extends AppCompatActivity {
                 String displayDate = new SimpleDateFormat("EEE, MMM d, yyyy", Locale.getDefault()).format(selectedDate);
 
                 tvSelectedDate.setText(displayDate);
-                tvSelectedDate.setTextColor(getResources().getColor(R.color.text_primary));
+                tvSelectedDate.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.text_primary));
 
                 if (selectedStationId == null) {
                     showHint("Please select a station first");
